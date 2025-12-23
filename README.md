@@ -28,38 +28,59 @@
 
 OCR-MCP is a FastMCP server that provides comprehensive OCR (Optical Character Recognition) capabilities to MCP clients. It processes various document formats and integrates with scanner hardware.
 
-### GOT-OCR2.0 Integration
+### State-of-the-Art OCR Integration
 
-OCR-MCP integrates GOT-OCR2.0, a unified end-to-end vision-language model for OCR tasks ([GitHub](https://github.com/Ucas-HaoranWei/GOT-OCR2.0), [ArXiv](https://arxiv.org/abs/2403.13601)). Key capabilities include:
+OCR-MCP integrates multiple current state-of-the-art OCR models for comprehensive document processing:
+
+#### Primary OCR Engines
+
+**🔥 DeepSeek-OCR (October 2025)** - *Current State-of-the-Art*
+- **Downloads**: 4.7M+ on Hugging Face (most downloaded OCR model)
+- **Capabilities**: Vision-language OCR with advanced text understanding
+- **Strengths**: Multilingual support, complex layouts, mathematical formulas
+- **Repository**: https://huggingface.co/deepseek-ai/DeepSeek-OCR
+- **Paper**: https://arxiv.org/abs/2510.18234
+
+**🎯 Florence-2 (June 2024)** - *Microsoft's Vision Foundation Model*
+- **Architecture**: Unified vision-language model for various vision tasks
+- **OCR Capabilities**: Excellent text extraction and layout understanding
+- **Strengths**: Multi-task learning, fine-grained text recognition
+- **Repository**: https://huggingface.co/microsoft/Florence-2-base
+
+**📊 DOTS.OCR (July 2025)** - *Document Understanding Specialist*
+- **Focus**: Document layout analysis, table recognition, formula extraction
+- **Strengths**: Structured document parsing, multilingual support
+- **Repository**: https://huggingface.co/rednote-hilab/dots.ocr
+
+**🚀 PP-OCRv5 (2025)** - *Industrial-Grade OCR*
+- **Performance**: PaddlePaddle's latest production-ready OCR system
+- **Strengths**: High accuracy, fast inference, edge deployment
+- **Repository**: https://huggingface.co/PaddlePaddle/PP-OCRv5
+
+#### OCR Capabilities
 
 - **Plain Text OCR**: Standard text extraction from images
 - **Formatted Text OCR**: Preserves layout and formatting structure
 - **Fine-Grained OCR**: Extract text from specific regions with coordinate precision
 - **Multi-Crop OCR**: Process documents with complex layouts by dividing into regions
 - **HTML Rendering**: Generate HTML output with visual layout preservation
+- **Document Understanding**: Table extraction, formula recognition, layout analysis
 
-GOT-OCR2.0 uses a vision-language architecture that combines visual understanding with language processing, enabling better handling of complex documents, multi-column layouts, and structured content.
+#### Auto-Backend Selection
 
-#### GOT-OCR2.0 Team & Background
+OCR-MCP automatically selects the best backend based on:
+- **Document Type**: PDF, image, scanned document, or comic
+- **Content Complexity**: Plain text vs. structured documents
+- **Language Requirements**: Multilingual content detection
+- **Performance Needs**: Speed vs. accuracy trade-offs
 
-- **Lead Author**: Haoran Wei (Ucas-HaoranWei on GitHub)
-- **Affiliation**: University of Chinese Academy of Sciences (UCAS)
-- **Company**: DeepSeek@AI
-- **Repository**: https://github.com/Ucas-HaoranWei/GOT-OCR2.0
-- **Release Date**: March 2024
-- **License**: Apache 2.0
+#### Community & Industry Adoption
 
-#### Web Reactions & Community Impact
-
-GOT-OCR2.0 has gained attention in the AI community for its innovative approach to OCR:
-
-- **Reddit Discussions**: Featured in r/MachineLearning and r/ComputerVision communities
-- **Hacker News**: Multiple threads discussing its capabilities and benchmarks
-- **Blog Coverage**: Technical blogs covering its vision-language architecture
-- **GitHub Stars**: 2.1K+ stars (as of December 2025)
-- **Model Downloads**: Popular on Hugging Face model hub
-
-**Reference**: Wei, H., Zhang, Z., Zhang, C., Zhang, Y., Li, Z., Zhang, Y., Gao, M., Zhang, F., & Li, Y. (2024). "GOT-OCR2.0: Advanced Open-source End-to-End OCR Model". ArXiv preprint arXiv:2403.13601.
+Current OCR landscape shows rapid evolution:
+- **DeepSeek-OCR**: Leading downloads indicate community preference
+- **Florence-2**: Academic and research adoption
+- **DOTS.OCR**: Document processing industry standard
+- **PP-OCRv5**: Production deployment in enterprise applications
 
 ### Key Features
 
