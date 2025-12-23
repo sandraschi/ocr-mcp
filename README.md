@@ -57,13 +57,13 @@ OCR-MCP integrates multiple current state-of-the-art OCR models for comprehensiv
 - **Strengths**: High accuracy, fast inference, edge deployment
 - **Repository**: https://huggingface.co/PaddlePaddle/PP-OCRv5
 
-**🎨 Qwen-Image-Layered (December 2025)** - *Advanced Image Generation*
-- **Technology**: Layered image generation from text prompts
-- **OCR Integration**: Generate synthetic test images for OCR validation
-- **Capabilities**: Multi-layer image composition, text-to-image synthesis
+**🎨 Qwen-Image-Layered (December 2025)** - *Advanced Image Decomposition*
+- **Technology**: Decomposes images into multiple independent RGBA layers
+- **OCR Integration**: Isolate text, background, and structural elements for better OCR
+- **Capabilities**: Layer-independent editing, resizing, repositioning, recoloring
 - **Repository**: https://huggingface.co/Qwen/Qwen-Image-Layered
 - **Paper**: https://arxiv.org/abs/2512.15603
-- **Use Case**: Create test documents with known text for OCR accuracy testing
+- **Use Case**: Pre-process complex documents by separating text layers from backgrounds
 
 #### OCR Capabilities
 
@@ -82,15 +82,16 @@ OCR-MCP automatically selects the best backend based on:
 - **Language Requirements**: Multilingual content detection
 - **Performance Needs**: Speed vs. accuracy trade-offs
 
-#### Synthetic Document Generation
+#### Advanced Document Pre-processing
 
-**Qwen-Image-Layered Integration** enables advanced OCR testing:
+**Qwen-Image-Layered Integration** revolutionizes OCR through intelligent image decomposition:
 
-- **Test Document Creation**: Generate images with known text content for accuracy validation
-- **Complex Layout Testing**: Create multi-column documents, tables, and formatted text
-- **Edge Case Testing**: Generate documents with challenging OCR scenarios (small text, complex backgrounds)
-- **Benchmarking**: Compare OCR accuracy across different engines using identical synthetic content
-- **Quality Assurance**: Automated testing pipeline for OCR model improvements
+- **Layer Separation**: Decompose documents into independent RGBA layers (text, background, images, graphics)
+- **Selective OCR**: Process text layers independently for improved accuracy on complex documents
+- **Noise Reduction**: Isolate and remove background noise, watermarks, and interfering elements
+- **Content Isolation**: Separate handwritten notes, stamps, and annotations from main text
+- **Layout Preservation**: Maintain document structure while enabling targeted OCR processing
+- **Multi-modal Enhancement**: Combine with traditional OCR for hybrid processing pipelines
 
 #### Community & Industry Adoption
 
