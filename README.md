@@ -14,6 +14,7 @@
 - [✨ Key Features](#-key-features)
 - [🚀 Quick Start](#-quick-start)
 - [🛠️ Installation](#-installation)
+- [🌐 WebApp Interface](#-webapp-interface)
 - [📖 Usage](#-usage)
 - [🔧 Configuration](#-configuration)
 - [🧠 OCR Backends](#-ocr-backends)
@@ -143,14 +144,14 @@ Current OCR landscape shows rapid evolution:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/ocr-mcp.git
+git clone https://github.com/sandraschi/ocr-mcp.git
 cd ocr-mcp
 
-# Install dependencies
-pip install -e .
+# Install dependencies with Poetry (recommended)
+poetry install
 
 # For GPU support (optional but recommended)
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+poetry run pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 ```
 
 ### MCP Configuration
@@ -171,6 +172,76 @@ Add to your `claude_desktop_config.json`:
   }
 }
 ```
+
+### WebApp Mode
+
+OCR-MCP includes a full-featured web interface for document processing:
+
+```bash
+# Run the web application
+poetry run ocr-mcp-webapp
+
+# Or use the script directly
+python scripts/run_webapp.py
+```
+
+The web interface provides:
+- **📤 Drag & drop file upload** - Support for PDF, images, CBZ
+- **🔄 Real-time processing** - Live status updates and progress
+- **📷 Scanner integration** - Direct scanner control via web interface
+- **📊 Batch processing** - Process multiple documents simultaneously
+- **🎨 OCR backend selection** - Choose from 5 different OCR engines
+- **📋 Results visualization** - Text, JSON, and HTML output formats
+
+**Access the webapp at:** http://localhost:8000
+
+## 🌐 WebApp Interface
+
+OCR-MCP provides a modern web interface for document processing and scanner control:
+
+### Features
+
+- **📤 File Upload**: Drag & drop interface supporting PDF, PNG, JPG, TIFF, BMP, CBZ, CBR
+- **🔄 Live Processing**: Real-time status updates with progress indicators
+- **📷 Scanner Control**: Discover and control WIA-compatible scanners
+- **📊 Batch Operations**: Process multiple documents simultaneously
+- **🎨 Backend Selection**: Choose from 5 different OCR engines per task
+- **📋 Multi-format Output**: View results as plain text, JSON, or HTML
+- **💾 Export Options**: Download results or copy to clipboard
+
+### Interface Sections
+
+#### Upload & Process Tab
+- Single document processing with drag-and-drop upload
+- OCR backend selection (DeepSeek-OCR, Florence-2, DOTS.OCR, PP-OCRv5, Qwen-Image-Layered)
+- Processing mode selection (Text, Formatted, Fine-grained)
+- Real-time processing status and results display
+
+#### Scanner Control Tab
+- Automatic scanner discovery
+- Scanner properties configuration (DPI, color mode, paper size)
+- Single document scanning
+- Direct integration with OCR processing
+
+#### Batch Processing Tab
+- Multiple file selection and management
+- Concurrent processing with progress tracking
+- Batch results aggregation
+
+#### Settings Tab
+- System health monitoring
+- OCR backend availability status
+- Configuration diagnostics
+
+### WebApp Architecture
+
+The webapp consists of:
+
+- **FastAPI Backend**: RESTful API server with async processing
+- **MCP Integration**: Direct communication with OCR-MCP server
+- **Modern Frontend**: Responsive HTML/CSS/JavaScript interface
+- **File Management**: Secure temporary file handling
+- **Real-time Updates**: WebSocket-like status polling
 
 ## 💡 Usage Examples
 

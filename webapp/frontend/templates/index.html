@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR-MCP Web Interface</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-search"></i> OCR-MCP Web Interface</h1>
+            <p>Advanced document processing with state-of-the-art OCR engines</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Navigation Tabs -->
+            <div class="tabs">
+                <button class="tab-button active" onclick="showTab('upload')">
+                    <i class="fas fa-upload"></i> Upload & Process
+                </button>
+                <button class="tab-button" onclick="showTab('scanner')">
+                    <i class="fas fa-print"></i> Scanner Control
+                </button>
+                <button class="tab-button" onclick="showTab('batch')">
+                    <i class="fas fa-layer-group"></i> Batch Processing
+                </button>
+                <button class="tab-button" onclick="showTab('settings')">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+            </div>
+
+            <!-- Upload & Process Tab -->
+            <div id="upload-tab" class="tab-content active">
+                <div class="upload-section">
+                    <h2><i class="fas fa-file-upload"></i> Document Upload</h2>
+                    <div class="upload-area" id="upload-area">
+                        <div class="upload-content">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <p>Drag & drop files here or click to browse</p>
+                            <p class="upload-subtitle">Supports PDF, PNG, JPG, CBZ, and other image formats</p>
+                            <input type="file" id="file-input" accept=".pdf,.png,.jpg,.jpeg,.tiff,.bmp,.cbz,.cbr" style="display: none;">
+                            <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">
+                                <i class="fas fa-folder-open"></i> Choose Files
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="processing-options">
+                        <h3>Processing Options</h3>
+                        <div class="options-grid">
+                            <div class="option-group">
+                                <label for="ocr-mode">OCR Mode:</label>
+                                <select id="ocr-mode" class="form-control">
+                                    <option value="text">Text Extraction</option>
+                                    <option value="format">Formatted Text</option>
+                                    <option value="fine-grained">Fine-Grained</option>
+                                </select>
+                            </div>
+
+                            <div class="option-group">
+                                <label for="backend">OCR Backend:</label>
+                                <select id="backend" class="form-control">
+                                    <option value="auto">Auto (Recommended)</option>
+                                    <option value="deepseek">DeepSeek-OCR</option>
+                                    <option value="florence">Florence-2</option>
+                                    <option value="dots">DOTS.OCR</option>
+                                    <option value="ppocr">PP-OCRv5</option>
+                                    <option value="qwen-layered">Qwen-Image-Layered</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-success" onclick="processFile()" id="process-btn">
+                            <i class="fas fa-play"></i> Process Document
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Processing Status -->
+                <div class="processing-status" id="processing-status" style="display: none;">
+                    <h3>Processing Status</h3>
+                    <div class="status-card">
+                        <div class="status-header">
+                            <span id="status-filename"></span>
+                            <span class="status-badge" id="status-badge">Processing</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                        <div class="status-details" id="status-details"></div>
+                    </div>
+                </div>
+
+                <!-- Results Display -->
+                <div class="results-section" id="results-section" style="display: none;">
+                    <h3>OCR Results</h3>
+                    <div class="results-tabs">
+                        <button class="results-tab active" onclick="showResultTab('text')">Text</button>
+                        <button class="results-tab" onclick="showResultTab('json')">JSON</button>
+                        <button class="results-tab" onclick="showResultTab('html')">HTML</button>
+                    </div>
+
+                    <div class="results-content">
+                        <div id="text-results" class="result-panel active">
+                            <pre id="text-content"></pre>
+                        </div>
+                        <div id="json-results" class="result-panel">
+                            <pre id="json-content"></pre>
+                        </div>
+                        <div id="html-results" class="result-panel">
+                            <div id="html-content"></div>
+                        </div>
+                    </div>
+
+                    <div class="results-actions">
+                        <button class="btn btn-secondary" onclick="downloadResult('text')">
+                            <i class="fas fa-download"></i> Download Text
+                        </button>
+                        <button class="btn btn-secondary" onclick="downloadResult('json')">
+                            <i class="fas fa-download"></i> Download JSON
+                        </button>
+                        <button class="btn btn-secondary" onclick="copyToClipboard()">
+                            <i class="fas fa-copy"></i> Copy to Clipboard
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scanner Control Tab -->
+            <div id="scanner-tab" class="tab-content">
+                <div class="scanner-section">
+                    <h2><i class="fas fa-print"></i> Scanner Control</h2>
+
+                    <div class="scanner-discovery">
+                        <button class="btn btn-primary" onclick="discoverScanners()">
+                            <i class="fas fa-search"></i> Discover Scanners
+                        </button>
+                        <div id="scanner-list" class="scanner-list"></div>
+                    </div>
+
+                    <div class="scanner-controls" id="scanner-controls" style="display: none;">
+                        <h3>Scan Settings</h3>
+                        <div class="scan-options">
+                            <div class="option-group">
+                                <label for="scan-dpi">Resolution (DPI):</label>
+                                <select id="scan-dpi" class="form-control">
+                                    <option value="150">150 DPI</option>
+                                    <option value="200">200 DPI</option>
+                                    <option value="300" selected>300 DPI</option>
+                                    <option value="600">600 DPI</option>
+                                </select>
+                            </div>
+
+                            <div class="option-group">
+                                <label for="scan-color">Color Mode:</label>
+                                <select id="scan-color" class="form-control">
+                                    <option value="Color" selected>Color</option>
+                                    <option value="Grayscale">Grayscale</option>
+                                    <option value="BlackWhite">Black & White</option>
+                                </select>
+                            </div>
+
+                            <div class="option-group">
+                                <label for="scan-size">Paper Size:</label>
+                                <select id="scan-size" class="form-control">
+                                    <option value="A4" selected>A4</option>
+                                    <option value="Letter">Letter</option>
+                                    <option value="Legal">Legal</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-success" onclick="scanDocument()" id="scan-btn">
+                            <i class="fas fa-camera"></i> Scan Document
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Batch Processing Tab -->
+            <div id="batch-tab" class="tab-content">
+                <div class="batch-section">
+                    <h2><i class="fas fa-layer-group"></i> Batch Processing</h2>
+
+                    <div class="batch-upload">
+                        <div class="upload-area" id="batch-upload-area">
+                            <div class="upload-content">
+                                <i class="fas fa-folder-plus upload-icon"></i>
+                                <p>Drop multiple files here or click to browse</p>
+                                <p class="upload-subtitle">Process multiple documents simultaneously</p>
+                                <input type="file" id="batch-file-input" multiple accept=".pdf,.png,.jpg,.jpeg,.tiff,.bmp,.cbz,.cbr" style="display: none;">
+                                <button class="btn btn-primary" onclick="document.getElementById('batch-file-input').click()">
+                                    <i class="fas fa-folder-open"></i> Choose Files
+                                </button>
+                            </div>
+                        </div>
+                        <div id="batch-file-list" class="file-list"></div>
+                    </div>
+
+                    <div class="batch-options">
+                        <h3>Batch Processing Options</h3>
+                        <div class="options-grid">
+                            <div class="option-group">
+                                <label for="batch-ocr-mode">OCR Mode:</label>
+                                <select id="batch-ocr-mode" class="form-control">
+                                    <option value="text">Text Extraction</option>
+                                    <option value="format">Formatted Text</option>
+                                </select>
+                            </div>
+
+                            <div class="option-group">
+                                <label for="batch-backend">OCR Backend:</label>
+                                <select id="batch-backend" class="form-control">
+                                    <option value="auto">Auto (Recommended)</option>
+                                    <option value="deepseek">DeepSeek-OCR</option>
+                                    <option value="florence">Florence-2</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-success" onclick="processBatch()" id="batch-process-btn">
+                            <i class="fas fa-play-circle"></i> Process Batch
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings-tab" class="tab-content">
+                <div class="settings-section">
+                    <h2><i class="fas fa-cog"></i> Settings & Diagnostics</h2>
+
+                    <div class="settings-grid">
+                        <div class="settings-card">
+                            <h3>System Status</h3>
+                            <div id="system-status" class="status-info">
+                                <p><i class="fas fa-spinner fa-spin"></i> Checking...</p>
+                            </div>
+                            <button class="btn btn-secondary" onclick="checkHealth()">
+                                <i class="fas fa-sync"></i> Refresh Status
+                            </button>
+                        </div>
+
+                        <div class="settings-card">
+                            <h3>OCR Backends</h3>
+                            <div id="backend-status" class="status-info">
+                                <p><i class="fas fa-spinner fa-spin"></i> Loading...</p>
+                            </div>
+                            <button class="btn btn-secondary" onclick="checkBackends()">
+                                <i class="fas fa-sync"></i> Check Backends
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
