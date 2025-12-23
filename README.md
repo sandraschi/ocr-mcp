@@ -57,6 +57,14 @@ OCR-MCP integrates multiple current state-of-the-art OCR models for comprehensiv
 - **Strengths**: High accuracy, fast inference, edge deployment
 - **Repository**: https://huggingface.co/PaddlePaddle/PP-OCRv5
 
+**🎨 Qwen-Image-Layered (December 2025)** - *Advanced Image Generation*
+- **Technology**: Layered image generation from text prompts
+- **OCR Integration**: Generate synthetic test images for OCR validation
+- **Capabilities**: Multi-layer image composition, text-to-image synthesis
+- **Repository**: https://huggingface.co/Qwen/Qwen-Image-Layered
+- **Paper**: https://arxiv.org/abs/2512.15603
+- **Use Case**: Create test documents with known text for OCR accuracy testing
+
 #### OCR Capabilities
 
 - **Plain Text OCR**: Standard text extraction from images
@@ -73,6 +81,16 @@ OCR-MCP automatically selects the best backend based on:
 - **Content Complexity**: Plain text vs. structured documents
 - **Language Requirements**: Multilingual content detection
 - **Performance Needs**: Speed vs. accuracy trade-offs
+
+#### Synthetic Document Generation
+
+**Qwen-Image-Layered Integration** enables advanced OCR testing:
+
+- **Test Document Creation**: Generate images with known text content for accuracy validation
+- **Complex Layout Testing**: Create multi-column documents, tables, and formatted text
+- **Edge Case Testing**: Generate documents with challenging OCR scenarios (small text, complex backgrounds)
+- **Benchmarking**: Compare OCR accuracy across different engines using identical synthetic content
+- **Quality Assurance**: Automated testing pipeline for OCR model improvements
 
 #### Community & Industry Adoption
 
