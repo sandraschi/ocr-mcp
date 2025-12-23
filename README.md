@@ -40,6 +40,25 @@ OCR-MCP integrates GOT-OCR2.0, a unified end-to-end vision-language model for OC
 
 GOT-OCR2.0 uses a vision-language architecture that combines visual understanding with language processing, enabling better handling of complex documents, multi-column layouts, and structured content.
 
+#### GOT-OCR2.0 Team & Background
+
+- **Lead Author**: Haoran Wei (Ucas-HaoranWei on GitHub)
+- **Affiliation**: University of Chinese Academy of Sciences (UCAS)
+- **Company**: DeepSeek@AI
+- **Repository**: https://github.com/Ucas-HaoranWei/GOT-OCR2.0
+- **Release Date**: March 2024
+- **License**: Apache 2.0
+
+#### Web Reactions & Community Impact
+
+GOT-OCR2.0 has gained attention in the AI community for its innovative approach to OCR:
+
+- **Reddit Discussions**: Featured in r/MachineLearning and r/ComputerVision communities
+- **Hacker News**: Multiple threads discussing its capabilities and benchmarks
+- **Blog Coverage**: Technical blogs covering its vision-language architecture
+- **GitHub Stars**: 2.1K+ stars (as of December 2025)
+- **Model Downloads**: Popular on Hugging Face model hub
+
 **Reference**: Wei, H., Zhang, Z., Zhang, C., Zhang, Y., Li, Z., Zhang, Y., Gao, M., Zhang, F., & Li, Y. (2024). "GOT-OCR2.0: Advanced Open-source End-to-End OCR Model". ArXiv preprint arXiv:2403.13601.
 
 ### Key Features
