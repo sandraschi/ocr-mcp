@@ -1,25 +1,53 @@
-# OCR-MCP: Revolutionary Document Understanding Server 🚀
+# OCR-MCP: Advanced Document Processing Server
 
 [![Python](https://img.shields.io/badge/Python-3.11+-green)](https://python.org)
 [![FastMCP](https://img.shields.io/badge/FastMCP-2.13+-blue)](https://github.com/jlowin/fastmcp)
 [![GOT-OCR2.0](https://img.shields.io/badge/GOT--OCR2.0-Integrated-orange)](https://github.com/Ucas-HaoranWei/GOT-OCR2.0)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Planning-red)](OCR-MCP_MASTER_PLAN.md)
+[![Status](https://img.shields.io/badge/Status-Alpha-green)](OCR-MCP_MASTER_PLAN.md)
 
-**FastMCP 2.13+ server providing state-of-the-art OCR capabilities to the entire MCP ecosystem**
+**FastMCP 2.13+ server providing advanced OCR capabilities to the MCP ecosystem**
 
-## 🎯 What is OCR-MCP?
+## 📋 Table of Contents
 
-OCR-MCP is a specialized FastMCP server that brings powerful document understanding capabilities to any MCP client. Built around the revolutionary GOT-OCR2.0 model and supporting multiple OCR backends, it transforms images and scanned documents into structured, searchable text.
+- [🎯 What is OCR-MCP?](#-what-is-ocr-mcp)
+- [✨ Key Features](#-key-features)
+- [🚀 Quick Start](#-quick-start)
+- [🛠️ Installation](#-installation)
+- [📖 Usage](#-usage)
+- [🔧 Configuration](#-configuration)
+- [🧠 OCR Backends](#-ocr-backends)
+- [📷 Scanner Integration](#-scanner-integration)
+- [📚 Document Processing](#-document-processing)
+- [🎨 Advanced Features](#-advanced-features)
+- [🔍 API Reference](#-api-reference)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
 
-### ✨ Key Features
+## What is OCR-MCP?
 
-- **🎨 Multiple OCR Backends**: GOT-OCR2.0, Tesseract, EasyOCR, PaddleOCR, TrOCR
-- **📄 Advanced Processing Modes**: Plain text, formatted text, layout preservation, HTML rendering
-- **🎯 Fine-grained OCR**: Extract text from specific regions with coordinate precision
-- **📦 Batch Processing**: Process multiple documents with progress tracking
-- **🔄 Format Conversion**: Output as text, HTML, Markdown, JSON, or XML
-- **🚀 High Performance**: Optimized for speed and accuracy across different hardware
+OCR-MCP is a FastMCP server that provides comprehensive OCR (Optical Character Recognition) capabilities to MCP clients. It processes various document formats and integrates with scanner hardware.
+
+### GOT-OCR2.0 Integration
+
+OCR-MCP integrates GOT-OCR2.0, a unified end-to-end vision-language model for OCR tasks. Key capabilities include:
+
+- **Plain Text OCR**: Standard text extraction from images
+- **Formatted Text OCR**: Preserves layout and formatting structure
+- **Fine-Grained OCR**: Extract text from specific regions with coordinate precision
+- **Multi-Crop OCR**: Process documents with complex layouts by dividing into regions
+- **HTML Rendering**: Generate HTML output with visual layout preservation
+
+GOT-OCR2.0 uses a vision-language architecture that combines visual understanding with language processing, enabling better handling of complex documents, multi-column layouts, and structured content.
+
+### Key Features
+
+- **Multiple OCR Backends**: GOT-OCR2.0, Tesseract, EasyOCR
+- **Processing Modes**: Plain text, formatted text, layout preservation, HTML rendering, fine-grained region extraction
+- **Document Formats**: PDF, CBZ/CBR comic archives, JPG/PNG/TIFF images, scanner input
+- **Scanner Integration**: Direct WIA control for Windows flatbed scanners
+- **Batch Processing**: Concurrent processing of multiple documents
+- **Output Formats**: Text, HTML, Markdown, JSON, XML
 
 ## 🏗️ Architecture
 
