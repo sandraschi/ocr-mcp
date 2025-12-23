@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Alpha-green)](OCR-MCP_MASTER_PLAN.md)
 
-**FastMCP 2.13+ server providing advanced OCR capabilities to the MCP ecosystem**
+**FastMCP 2.13+ server providing advanced OCR capabilities including GOT-OCR2.0 integration, WIA scanner control, and multi-format document processing.**
 
 ## 📋 Table of Contents
 
@@ -30,7 +30,7 @@ OCR-MCP is a FastMCP server that provides comprehensive OCR (Optical Character R
 
 ### GOT-OCR2.0 Integration
 
-OCR-MCP integrates GOT-OCR2.0, a unified end-to-end vision-language model for OCR tasks. Key capabilities include:
+OCR-MCP integrates GOT-OCR2.0, a unified end-to-end vision-language model for OCR tasks ([GitHub](https://github.com/Ucas-HaoranWei/GOT-OCR2.0), [ArXiv](https://arxiv.org/abs/2403.13601)). Key capabilities include:
 
 - **Plain Text OCR**: Standard text extraction from images
 - **Formatted Text OCR**: Preserves layout and formatting structure
@@ -39,6 +39,8 @@ OCR-MCP integrates GOT-OCR2.0, a unified end-to-end vision-language model for OC
 - **HTML Rendering**: Generate HTML output with visual layout preservation
 
 GOT-OCR2.0 uses a vision-language architecture that combines visual understanding with language processing, enabling better handling of complex documents, multi-column layouts, and structured content.
+
+**Reference**: Wei, H., Zhang, Z., Zhang, C., Zhang, Y., Li, Z., Zhang, Y., Gao, M., Zhang, F., & Li, Y. (2024). "GOT-OCR2.0: Advanced Open-source End-to-End OCR Model". ArXiv preprint arXiv:2403.13601.
 
 ### Key Features
 
