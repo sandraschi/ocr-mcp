@@ -8,35 +8,76 @@ packages = [{include = "ocr_mcp"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-fastmcp = {extras = ["server"], version = "^2.13.0"}
+fastmcp = {extras = ["server"], version = ">=2.13.0,<2.14.0"}
+
+# Core ML/AI dependencies
 transformers = "^4.35.0"
-torch = "^2.1.0"
-pillow = "^10.0.0"
 accelerate = "^0.24.0"
+sentencepiece = "^0.1.99"
+protobuf = "^4.25.0"
+timm = "^0.9.0"
+einops = "^0.7.0"
+huggingface-hub = "^0.17.0"
+
+# OCR backends
 pytesseract = "^0.3.10"
 easyocr = "^1.7.0"
-pydantic = "^2.0.0"
-pywin32 = {version = "^306.0.0", markers = "sys_platform == 'win32'"}
-comtypes = "^1.2.0"
+httpx = "^0.28.1"  # For Mistral OCR API
+
+# Image processing
+pillow = "^10.0.0"
 opencv-python = "^4.8.0"
+scikit-image = "^0.22.0"
+
+# Document processing
 PyMuPDF = "^1.23.0"
 rarfile = "^4.1"
+pdf2image = "^1.17.0"
+pypdf = "^3.17.0"
+
+# Scanner support
+comtypes = {version = "^1.2.0", markers = "sys_platform == 'win32'"}
+pywin32 = {version = "^310.0.0", markers = "sys_platform == 'win32'"}
+
+# Configuration and utilities
+pydantic = "^2.0.0"
+python-dotenv = "^1.0.0"
+click = "^8.1.0"
+
 # Webapp dependencies
-fastapi = "^0.104.0"
-uvicorn = {extras = ["standard"], version = "^0.24.0"}
+fastapi = "^0.115.0"
+uvicorn = {extras = ["standard"], version = "^0.35.0"}
 jinja2 = "^3.1.0"
-python-multipart = "^0.0.6"
+python-multipart = "^0.0.9"
+aiofiles = "^23.2.1"
+
+# HTTP and networking
+aiohttp = "^3.9.0"
 
 [tool.poetry.group.dev.dependencies]
+# Testing Framework
 pytest = "^7.4.0"
 pytest-asyncio = "^0.21.0"
+pytest-cov = "^4.1.0"
+pytest-mock = "^3.12.0"
+pytest-xdist = "^3.5.0"
+pytest-html = "^4.1.0"
+pytest-benchmark = "^4.0.0"
+
+# Code Quality
 black = "^23.0.0"
 isort = "^5.12.0"
 ruff = "^0.1.0"
 
+# Optional Testing
+testcontainers = {version = "^3.7.1", optional = true}
+playwright = {version = "^1.40.0", optional = true}
+
 [tool.poetry.scripts]
 ocr-mcp = "ocr_mcp.server:main"
 ocr-mcp-webapp = "webapp.backend.app:main"
+ocr-mcp-test = "scripts.run_tests:main"
+ocr-mcp-install-models = "scripts.install_models:main"
 
 [build-system]
 requires = ["poetry-core"]
@@ -49,3 +90,49 @@ target-version = "py311"
 [tool.black]
 line-length = 100
 target-version = ['py311']
+
+[tool.pytest.ini_options]
+minversion = "7.4"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--disable-warnings",
+    "--cov=src",
+    "--cov-report=html:htmlcov",
+    "--cov-report=xml",
+    "--cov-report=term-missing",
+    "--cov-fail-under=85",
+    "--html=reports/pytest-report.html",
+    "--self-contained-html"
+]
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "e2e: marks tests as end-to-end tests",
+    "benchmark: marks tests as benchmarks",
+    "gpu: marks tests that require GPU",
+    "scanner: marks tests that require scanner hardware",
+    "ocr_backend: marks tests specific to OCR backends",
+    "unit: marks tests as unit tests"
+]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/conftest.py",
+    "*/__pycache__/*",
+    "setup.py"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError"
+]

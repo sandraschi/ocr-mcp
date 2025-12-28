@@ -1,0 +1,395 @@
+{
+  "examples": [
+    {
+      "title": "Basic Document Processing",
+      "description": "Process a single PDF document with automatic backend selection",
+      "user_input": "Extract text from this PDF: /documents/contract.pdf",
+      "tool_call": "process_document",
+      "parameters": {
+        "file_path": "/documents/contract.pdf",
+        "output_format": "text"
+      },
+      "expected_output": "Text content extracted from contract.pdf with confidence score and processing details"
+    },
+    {
+      "title": "Scanner Discovery",
+      "description": "List all available scanner devices",
+      "user_input": "What scanners do I have connected?",
+      "tool_call": "list_scanners",
+      "parameters": {},
+      "expected_output": "List of available scanner devices with IDs and capabilities"
+    },
+    {
+      "title": "Document Scanning",
+      "description": "Scan a document using connected scanner",
+      "user_input": "Scan a document and save it as scanned_doc.png",
+      "tool_call": "scan_document",
+      "parameters": {
+        "output_path": "scanned_doc.png",
+        "resolution": 300
+      },
+      "expected_output": "Document scanned and saved to specified path"
+    },
+    {
+      "title": "Batch Document Processing",
+      "description": "Process multiple documents concurrently",
+      "user_input": "Process these three documents: invoice.pdf, letter.pdf, form.jpg",
+      "tool_call": "process_batch_documents",
+      "parameters": {
+        "file_paths": ["invoice.pdf", "letter.pdf", "form.jpg"],
+        "output_format": "markdown",
+        "concurrent": true
+      },
+      "expected_output": "All documents processed concurrently and saved in markdown format"
+    },
+    {
+      "title": "Region Text Extraction",
+      "description": "Extract text from specific region of an image",
+      "user_input": "Extract text from the address field in this form image",
+      "tool_call": "extract_regions",
+      "parameters": {
+        "image_path": "form.jpg",
+        "regions": [
+          {
+            "x": 50,
+            "y": 100,
+            "width": 300,
+            "height": 50,
+            "label": "address_field"
+          }
+        ]
+      },
+      "expected_output": "Text extracted from specified region with coordinates"
+    },
+    {
+      "title": "Backend Status Check",
+      "description": "Check availability of OCR backends",
+      "user_input": "Which OCR backends are currently working?",
+      "tool_call": "get_backend_status",
+      "parameters": {},
+      "expected_output": "Status of all OCR backends (available/unavailable) with version info"
+    },
+    {
+      "title": "High-Resolution Scanning",
+      "description": "Scan document at high resolution for archival quality",
+      "user_input": "Scan this important document at 600 DPI for archiving",
+      "tool_call": "scan_document",
+      "parameters": {
+        "output_path": "archive_scan.png",
+        "resolution": 600,
+        "color_mode": "grayscale"
+      },
+      "expected_output": "High-resolution scan saved for archival purposes"
+    },
+    {
+      "title": "Research Paper Processing",
+      "description": "Process academic paper with optimal backend",
+      "user_input": "Process this research paper with the best available OCR",
+      "tool_call": "process_document",
+      "parameters": {
+        "file_path": "research_paper.pdf",
+        "backend": "deepseek",
+        "output_format": "markdown"
+      },
+      "expected_output": "Research paper processed using DeepSeek-OCR with markdown output"
+    },
+    {
+      "title": "Form Data Extraction",
+      "description": "Extract structured data from filled forms",
+      "user_input": "Extract the name and address from this filled form",
+      "tool_call": "extract_regions",
+      "parameters": {
+        "image_path": "filled_form.jpg",
+        "regions": [
+          {
+            "x": 100,
+            "y": 150,
+            "width": 250,
+            "height": 30,
+            "label": "full_name"
+          },
+          {
+            "x": 100,
+            "y": 200,
+            "width": 350,
+            "height": 60,
+            "label": "address"
+          }
+        ],
+        "output_format": "json"
+      },
+      "expected_output": "Structured JSON output with extracted form fields"
+    },
+    {
+      "title": "Bulk Archive Processing",
+      "description": "Process entire document archive",
+      "user_input": "Process all PDFs in my documents folder and save as text files",
+      "tool_call": "process_batch_documents",
+      "parameters": {
+        "file_paths": "glob:/documents/*.pdf",
+        "output_format": "text",
+        "output_directory": "/processed_documents/",
+        "concurrent": true
+      },
+      "expected_output": "All PDFs in documents folder processed and saved as text files"
+    },
+    {
+      "title": "Academic Paper Processing",
+      "description": "Process research paper with optimal backend selection",
+      "user_input": "Extract text from this research paper with mathematical equations",
+      "tool_call": "process_document",
+      "parameters": {
+        "file_path": "/papers/research_paper.pdf",
+        "backend": "deepseek",
+        "output_format": "markdown"
+      },
+      "expected_output": "Research paper processed using DeepSeek-OCR with proper equation formatting in markdown"
+    },
+    {
+      "title": "Invoice Processing",
+      "description": "Extract structured data from invoice",
+      "user_input": "Process this invoice and extract the total amount and date",
+      "tool_call": "process_document",
+      "parameters": {
+        "file_path": "/invoices/invoice_001.pdf",
+        "backend": "florence",
+        "output_format": "json"
+      },
+      "expected_output": "Invoice processed with structured JSON output including amount, date, vendor info"
+    },
+    {
+      "title": "Handwritten Note Processing",
+      "description": "Process handwritten document with advanced OCR",
+      "user_input": "Read this handwritten note from my meeting",
+      "tool_call": "process_document",
+      "parameters": {
+        "file_path": "/notes/handwritten_meeting_notes.jpg",
+        "backend": "mistral",
+        "output_format": "text"
+      },
+      "expected_output": "Handwritten notes transcribed using Mistral OCR 3 with high accuracy"
+    },
+    {
+      "title": "Multi-language Document",
+      "description": "Process document with multiple languages",
+      "user_input": "Extract text from this bilingual document",
+      "tool_call": "process_document",
+      "parameters": {
+        "file_path": "/documents/bilingual_contract.pdf",
+        "backend": "deepseek",
+        "output_format": "markdown"
+      },
+      "expected_output": "Multilingual document processed with proper language detection and formatting"
+    },
+    {
+      "title": "Form Field Extraction",
+      "description": "Extract specific fields from a form",
+      "user_input": "Extract the name and address from this application form",
+      "tool_call": "extract_regions",
+      "parameters": {
+        "image_path": "/forms/application_form.jpg",
+        "regions": [
+          {"x": 150, "y": 100, "width": 250, "height": 30, "label": "applicant_name"},
+          {"x": 150, "y": 160, "width": 350, "height": 60, "label": "home_address"}
+        ],
+        "backend": "florence"
+      },
+      "expected_output": "Specific form fields extracted with high precision using Florence-2"
+    },
+    {
+      "title": "High-Volume Document Processing",
+      "description": "Process large batch of similar documents",
+      "user_input": "Process these 50 receipts for expense reporting",
+      "tool_call": "process_batch_documents",
+      "parameters": {
+        "file_paths": "/receipts/*.jpg",
+        "output_format": "json",
+        "backend": "ppocr",
+        "concurrent": true,
+        "max_concurrency": 8
+      },
+      "expected_output": "50 receipts processed concurrently using PP-OCRv5 with JSON output for expense system"
+    },
+    {
+      "title": "Scanned Book Processing",
+      "description": "Process scanned book with multiple pages",
+      "user_input": "Convert this scanned book to searchable text",
+      "tool_call": "process_document",
+      "parameters": {
+        "file_path": "/books/scanned_book.pdf",
+        "backend": "auto",
+        "output_format": "html"
+      },
+      "expected_output": "Multi-page scanned book processed with HTML output preserving formatting"
+    },
+    {
+      "title": "Legal Document Processing",
+      "description": "Process legal document with high accuracy",
+      "user_input": "Extract text from this legal contract carefully",
+      "tool_call": "process_document",
+      "parameters": {
+        "file_path": "/legal/contract.pdf",
+        "backend": "mistral",
+        "output_format": "markdown",
+        "confidence_threshold": 0.95
+      },
+      "expected_output": "Legal contract processed with Mistral OCR 3 ensuring high accuracy for legal requirements"
+    },
+    {
+      "title": "Real-time Scanner Usage",
+      "description": "Use scanner for immediate document processing",
+      "user_input": "Scan this document and extract the text immediately",
+      "tool_call": "scan_document",
+      "parameters": {
+        "output_path": "/temp/scanned_doc.png",
+        "resolution": 600,
+        "color_mode": "grayscale"
+      },
+      "expected_output": "Document scanned at high resolution, then automatically processed for text extraction"
+    }
+  ],
+  "configuration_examples": [
+    {
+      "title": "Set Default Backend",
+      "description": "Configure preferred OCR backend",
+      "user_input": "Use Florence-2 as my default OCR backend",
+      "config_key": "default_backend",
+      "config_value": "florence"
+    },
+    {
+      "title": "Configure API Key",
+      "description": "Set API key for cloud OCR services",
+      "user_input": "Set my Mistral OCR API key",
+      "config_key": "api_key",
+      "config_value": "sk-your-api-key-here"
+    },
+    {
+      "title": "Adjust Scanner Timeout",
+      "description": "Configure scanner operation timeout",
+      "user_input": "Set scanner timeout to 60 seconds",
+      "config_key": "scanner_timeout",
+      "config_value": "60"
+    },
+    {
+      "title": "Configure Batch Processing",
+      "description": "Set concurrent processing limits",
+      "user_input": "Allow up to 8 concurrent document processing operations",
+      "config_key": "batch_concurrency",
+      "config_value": "8"
+    },
+    {
+      "title": "Set GPU Acceleration",
+      "description": "Enable GPU processing for compatible backends",
+      "user_input": "Enable GPU acceleration for OCR processing",
+      "config_key": "gpu_acceleration",
+      "config_value": true
+    },
+    {
+      "title": "Configure Scan Resolution",
+      "description": "Set default scanner resolution",
+      "user_input": "Set default scan resolution to 600 DPI",
+      "config_key": "scan_resolution",
+      "config_value": "600"
+    },
+    {
+      "title": "Set Output Validation",
+      "description": "Enable text quality validation",
+      "user_input": "Always validate OCR text quality",
+      "config_key": "output_validation",
+      "config_value": true
+    },
+    {
+      "title": "Configure Memory Limits",
+      "description": "Set maximum memory usage per operation",
+      "user_input": "Limit OCR operations to 4GB of memory",
+      "config_key": "memory_limit",
+      "config_value": "4GB"
+    }
+  ],
+  "error_handling_examples": [
+    {
+      "title": "Backend Unavailable",
+      "description": "Handle when preferred backend is not available",
+      "error": "DeepSeek backend not available",
+      "recovery": "Automatically falls back to next available backend (Florence-2)",
+      "user_action": "Check backend status with get_backend_status()"
+    },
+    {
+      "title": "Scanner Not Connected",
+      "description": "Handle scanner connectivity issues",
+      "error": "Scanner device not found",
+      "recovery": "Verify scanner is powered on and connected",
+      "user_action": "Run list_scanners() to verify connection"
+    },
+    {
+      "title": "Unsupported File Format",
+      "description": "Handle unsupported document formats",
+      "error": "File format not supported",
+      "recovery": "Convert file to supported format (PDF, PNG, JPG, TIFF, BMP)",
+      "user_action": "Check supported formats in documentation"
+    },
+    {
+      "title": "API Key Missing",
+      "description": "Handle missing API key for cloud backends",
+      "error": "Mistral OCR API key not configured",
+      "recovery": "Fall back to local backends (DeepSeek, Florence, PP-OCR)",
+      "user_action": "Configure API key in Claude Desktop settings or use local backends"
+    },
+    {
+      "title": "Network Connection Failed",
+      "description": "Handle network connectivity issues for cloud backends",
+      "error": "Network connection timeout - cannot reach Mistral API",
+      "recovery": "Retry with exponential backoff, switch to local backends",
+      "user_action": "Check internet connection, retry later, or use offline backends"
+    },
+    {
+      "title": "Memory Insufficient",
+      "description": "Handle out of memory errors for large documents",
+      "error": "Insufficient memory for processing large document (2.5GB file)",
+      "recovery": "Process document in chunks or reduce resolution",
+      "user_action": "Split large documents or reduce scan resolution"
+    },
+    {
+      "title": "GPU Not Available",
+      "description": "Handle missing GPU for GPU-accelerated backends",
+      "error": "CUDA GPU not available for DeepSeek-OCR processing",
+      "recovery": "Fall back to CPU processing (slower but functional)",
+      "user_action": "Install CUDA drivers or use CPU-only backends like PP-OCR"
+    },
+    {
+      "title": "File Corruption",
+      "description": "Handle corrupted or invalid document files",
+      "error": "File appears corrupted or invalid format",
+      "recovery": "Validate file integrity, suggest file repair",
+      "user_action": "Verify file is not corrupted, try different file format"
+    },
+    {
+      "title": "Scanner Driver Issues",
+      "description": "Handle scanner driver compatibility problems",
+      "error": "Scanner driver incompatible or not installed",
+      "recovery": "Use alternative scanner or software scanning",
+      "user_action": "Install correct scanner drivers or use different scanning method"
+    },
+    {
+      "title": "Concurrent Limit Exceeded",
+      "description": "Handle too many concurrent operations",
+      "error": "Maximum concurrent operations (8) exceeded",
+      "recovery": "Queue additional operations for later processing",
+      "user_action": "Wait for current operations to complete or reduce batch size"
+    },
+    {
+      "title": "Backend Model Loading Failed",
+      "description": "Handle model loading failures",
+      "error": "Cannot load Florence-2 model - insufficient disk space",
+      "recovery": "Free up disk space or use alternative backend",
+      "user_action": "Clear disk space (need ~2GB free) or select different backend"
+    },
+    {
+      "title": "Rate Limit Exceeded",
+      "description": "Handle API rate limiting for cloud backends",
+      "error": "Mistral API rate limit exceeded (100 requests/minute)",
+      "recovery": "Implement request throttling, switch to local backends",
+      "user_action": "Wait for rate limit reset or use local processing"
+    }
+  ]
+}

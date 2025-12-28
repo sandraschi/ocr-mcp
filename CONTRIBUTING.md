@@ -223,3 +223,9 @@ Contributors will be recognized in:
 - Join discussions in existing issues
 
 Thank you for contributing to OCR-MCP! 🎉
+
+
+
+
+
+

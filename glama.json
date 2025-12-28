@@ -1,0 +1,38 @@
+{
+  "mcpServers": {
+    "ocr-mcp": {
+      "command": "python",
+      "args": ["-m", "src.ocr_mcp.server"],
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "description": "Advanced Document Processing Server with State-of-the-Art OCR",
+      "capabilities": {
+        "tools": {
+          "enabled": true,
+          "listChanged": true
+        },
+        "resources": {
+          "enabled": true,
+          "listChanged": true,
+          "subscribe": true
+        },
+        "prompts": {
+          "enabled": true
+        }
+      },
+      "timeout": {
+        "initialize": 30000,
+        "message": 60000
+      },
+      "metadata": {
+        "version": "1.0.0",
+        "author": "OCR-MCP Team",
+        "homepage": "https://github.com/sandr/ocr-mcp",
+        "license": "MIT",
+        "tags": ["ocr", "document-processing", "ai", "computer-vision", "pdf", "image-processing"],
+        "categories": ["Productivity", "AI/ML", "Document Processing"]
+      }
+    }
+  }
+}

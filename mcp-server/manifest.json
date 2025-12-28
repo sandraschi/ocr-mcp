@@ -1,0 +1,244 @@
+{
+  "manifest_version": "0.2",
+  "name": "ocr-mcp",
+  "version": "1.0.0",
+  "description": "Professional Document Processing Suite with 7 State-of-the-Art OCR Engines, Scanner Integration, and Advanced Document Analysis",
+  "author": {
+    "name": "OCR-MCP Team",
+    "email": "ocr-mcp@sandraschi.com"
+  },
+  "homepage": "https://github.com/sandraschi/ocr-mcp",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sandraschi/ocr-mcp.git"
+  },
+  "server": {
+    "type": "python",
+    "entry_point": "src/ocr_mcp/server.py",
+    "mcp_config": {
+      "command": "python",
+      "args": ["-m", "ocr_mcp.server"],
+      "env": {
+        "PYTHONPATH": "${PWD}",
+        "PYTHONUNBUFFERED": "1",
+        "OCR_CACHE_DIR": "${HOME}/.cache/ocr-mcp",
+        "OCR_DEVICE": "cuda"
+      }
+    }
+  },
+  "user_config": {
+    "mistral_api_key": {
+      "type": "string",
+      "title": "Mistral OCR API Key",
+      "required": false,
+      "default": "",
+      "description": "API key for Mistral OCR 3 backend (optional - local backends work without it)"
+    },
+    "default_backend": {
+      "type": "string",
+      "title": "Default OCR Backend",
+      "required": false,
+      "default": "auto",
+      "description": "Preferred OCR backend. Options: auto, mistral, deepseek, florence, dots, ppocr, qwen, tesseract, got, easyocr"
+    },
+    "gpu_device": {
+      "type": "string",
+      "title": "GPU Device",
+      "required": false,
+      "default": "auto",
+      "description": "GPU device for ML models. Options: auto, cuda, cuda:0, cuda:1, cpu"
+    },
+    "scanner_timeout": {
+      "type": "string",
+      "title": "Scanner Operation Timeout (seconds)",
+      "required": false,
+      "default": "30",
+      "description": "Timeout for scanner operations in seconds"
+    },
+    "batch_concurrency": {
+      "type": "string",
+      "title": "Batch Processing Concurrency",
+      "required": false,
+      "default": "4",
+      "description": "Number of concurrent document processing operations (1-8 recommended)"
+    },
+    "model_cache_dir": {
+      "type": "string",
+      "title": "Model Cache Directory",
+      "required": false,
+      "default": "~/.cache/ocr-mcp",
+      "description": "Directory for storing downloaded ML models"
+    },
+    "enable_gpu_acceleration": {
+      "type": "boolean",
+      "title": "Enable GPU Acceleration",
+      "required": false,
+      "default": true,
+      "description": "Enable GPU acceleration for compatible backends (recommended)"
+    },
+    "comic_mode": {
+      "type": "boolean",
+      "title": "Enable Comic Processing Mode",
+      "required": false,
+      "default": false,
+      "description": "Enable specialized comic/manga processing optimizations"
+    }
+  },
+  "tools": [
+    {
+      "name": "process_document",
+      "description": "Process single document with intelligent OCR backend selection"
+    },
+    {
+      "name": "process_document_batch_intelligent",
+      "description": "Process multiple documents with intelligent batch orchestration"
+    },
+    {
+      "name": "analyze_document_layout",
+      "description": "Analyze document structure (headers, tables, columns, sections)"
+    },
+    {
+      "name": "extract_table_data",
+      "description": "Extract structured data from complex table layouts"
+    },
+    {
+      "name": "detect_form_fields",
+      "description": "Detect form elements (checkboxes, text fields, signatures)"
+    },
+    {
+      "name": "assess_ocr_quality",
+      "description": "Comprehensive OCR accuracy scoring and validation"
+    },
+    {
+      "name": "compare_ocr_backends",
+      "description": "Performance comparison across all OCR engines"
+    },
+    {
+      "name": "deskew_image",
+      "description": "Automatically straighten skewed documents"
+    },
+    {
+      "name": "enhance_image",
+      "description": "Quality enhancement (contrast, sharpness, noise reduction)"
+    },
+    {
+      "name": "preprocess_for_ocr",
+      "description": "Complete preprocessing pipeline for OCR optimization"
+    },
+    {
+      "name": "list_scanners",
+      "description": "Discover and enumerate available scanner devices"
+    },
+    {
+      "name": "scan_document",
+      "description": "Scan single document using connected scanner"
+    },
+    {
+      "name": "scan_batch",
+      "description": "Batch scanning with automatic document feed support"
+    },
+    {
+      "name": "convert_image_format",
+      "description": "Convert between image formats with quality control"
+    },
+    {
+      "name": "convert_pdf_to_images",
+      "description": "Extract images from PDF documents"
+    },
+    {
+      "name": "create_pdf_from_images",
+      "description": "Compile images into searchable PDF documents"
+    },
+    {
+      "name": "extract_text_to_pdf",
+      "description": "Create searchable PDFs with embedded OCR text"
+    },
+    {
+      "name": "create_processing_pipeline",
+      "description": "Build custom document processing workflows"
+    },
+    {
+      "name": "execute_pipeline",
+      "description": "Execute custom processing pipelines with monitoring"
+    },
+    {
+      "name": "monitor_batch_progress",
+      "description": "Monitor real-time progress of batch operations"
+    },
+    {
+      "name": "classify_document_type",
+      "description": "Auto-classify document types (invoices, forms, articles)"
+    },
+    {
+      "name": "extract_document_metadata",
+      "description": "Extract metadata (dates, names, numbers, addresses)"
+    },
+    {
+      "name": "analyze_document_reading_order",
+      "description": "Determine logical text flow and reading sequence"
+    },
+    {
+      "name": "analyze_image_quality",
+      "description": "Pre-OCR quality analysis and improvement suggestions"
+    },
+    {
+      "name": "validate_ocr_accuracy",
+      "description": "Ground truth accuracy validation and error analysis"
+    },
+    {
+      "name": "optimize_document_for_ocr",
+      "description": "Complete document optimization for best OCR results"
+    },
+    {
+      "name": "optimize_batch_processing",
+      "description": "Intelligent batch processing optimization"
+    },
+    {
+      "name": "crop_image",
+      "description": "Content boundary detection and cropping"
+    },
+    {
+      "name": "rotate_image",
+      "description": "Auto-detect and correct document orientation"
+    },
+    {
+      "name": "scanner_properties",
+      "description": "Get detailed scanner capabilities and settings"
+    },
+    {
+      "name": "configure_scan",
+      "description": "Configure scanner parameters (DPI, color, paper size)"
+    },
+    {
+      "name": "preview_scan",
+      "description": "Low-resolution preview scan for positioning"
+    },
+    {
+      "name": "get_scanner_settings",
+      "description": "Query current scanner configuration"
+    },
+    {
+      "name": "set_scanner_settings",
+      "description": "Modify scanner settings and parameters"
+    },
+    {
+      "name": "get_raw_scan",
+      "description": "Raw scanner acquisition without OCR processing"
+    }
+  ],
+  "categories": ["productivity", "ai", "document-processing", "ocr", "scanner"],
+  "tags": ["ocr", "document-processing", "scanner", "ai", "computer-vision", "pdf", "image-processing"],
+  "requirements": {
+    "python": ">=3.11",
+    "gpu": "recommended (8GB+ VRAM)",
+    "platform": ["windows", "linux", "macos"]
+  },
+  "dependencies": {
+    "fastmcp": ">=2.13.0,<2.14.0",
+    "torch": ">=2.1.0",
+    "transformers": ">=4.35.0",
+    "pillow": ">=10.0.0",
+    "opencv-python": ">=4.8.0"
+  }
+}

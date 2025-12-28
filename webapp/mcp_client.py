@@ -5,6 +5,7 @@ Communicates with the OCR-MCP server via stdio protocol
 
 import asyncio
 import json
+import os
 import sys
 import subprocess
 import threading
@@ -25,55 +26,109 @@ class MCPClient:
 
     async def initialize(self):
         """Initialize connection to MCP server"""
+        logger.info("MCPClient.initialize() method called")
         try:
             # Start the MCP server process
-            server_path = Path(__file__).parent.parent / "src" / "ocr_mcp" / "__main__.py"
             python_path = sys.executable
+            project_root = Path(__file__).parent.parent
 
             env = {
                 **os.environ,
-                "PYTHONPATH": str(Path(__file__).parent.parent / "src"),
+                "PYTHONPATH": str(project_root / "src"),
                 "PYTHONUNBUFFERED": "1"
             }
 
+            logger.info(f"Starting MCP server subprocess with command: {python_path} -m src.ocr_mcp.server")
+            logger.info(f"Working directory: {project_root}")
+            logger.info(f"Python executable: {python_path}")
+
             self.process = subprocess.Popen(
-                [python_path, str(server_path)],
+                [python_path, "-m", "src.ocr_mcp.server"],
+                cwd=str(project_root),
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                env=env
+                env=env,
+                bufsize=0  # Unbuffered
             )
+
+            logger.info(f"MCP server subprocess started with PID: {self.process.pid}")
+
+            # Check if process is still alive
+            if self.process.poll() is not None:
+                stdout, stderr = self.process.communicate()
+                logger.error(f"MCP server subprocess exited immediately with code {self.process.returncode}")
+                logger.error(f"STDOUT: {stdout}")
+                logger.error(f"STDERR: {stderr}")
+                raise Exception(f"MCP server subprocess failed to start: {stderr}")
 
             # Start reading responses in background
             threading.Thread(target=self._read_responses, daemon=True).start()
 
-            # Wait for server to be ready
-            await asyncio.sleep(2)
+            # Wait for server to be ready (longer timeout)
+            logger.info("Waiting 10 seconds for MCP server to initialize...")
+            await asyncio.sleep(10)
+            logger.info("Finished waiting for MCP server initialization")
 
             # Test connection
-            await self._initialize_connection()
-            self.connected = True
-            logger.info("MCP client connected successfully")
+            logger.info("Testing MCP connection...")
+            try:
+                # Send a simple ping first to test if the server responds
+                logger.info("Sending ping to MCP server...")
+                ping_result = await self._send_request("ping", {})
+                logger.info(f"Ping response: {ping_result}")
+            except Exception as e:
+                logger.warning(f"Ping failed: {e}")
+
+            try:
+                logger.info("Initializing MCP protocol connection...")
+                await self._initialize_connection()
+                self.connected = True
+                logger.info("MCP client connected successfully")
+            except Exception as e:
+                logger.error(f"MCP protocol initialization failed: {e}")
+                raise
 
         except Exception as e:
             logger.error(f"Failed to initialize MCP client: {e}")
+            # Try to get subprocess stderr if available
+            if self.process and self.process.stderr:
+                try:
+                    stderr_output = self.process.stderr.read()
+                    if stderr_output:
+                        logger.error(f"MCP server stderr: {stderr_output}")
+                except:
+                    pass
             raise
 
     async def _initialize_connection(self):
-        """Initialize MCP protocol connection"""
-        # Send initialize request
-        result = await self._send_request("initialize", {
-            "protocolVersion": "2024-11-05",
-            "capabilities": {},
-            "clientInfo": {
-                "name": "ocr-mcp-webapp",
-                "version": "0.1.0"
-            }
-        })
+        """Initialize MCP protocol connection with retry logic"""
+        max_retries = 5
+        for attempt in range(max_retries):
+            try:
+                # Send initialize request
+                result = await self._send_request("initialize", {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {},
+                    "clientInfo": {
+                        "name": "ocr-mcp-webapp",
+                        "version": "0.1.0"
+                    }
+                })
 
-        # Send initialized notification
-        await self._send_notification("notifications/initialized", {})
+                # Send initialized notification
+                await self._send_notification("notifications/initialized", {})
+                logger.info("MCP protocol initialized successfully")
+                return result
+
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    logger.warning(f"MCP initialization attempt {attempt + 1} failed: {e}, retrying...")
+                    await asyncio.sleep(2)
+                else:
+                    logger.error(f"MCP initialization failed after {max_retries} attempts: {e}")
+                    raise
 
     async def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Call an MCP tool"""
@@ -106,8 +161,10 @@ class MCPClient:
 
         # Send request
         request_json = json.dumps(request) + "\n"
+        logger.info(f"Sending request to MCP server: {request_json.strip()}")
         self.process.stdin.write(request_json)
         self.process.stdin.flush()
+        logger.info("Request sent to MCP server")
 
         # Wait for response
         try:
@@ -137,10 +194,20 @@ class MCPClient:
             return
 
         try:
+            logger.info("Starting to read MCP server responses...")
             for line in iter(self.process.stdout.readline, ''):
                 if line.strip():
+                    line_stripped = line.strip()
+                    logger.debug(f"Received line from MCP server: {line_stripped}")
+
+                    # Skip non-JSON lines (log messages, etc.)
+                    if not line_stripped.startswith('{'):
+                        logger.debug(f"Skipping non-JSON line: {line_stripped}")
+                        continue
+
                     try:
-                        response = json.loads(line.strip())
+                        response = json.loads(line_stripped)
+                        logger.info(f"Parsed MCP response: {response}")
 
                         # Handle response
                         if "id" in response:
@@ -153,9 +220,13 @@ class MCPClient:
                                     future.set_exception(Exception(response["error"].get("message", "Unknown error")))
                                 else:
                                     future.set_exception(Exception("Invalid response format"))
+                            else:
+                                logger.warning(f"No future found for request ID: {request_id}")
+                        else:
+                            logger.warning(f"Response without ID: {response}")
 
                     except json.JSONDecodeError as e:
-                        logger.error(f"Failed to parse MCP response: {e}")
+                        logger.error(f"Failed to parse MCP response: {e}, line: {line_stripped}")
                     except Exception as e:
                         logger.error(f"Error processing MCP response: {e}")
 

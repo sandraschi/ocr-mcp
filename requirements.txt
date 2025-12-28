@@ -1,0 +1,33 @@
+# Core dependencies - FastMCP 2.13+ SOTA standards
+fastmcp[server]>=2.13.0,<2.14.0
+pydantic>=2.0.0
+httpx>=0.28.1
+uvicorn[standard]>=0.35.0
+python-multipart>=0.0.9
+pywin32>=310; sys_platform == "win32"
+
+# Image processing
+Pillow>=10.0.0
+opencv-python>=4.8.0
+PyMuPDF>=1.23.0
+rarfile>=4.1
+
+# OCR backends
+pytesseract>=0.3.10
+easyocr>=1.7.0
+
+# Web app
+fastapi>=0.115.0
+jinja2>=3.1.0
+aiofiles>=23.2.1
+
+# Utilities
+click>=8.1.0
+python-dotenv>=1.0.0
+comtypes>=1.2.0; sys_platform == "win32"
+
+
+
+
+
+

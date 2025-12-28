@@ -7,9 +7,8 @@ Supports flatbed scanners, ADF (Automatic Document Feeder), and various scan mod
 
 import logging
 import platform
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Any, Optional, List
 from dataclasses import dataclass
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -21,22 +20,29 @@ if IS_WINDOWS:
     try:
         import comtypes
         import comtypes.client as cc
-        from comtypes.gen import WIALib
         import pythoncom
 
-        WIA_AVAILABLE = True
+        # Test WIA availability by trying to create DeviceManager
+        try:
+            pythoncom.CoInitialize()
+            test_dm = cc.CreateObject('WIA.DeviceManager')
+            pythoncom.CoUninitialize()
+            WIA_AVAILABLE = True
+            logger.info("WIA is available and working")
+        except Exception as e:
+            logger.warning(f"WIA not available: {e}")
+            WIA_AVAILABLE = False
+
     except ImportError as e:
         logger.warning(f"WIA dependencies not available: {e}")
         WIA_AVAILABLE = False
         comtypes = None
         cc = None
-        WIALib = None
         pythoncom = None
 else:
     WIA_AVAILABLE = False
     comtypes = None
     cc = None
-    WIALib = None
     pythoncom = None
 
 
@@ -108,7 +114,7 @@ class WIABackend:
             pythoncom.CoInitialize()
 
             # Create WIA manager
-            self._wia_manager = cc.CreateObject("WIA.DeviceManager", clsctx=comtypes.CLSCTX_LOCAL_SERVER)
+            self._wia_manager = cc.CreateObject("WIA.DeviceManager")
             self._initialized = True
             logger.info("WIA scanner backend initialized")
 
@@ -177,7 +183,7 @@ class WIABackend:
                     # Check if device supports ADF
                     supports_adf = True
                     device_type = "Feeder"
-            except:
+            except Exception:
                 pass
 
             # Get maximum DPI
@@ -187,7 +193,7 @@ class WIABackend:
                 horiz_res = self._get_property_value(properties, "Horizontal Resolution")
                 if horiz_res:
                     max_dpi = max(max_dpi, int(horiz_res))
-            except:
+            except Exception:
                 pass
 
             return ScannerInfo(
@@ -251,7 +257,7 @@ class WIABackend:
                 horiz_res = self._get_property_value(properties, "Horizontal Resolution")
                 if horiz_res:
                     supported_resolutions = [int(horiz_res)]
-            except:
+            except Exception:
                 pass
 
             return ScannerProperties(
@@ -405,5 +411,11 @@ class WIABackend:
         if hasattr(self, '_wia_manager') and self._wia_manager:
             try:
                 pythoncom.CoUninitialize()
-            except:
+            except Exception:
                 pass
+
+
+
+
+
+

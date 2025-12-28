@@ -3,6 +3,7 @@ EasyOCR Backend for OCR-MCP
 """
 
 import logging
+import os
 from typing import Dict, Any, Optional, List
 
 from ..core.backend_manager import OCRBackend
@@ -17,17 +18,42 @@ class EasyOCRBackend(OCRBackend):
     def __init__(self, config: OCRConfig):
         super().__init__("easyocr", config)
         self._reader = None
+        self._initialized = False
 
-        # Check if EasyOCR is available
+        # Check if EasyOCR is available (don't initialize reader yet)
         try:
             import easyocr
-            # Initialize reader with configured languages
-            self._reader = easyocr.Reader(self.config.easyocr_languages, gpu=True)
+            self._easyocr = easyocr
             self._available = True
-            logger.info("EasyOCR backend available")
+            logger.info("EasyOCR backend available (deferred initialization)")
         except Exception as e:
             self._available = False
             logger.warning(f"EasyOCR backend not available: {e}")
+
+    def _ensure_initialized(self):
+        """Initialize EasyOCR reader on first use."""
+        if self._initialized or not self._available:
+            return
+
+        try:
+            # Set environment variable to avoid Unicode progress bar issues on Windows
+            original_verbose = os.environ.get('EASYOCR_VERBOSE', '1')
+            os.environ['EASYOCR_VERBOSE'] = '0'  # Disable verbose output
+
+            # Initialize reader with configured languages
+            self._reader = self._easyocr.Reader(self.config.easyocr_languages, gpu=True, verbose=False)
+            self._initialized = True
+            logger.info("EasyOCR reader initialized successfully")
+
+            # Restore original verbose setting
+            if original_verbose != '1':
+                os.environ['EASYOCR_VERBOSE'] = original_verbose
+            else:
+                os.environ.pop('EASYOCR_VERBOSE', None)
+
+        except Exception as e:
+            self._available = False
+            logger.warning(f"EasyOCR reader initialization failed: {e}")
 
     async def process_image(
         self,
@@ -55,6 +81,15 @@ class EasyOCRBackend(OCRBackend):
             return {
                 "success": False,
                 "error": "EasyOCR backend not available"
+            }
+
+        # Ensure reader is initialized
+        self._ensure_initialized()
+
+        if not self._initialized:
+            return {
+                "success": False,
+                "error": "EasyOCR reader initialization failed"
             }
 
         try:
@@ -126,3 +161,9 @@ class EasyOCRBackend(OCRBackend):
             ]
         })
         return base_capabilities
+
+
+
+
+
+

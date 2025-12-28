@@ -4,15 +4,14 @@ FastAPI server providing web interface for OCR-MCP functionality
 """
 
 import asyncio
-import json
 import os
 import tempfile
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 import logging
 
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, BackgroundTasks
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.requests import Request
@@ -45,10 +44,21 @@ processing_jobs: Dict[str, Dict[str, Any]] = {}
 async def startup_event():
     """Initialize MCP client on startup"""
     try:
-        await mcp_client.initialize()
-        logger.info("MCP client initialized successfully")
+        # Initialize MCP client in background to not block startup
+        task = asyncio.create_task(mcp_client.initialize())
+        logger.info("MCP client initialization started")
+
+        # Wait a bit to see if it completes quickly
+        try:
+            await asyncio.wait_for(task, timeout=1.0)
+            logger.info("MCP client initialization completed quickly")
+        except asyncio.TimeoutError:
+            logger.info("MCP client initialization is running in background")
+
     except Exception as e:
-        logger.error(f"Failed to initialize MCP client: {e}")
+        logger.error(f"Failed to start MCP client initialization: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -64,14 +74,21 @@ async def home(request: Request):
 async def health_check():
     """Health check endpoint"""
     return {
-        "status": "healthy",
+        "status": "healthy" if mcp_client.connected else "degraded",
         "mcp_connected": mcp_client.connected,
+        "mcp_status": "connected" if mcp_client.connected else "not_connected",
+        "instructions": "Start OCR-MCP server separately: python -m src.ocr_mcp.server" if not mcp_client.connected else None,
         "version": "0.1.0"
     }
 
 @app.get("/api/scanners")
 async def get_scanners():
     """Get available scanners"""
+    if not mcp_client.connected:
+        raise HTTPException(
+            status_code=503,
+            detail="MCP server not connected. Please start the OCR-MCP server separately: python -m src.ocr_mcp.server"
+        )
     try:
         result = await mcp_client.call_tool("list_scanners", {})
         return result
@@ -197,6 +214,11 @@ async def process_batch(
 @app.get("/api/backends")
 async def get_backends():
     """Get available OCR backends"""
+    if not mcp_client.connected:
+        raise HTTPException(
+            status_code=503,
+            detail="MCP server not connected. Please start the OCR-MCP server separately: python -m src.ocr_mcp.server"
+        )
     try:
         result = await mcp_client.call_tool("list_backends", {})
         return result
@@ -253,7 +275,8 @@ async def process_batch_background(job_id: str, file_paths: List[str], ocr_mode:
 
 def main():
     """Entry point for running the webapp"""
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("WEBAPP_PORT", "7460"))
+    uvicorn.run(app, host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
     main()

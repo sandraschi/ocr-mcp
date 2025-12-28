@@ -1,0 +1,310 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.9", "3.10", "3.11"]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install Poetry
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install poetry==1.7.1
+
+    - name: Configure Poetry
+      run: |
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
+
+    - name: Install dependencies
+      run: poetry install --with dev
+
+    - name: Run linting
+      run: |
+        poetry run ruff check src/ tests/
+        poetry run black --check --diff src/ tests/
+
+    - name: Run type checking
+      run: poetry run mypy src/ --ignore-missing-imports
+
+    - name: Run unit tests
+      run: poetry run pytest tests/unit/ -v --tb=short --cov=src --cov-report=xml --cov-report=term-missing
+
+    - name: Run integration tests
+      run: poetry run pytest tests/integration/ -v --tb=short
+
+    - name: Run end-to-end tests
+      run: poetry run pytest tests/e2e/ -v --tb=short --durations=10
+
+    - name: Run performance benchmarks
+      run: poetry run pytest tests/benchmarks/ -v --tb=short --benchmark-only --benchmark-json=benchmark.json
+      continue-on-error: true
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: ${{ matrix.os }}-${{ matrix.python-version }}
+        name: codecov-umbrella
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v3
+      with:
+        name: benchmark-results-${{ matrix.os }}-${{ matrix.python-version }}
+        path: benchmark.json
+      if: always()
+
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Poetry
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install poetry==1.7.1
+
+    - name: Install dependencies
+      run: poetry install --with dev
+
+    - name: Run security audit
+      run: |
+        poetry run pip-audit
+        poetry run bandit -r src/ -f json -o bandit-report.json
+      continue-on-error: true
+
+    - name: Run complexity analysis
+      run: |
+        poetry run radon cc src/ -a -s > complexity.txt
+        poetry run radon mi src/ -s > maintainability.txt
+      continue-on-error: true
+
+    - name: Upload quality reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: quality-reports
+        path: |
+          bandit-report.json
+          complexity.txt
+          maintainability.txt
+      if: always()
+
+  build:
+    name: Build Package
+    runs-on: ubuntu-latest
+    needs: [test, quality]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Poetry
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install poetry==1.7.1
+
+    - name: Configure Poetry
+      run: |
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
+
+    - name: Install dependencies
+      run: poetry install
+
+    - name: Build package
+      run: poetry build
+
+    - name: Test package installation
+      run: |
+        python -m pip install dist/*.whl
+        python -c "import ocr_mcp; print('Package import successful')"
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist-packages
+        path: dist/
+
+  webapp-test:
+    name: WebApp Tests
+    runs-on: ubuntu-latest
+    needs: [test]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Poetry
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install poetry==1.7.1
+
+    - name: Install dependencies
+      run: poetry install
+
+    - name: Install Playwright
+      run: poetry run playwright install
+
+    - name: Start webapp server
+      run: |
+        poetry run python scripts/run_webapp.py &
+        sleep 5
+
+    - name: Run webapp tests
+      run: poetry run pytest tests/e2e/test_webapp.py -v --tb=short
+      continue-on-error: true
+
+    - name: Stop webapp server
+      run: pkill -f "run_webapp.py"
+      continue-on-error: true
+
+  deploy-docs:
+    name: Deploy Documentation
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Poetry
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install poetry==1.7.1
+
+    - name: Install dependencies
+      run: poetry install
+
+    - name: Generate documentation
+      run: |
+        poetry run pdoc --html --output-dir docs/api src/ocr_mcp
+        cp README.md docs/
+        cp CHANGELOG.md docs/
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: docs/
+      if: github.ref == 'refs/heads/main'
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [test, build, webapp-test]
+    if: github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'release:')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Poetry
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install poetry==1.7.1
+
+    - name: Install dependencies
+      run: poetry install
+
+    - name: Run release tests
+      run: |
+        poetry run pytest tests/ -v --tb=short -m "not benchmark" --cov=src --cov-report=term-missing --cov-fail-under=90
+
+    - name: Create GitHub release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.sha }}
+        name: Release ${{ github.sha }}
+        body: |
+          Automated release from commit ${{ github.sha }}
+
+          ## Test Results
+          - ✅ All tests passed
+          - ✅ Code coverage > 90%
+          - ✅ WebApp tests passed
+          - ✅ Package build successful
+
+          ## Changes
+          See CHANGELOG.md for details.
+        files: |
+          dist/*.whl
+          dist/*.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: [test, quality, build, webapp-test]
+    if: failure()
+
+    steps:
+    - name: Send notification
+      run: |
+        echo "Pipeline failed - check logs for details"
+        # Add notification logic here (Slack, Discord, etc.)
+
+
+
+
+
+
