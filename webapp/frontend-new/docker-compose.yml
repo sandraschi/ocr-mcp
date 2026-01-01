@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - ocr-network
+
+  # Optional: Backend service (uncomment if you have a backend)
+  # backend:
+  #   image: your-backend-image
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     - ENV=production
+  #   restart: unless-stopped
+  #   networks:
+  #     - ocr-network
+
+networks:
+  ocr-network:
+    driver: bridge
+
+volumes:
+  # Optional: For persistent data
+  # ocr-data:
+  #   driver: local

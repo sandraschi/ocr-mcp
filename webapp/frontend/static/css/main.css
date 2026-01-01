@@ -1,0 +1,106 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Main layout and body styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    background: #ecf0f1;
+}
+
+.main-layout {
+    display: flex;
+    height: 100vh;
+}
+
+.sidebar {
+    background: #2c3e50;
+    color: white;
+    width: 280px;
+    padding: 20px 0;
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+.sidebar-content {
+    padding: 0 20px;
+}
+
+.sidebar h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 18px;
+    padding: 0 20px;
+}
+
+.nav-item {
+    padding: 15px 20px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: all 0.3s;
+    margin: 5px 0;
+}
+
+.nav-item:hover {
+    background: #34495e;
+    border-left-color: #3498db;
+}
+
+.nav-item.active {
+    background: #3498db;
+    border-left-color: #2980b9;
+    color: white;
+    font-weight: bold;
+}
+
+.nav-item i {
+    margin-right: 10px;
+    width: 16px;
+}
+
+.main-content {
+    flex: 1;
+    padding: 20px;
+    background: #ecf0f1;
+    overflow-y: auto;
+    height: 100vh;
+}
+
+.content-section {
+    display: none;
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border: 1px solid #e9ecef;
+    margin-bottom: 20px;
+}
+
+.content-section.active {
+    display: block;
+}
+
+/* Make upload section visible by default as fallback */
+#upload-section {
+    display: block;
+}
+
+.content-section h1 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 5px;
+    margin: -20px -20px 20px -20px;
+}
+
+.content-section p {
+    line-height: 1.6;
+    color: #555;
+}

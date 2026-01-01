@@ -1,0 +1,201 @@
+<div class="content-section">
+    <div class="page-header">
+        <h1><i class="fas fa-upload"></i> Single Document Processing</h1>
+        <p>Upload and process individual documents with advanced OCR and analysis capabilities.</p>
+    </div>
+
+    <div class="processing-workflow">
+        <!-- Step 1: Upload -->
+        <div class="workflow-step active" id="step-upload">
+            <div class="step-header">
+                <span class="step-number">1</span>
+                <h3>Upload Document</h3>
+            </div>
+            <div class="upload-zone" id="upload-zone">
+                <div class="upload-content">
+                    <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                    <h3>Drop files here or click to browse</h3>
+                    <p>Supports PDF, CBZ, CBR, JPG, PNG, TIFF, BMP, WebP</p>
+                    <div class="upload-actions">
+                        <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">
+                            <i class="fas fa-folder-open"></i> Browse Files
+                        </button>
+                        <button class="btn btn-secondary" onclick="showRecentFiles()">
+                            <i class="fas fa-history"></i> Recent Files
+                        </button>
+                    </div>
+                    <input type="file" id="file-input" multiple accept=".pdf,.cbz,.cbr,.jpg,.jpeg,.png,.tiff,.bmp,.webp" style="display: none;">
+                </div>
+                <div class="upload-progress" id="upload-progress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="upload-progress-fill"></div>
+                    </div>
+                    <div class="progress-text" id="upload-progress-text">Uploading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Configure Processing -->
+        <div class="workflow-step" id="step-configure">
+            <div class="step-header">
+                <span class="step-number">2</span>
+                <h3>Configure Processing</h3>
+            </div>
+            <div class="processing-options">
+                <div class="option-row">
+                    <div class="option-group">
+                        <label for="ocr-mode">Processing Mode:</label>
+                        <select id="ocr-mode" class="form-control">
+                            <option value="auto">Auto (Recommended)</option>
+                            <option value="text">Text Extraction Only</option>
+                            <option value="format">Preserve Formatting</option>
+                            <option value="fine-grained">Region-based</option>
+                        </select>
+                    </div>
+                    <div class="option-group">
+                        <label for="ocr-backend">OCR Engine:</label>
+                        <select id="ocr-backend" class="form-control">
+                            <option value="auto">Auto-Select Best</option>
+                            <option value="florence-2">Florence-2 (Layout analysis)</option>
+                            <option value="pp-ocrv5">PP-OCRv5 (Industrial)</option>
+                            <option value="easyocr">EasyOCR (Handwriting)</option>
+                            <option value="tesseract">Tesseract (Legacy)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="advanced-options" id="advanced-options" style="display: none;">
+                    <div class="option-row">
+                        <div class="option-group">
+                            <label for="ocr-language">Language:</label>
+                            <select id="ocr-language" class="form-control">
+                                <option value="auto">Auto-detect</option>
+                                <option value="en">English</option>
+                                <option value="es">Spanish</option>
+                                <option value="fr">French</option>
+                                <option value="de">German</option>
+                                <option value="zh">Chinese</option>
+                                <option value="ja">Japanese</option>
+                            </select>
+                        </div>
+                        <div class="option-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enable-analysis" checked>
+                                <span class="checkmark"></span>
+                                Enable document analysis
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-link" onclick="toggleAdvancedOptions()">
+                    <i class="fas fa-sliders-h"></i> Advanced Options
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 3: Processing Results -->
+        <div class="workflow-step" id="step-results">
+            <div class="step-header">
+                <span class="step-number">3</span>
+                <h3>Processing Results</h3>
+            </div>
+            <div class="results-container">
+                <!-- Processing Status -->
+                <div class="processing-status" id="processing-status" style="display: none;">
+                    <div class="status-card">
+                        <div class="status-header">
+                            <i class="fas fa-cog fa-spin"></i>
+                            <span>Processing document...</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                        <div class="status-details" id="status-details"></div>
+                    </div>
+                </div>
+
+                <!-- Results Tabs -->
+                <div class="results-viewer" id="results-viewer" style="display: none;">
+                    <div class="results-tabs">
+                        <button class="tab-btn active" onclick="showResultTab('text')">
+                            <i class="fas fa-file-alt"></i> Text
+                        </button>
+                        <button class="tab-btn" onclick="showResultTab('structured')">
+                            <i class="fas fa-table"></i> Structured Data
+                        </button>
+                        <button class="tab-btn" onclick="showResultTab('analysis')">
+                            <i class="fas fa-chart-bar"></i> Analysis
+                        </button>
+                        <button class="tab-btn" onclick="showResultTab('export')">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
+
+                    <div class="tab-content">
+                        <!-- Text Results -->
+                        <div id="text-tab" class="result-panel active">
+                            <div class="text-controls">
+                                <button class="btn btn-sm" onclick="copyText()">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                                <button class="btn btn-sm" onclick="downloadText()">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                            </div>
+                            <pre id="text-content" class="text-content"></pre>
+                        </div>
+
+                        <!-- Structured Data -->
+                        <div id="structured-tab" class="result-panel">
+                            <div class="structured-data" id="structured-content">
+                                <!-- Tables, forms, and other structured elements -->
+                            </div>
+                        </div>
+
+                        <!-- Analysis -->
+                        <div id="analysis-tab" class="result-panel">
+                            <div class="analysis-content" id="analysis-content">
+                                <!-- Document layout analysis, quality metrics, etc. -->
+                            </div>
+                        </div>
+
+                        <!-- Export -->
+                        <div id="export-tab" class="result-panel">
+                            <div class="export-options">
+                                <div class="export-group">
+                                    <h4>Text Formats</h4>
+                                    <button class="btn btn-outline" onclick="exportAs('txt')">
+                                        <i class="fas fa-file-alt"></i> Plain Text
+                                    </button>
+                                    <button class="btn btn-outline" onclick="exportAs('docx')">
+                                        <i class="fas fa-file-word"></i> Word Document
+                                    </button>
+                                </div>
+                                <div class="export-group">
+                                    <h4>Data Formats</h4>
+                                    <button class="btn btn-outline" onclick="exportAs('json')">
+                                        <i class="fas fa-brackets-curly"></i> JSON
+                                    </button>
+                                    <button class="btn btn-outline" onclick="exportAs('xml')">
+                                        <i class="fas fa-code-branch"></i> XML
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="workflow-actions">
+        <button class="btn btn-secondary" onclick="resetWorkflow()">
+            <i class="fas fa-redo"></i> Start Over
+        </button>
+        <button class="btn btn-primary" onclick="processCurrentStep()" id="process-btn">
+            <i class="fas fa-play"></i> Process Document
+        </button>
+    </div>
+</div>

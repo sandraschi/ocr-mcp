@@ -1,0 +1,221 @@
+<div class="content-section">
+    <div class="page-header">
+        <h1><i class="fas fa-search-plus"></i> Document Structure Analysis</h1>
+        <p>Extract tables, forms, layout information, and document metadata with advanced AI-powered analysis.</p>
+    </div>
+
+    <div class="analysis-workspace">
+        <!-- Document Upload -->
+        <div class="analysis-upload">
+            <div class="upload-area" id="analysis-upload-area">
+                <div class="upload-content">
+                    <i class="fas fa-file-contract"></i>
+                    <h3>Upload document for analysis</h3>
+                    <p>Supports PDF, images, and office documents</p>
+                    <input type="file" id="analysis-file-input" accept=".pdf,.png,.jpg,.jpeg,.tiff,.bmp,.docx,.xlsx" style="display: none;">
+                    <button class="btn btn-primary" onclick="document.getElementById('analysis-file-input').click()">
+                        <i class="fas fa-folder-open"></i> Choose Document
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Tools -->
+        <div class="analysis-tools" id="analysis-tools" style="display: none;">
+            <div class="tools-header">
+                <h3>Analysis Tools</h3>
+                <div class="tool-controls">
+                    <button class="btn btn-outline" onclick="clearAnalysis()">
+                        <i class="fas fa-trash"></i> Clear Results
+                    </button>
+                    <button class="btn btn-primary" onclick="runAllAnalysis()">
+                        <i class="fas fa-play"></i> Run All Analysis
+                    </button>
+                </div>
+            </div>
+
+            <div class="tools-grid">
+                <div class="tool-card" data-tool="layout">
+                    <div class="tool-icon">
+                        <i class="fas fa-th-large"></i>
+                    </div>
+                    <div class="tool-content">
+                        <h4>Layout Analysis</h4>
+                        <p>Detect headers, paragraphs, sections, and document structure</p>
+                        <div class="tool-status" id="layout-status">
+                            <span class="status-indicator">Ready</span>
+                        </div>
+                        <button class="btn btn-sm btn-outline" onclick="runAnalysis('layout')">
+                            Analyze Layout
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tool-card" data-tool="tables">
+                    <div class="tool-icon">
+                        <i class="fas fa-table"></i>
+                    </div>
+                    <div class="tool-content">
+                        <h4>Table Extraction</h4>
+                        <p>Extract tabular data from documents with high accuracy</p>
+                        <div class="tool-status" id="tables-status">
+                            <span class="status-indicator">Ready</span>
+                        </div>
+                        <button class="btn btn-sm btn-outline" onclick="runAnalysis('tables')">
+                            Extract Tables
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tool-card" data-tool="forms">
+                    <div class="tool-icon">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                    <div class="tool-content">
+                        <h4>Form Detection</h4>
+                        <p>Find form fields, checkboxes, and input elements</p>
+                        <div class="tool-status" id="forms-status">
+                            <span class="status-indicator">Ready</span>
+                        </div>
+                        <button class="btn btn-sm btn-outline" onclick="runAnalysis('forms')">
+                            Detect Forms
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tool-card" data-tool="reading_order">
+                    <div class="tool-icon">
+                        <i class="fas fa-route"></i>
+                    </div>
+                    <div class="tool-content">
+                        <h4>Reading Order</h4>
+                        <p>Determine logical text flow and reading sequence</p>
+                        <div class="tool-status" id="reading-order-status">
+                            <span class="status-indicator">Ready</span>
+                        </div>
+                        <button class="btn btn-sm btn-outline" onclick="runAnalysis('reading_order')">
+                            Analyze Order
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tool-card" data-tool="classification">
+                    <div class="tool-icon">
+                        <i class="fas fa-tags"></i>
+                    </div>
+                    <div class="tool-content">
+                        <h4>Document Type</h4>
+                        <p>Classify document type and category</p>
+                        <div class="tool-status" id="classification-status">
+                            <span class="status-indicator">Ready</span>
+                        </div>
+                        <button class="btn btn-sm btn-outline" onclick="runAnalysis('classification')">
+                            Classify Document
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tool-card" data-tool="metadata">
+                    <div class="tool-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="tool-content">
+                        <h4>Metadata Extraction</h4>
+                        <p>Extract dates, names, numbers, and other metadata</p>
+                        <div class="tool-status" id="metadata-status">
+                            <span class="status-indicator">Ready</span>
+                        </div>
+                        <button class="btn btn-sm btn-outline" onclick="runAnalysis('metadata')">
+                            Extract Metadata
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tool-card" data-tool="key_value">
+                    <div class="tool-icon">
+                        <i class="fas fa-key"></i>
+                    </div>
+                    <div class="tool-content">
+                        <h4>Key-Value Pairs</h4>
+                        <p>Extract key-value relationships from documents</p>
+                        <div class="tool-status" id="key-value-status">
+                            <span class="status-indicator">Ready</span>
+                        </div>
+                        <button class="btn btn-sm btn-outline" onclick="runAnalysis('key_value')">
+                            Extract Pairs
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tool-card" data-tool="sentiment">
+                    <div class="tool-icon">
+                        <i class="fas fa-smile"></i>
+                    </div>
+                    <div class="tool-content">
+                        <h4>Sentiment Analysis</h4>
+                        <p>Analyze tone and sentiment in text content</p>
+                        <div class="tool-status" id="sentiment-status">
+                            <span class="status-indicator">Ready</span>
+                        </div>
+                        <button class="btn btn-sm btn-outline" onclick="runAnalysis('sentiment')">
+                            Analyze Sentiment
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Results -->
+        <div class="analysis-results" id="analysis-results" style="display: none;">
+            <div class="results-header">
+                <h3>Analysis Results</h3>
+                <div class="results-controls">
+                    <button class="btn btn-sm" onclick="exportAnalysis()">
+                        <i class="fas fa-download"></i> Export Results
+                    </button>
+                    <button class="btn btn-sm" onclick="clearAnalysis()">
+                        <i class="fas fa-trash"></i> Clear All
+                    </button>
+                </div>
+            </div>
+
+            <div class="results-tabs">
+                <button class="tab-btn active" onclick="showAnalysisTab('overview')">Overview</button>
+                <button class="tab-btn" onclick="showAnalysisTab('layout')">Layout</button>
+                <button class="tab-btn" onclick="showAnalysisTab('tables')">Tables</button>
+                <button class="tab-btn" onclick="showAnalysisTab('forms')">Forms</button>
+                <button class="tab-btn" onclick="showAnalysisTab('metadata')">Metadata</button>
+            </div>
+
+            <div class="analysis-content" id="analysis-content">
+                <!-- Analysis results will be displayed here -->
+                <div class="analysis-placeholder">
+                    <i class="fas fa-chart-bar"></i>
+                    <h3>Analysis Results</h3>
+                    <p>Run analysis tools to see results here</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Document Preview -->
+        <div class="document-preview" id="document-preview" style="display: none;">
+            <div class="preview-header">
+                <h3>Document Preview</h3>
+                <div class="preview-controls">
+                    <button class="btn btn-sm" onclick="zoomInPreview()">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button class="btn btn-sm" onclick="zoomOutPreview()">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button class="btn btn-sm" onclick="fitToWidth()">
+                        <i class="fas fa-arrows-alt-h"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="preview-container">
+                <img id="preview-document" alt="Document preview" style="max-width: 100%; border: 1px solid #ddd;">
+            </div>
+        </div>
+    </div>
+</div>

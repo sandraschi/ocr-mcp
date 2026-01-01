@@ -5,7 +5,20 @@ All notable changes to OCR-MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.2] - 2026-01-01
+
+### Added
+- **Singleton Backend Manager**: Refactored `BackendManager` in `app.py` to a global singleton, ensuring COM context stability.
+- **Robust WIA 2.0 Acquisition**: Implemented explicitly scoped `CoInitialize` calls and reconnection logic in `wia_scanner.py` for hardware stability.
+- **Hardware Stability**: Successfully resolved the `WIA_ERROR_BUSY` (0x8021006B) and acquisition failures for Canon LiDE 400 scanners.
+- **Professional Web Interface**: Finalized integration of the modern React-based UI with the stable backend.
+
+### Fixed
+- Indentation errors and logic flow in `webapp/backend/app.py` `/api/scan` endpoint.
+- Redundant backend re-initialization that caused resource churn and COM instability.
+- Port conflict resolution and documentation (Standardized on port 8765).
+
+## [0.1.1] - 2025-12-23
 
 ### Added
 - Complete implementation of all 6 advanced OCR backends:

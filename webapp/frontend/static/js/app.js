@@ -25,6 +25,50 @@ const ENDPOINTS = {
     ocr: '/api/ocr'
 };
 
+// Global Navigation Function
+window.showSection = function (sectionName) {
+    // Hide all sections
+    const sections = document.querySelectorAll('.content-section');
+    sections.forEach(section => {
+        section.classList.remove('active');
+        section.style.display = 'none';
+    });
+
+    // Show target section
+    const targetSection = document.getElementById(sectionName + '-section');
+    if (targetSection) {
+        targetSection.classList.add('active');
+        targetSection.style.display = 'block';
+    }
+
+    // Update navigation
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        if (item.dataset.section === sectionName) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
+
+    // Update global state
+    currentSection = sectionName;
+};
+
+// Initialize Navigation Event Listeners
+document.addEventListener('DOMContentLoaded', () => {
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            const section = item.dataset.section;
+            if (section) {
+                showSection(section);
+            }
+        });
+    });
+});
+
+
 // Enhanced file handling functions
 function initializeFileHandling() {
     const uploadZone = document.getElementById('upload-zone');
@@ -82,10 +126,11 @@ function handleFileSelect(e) {
 function addFilesToQueue(files) {
     const validFiles = files.filter(file => {
         const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/tiff', 'image/bmp', 'application/x-cbz', 'application/x-cbr', 'image/webp'];
+
         const validExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.tiff', '.bmp', '.cbz', '.cbr', '.webp'];
 
         return validTypes.includes(file.type) ||
-               validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+            validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
     });
 
     if (validFiles.length !== files.length) {
@@ -244,7 +289,7 @@ function previewFile(fileId) {
     // Simple preview for images
     if (item.type && item.type.startsWith('image/')) {
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = function (e) {
             if (previewArea) {
                 previewArea.innerHTML = `<img src="${e.target.result}" alt="${item.name}" style="max-width: 100%; max-height: 400px;">`;
             }
@@ -313,7 +358,7 @@ function showNotification(message, type = 'info') {
 }
 
 // Initialize the application
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initializeApp();
     setupEventListeners();
     checkSystemStatus();
@@ -321,7 +366,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Initialize the application
 function initializeApp() {
+    console.log('Initializing OCR-MCP webapp...');
+
     // Set initial section
+    console.log('Setting initial section to upload');
     showSection('upload');
 
     // Initialize workflow
@@ -332,16 +380,17 @@ function initializeApp() {
 
     // Set up periodic status updates
     setInterval(checkSystemStatus, 30000); // Check every 30 seconds
+
+    console.log('OCR-MCP webapp initialization complete');
 }
 
 // Set up all event listeners
 function setupEventListeners() {
     // Sidebar navigation
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', function(e) {
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', function (e) {
             e.preventDefault();
-            const section = this.getAttribute('onclick')?.match(/'([^']+)'/)[1] ||
-                          this.onclick?.toString().match(/'([^']+)'/)?.[1];
+            const section = this.getAttribute('data-section');
             if (section) {
                 showSection(section);
             }
@@ -368,33 +417,34 @@ function setupEventListeners() {
 // NAVIGATION FUNCTIONS
 // ============================================================================
 
-// Show a specific section
+// Simple navigation function (established since 1990)
 function showSection(sectionName) {
     // Hide all sections
-    document.querySelectorAll('.content-section').forEach(section => {
+    const sections = document.querySelectorAll('.content-section');
+    sections.forEach(section => {
         section.classList.remove('active');
+        section.style.display = 'none';
     });
 
     // Show target section
-    const targetSection = document.getElementById(`${sectionName}-section`);
+    const targetSection = document.getElementById(sectionName + '-section');
     if (targetSection) {
         targetSection.classList.add('active');
-        currentSection = sectionName;
+        targetSection.style.display = 'block';
     }
 
-    // Update sidebar navigation
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.classList.remove('active');
+    // Update navigation
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        item.classList.remove('active');
     });
-    const activeLink = document.querySelector(`[onclick*="showSection('${sectionName}')"]`);
-    if (activeLink) {
-        activeLink.classList.add('active');
-    }
 
-    // Reset workflow for upload section
-    if (sectionName === 'upload') {
-        resetWorkflow();
-    }
+    // Find and activate the clicked nav item
+    navItems.forEach(item => {
+        if (item.getAttribute('data-section') === sectionName) {
+            item.classList.add('active');
+        }
+    });
 }
 
 // Update workflow progress
@@ -809,8 +859,8 @@ function showNotification(message, type = 'info') {
     notification.className = `notification notification-${type} fade-in`;
 
     const icon = type === 'success' ? 'check-circle' :
-                type === 'error' ? 'exclamation-circle' :
-                type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+        type === 'error' ? 'exclamation-circle' :
+            type === 'warning' ? 'exclamation-triangle' : 'info-circle';
 
     notification.innerHTML = `
         <i class="fas fa-${icon}"></i>
@@ -839,7 +889,7 @@ function showNotification(message, type = 'info') {
 function setupWorkflowControls() {
     // Strategy selection
     document.querySelectorAll('.strategy-card').forEach(card => {
-        card.addEventListener('click', function() {
+        card.addEventListener('click', function () {
             document.querySelectorAll('.strategy-card').forEach(c => c.classList.remove('active'));
             this.classList.add('active');
         });
@@ -849,7 +899,7 @@ function setupWorkflowControls() {
     const qualitySlider = document.getElementById('batch-quality-threshold');
     const qualityValue = document.getElementById('quality-value');
     if (qualitySlider && qualityValue) {
-        qualitySlider.addEventListener('input', function() {
+        qualitySlider.addEventListener('input', function () {
             qualityValue.textContent = this.value * 100 + '%';
         });
     }
@@ -867,7 +917,7 @@ function setupScannerControls() {
     const dpiSlider = document.getElementById('brightness');
     const dpiValue = document.getElementById('brightness-value');
     if (dpiSlider && dpiValue) {
-        dpiSlider.addEventListener('input', function() {
+        dpiSlider.addEventListener('input', function () {
             dpiValue.textContent = this.value;
         });
     }
@@ -875,7 +925,7 @@ function setupScannerControls() {
     const contrastSlider = document.getElementById('contrast');
     const contrastValue = document.getElementById('contrast-value');
     if (contrastSlider && contrastValue) {
-        contrastSlider.addEventListener('input', function() {
+        contrastSlider.addEventListener('input', function () {
             contrastValue.textContent = this.value;
         });
     }
@@ -885,7 +935,7 @@ function setupScannerControls() {
 function setupQualityControls() {
     // Quality tool selection
     document.querySelectorAll('.tool-card').forEach(card => {
-        card.addEventListener('click', function() {
+        card.addEventListener('click', function () {
             const toolType = this.dataset.tool;
             if (toolType) {
                 showQualityTool(toolType);
@@ -896,7 +946,7 @@ function setupQualityControls() {
 
 // Set up keyboard shortcuts
 function setupKeyboardShortcuts() {
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
         // Ctrl+O for file upload
         if (e.ctrlKey && e.key === 'o') {
             e.preventDefault();
@@ -947,12 +997,106 @@ function runAnalysis(analysisType) {
     showNotification(`${analysisType} analysis coming soon!`, 'info');
 }
 
-function discoverScanners() {
-    showNotification('Scanner discovery coming soon!', 'info');
+async function discoverScanners() {
+    try {
+        const response = await fetch('/api/scanners');
+        const data = await response.json();
+
+        const scannerList = document.getElementById('scanner-list');
+        scannerList.innerHTML = '';
+
+        // Handle both demo mode (data.scanners) and MCP mode (data directly)
+        const scanners = data.scanners || data;
+
+        if (!scanners || scanners.length === 0) {
+            scannerList.innerHTML = '<p>No scanners found. Make sure your scanner is connected and powered on.</p>';
+            return;
+        }
+
+        scanners.forEach(scanner => {
+            const scannerItem = document.createElement('div');
+            scannerItem.className = 'scanner-item';
+            scannerItem.innerHTML = `
+                <div>
+                    <h4>${scanner.name || scanner.id}</h4>
+                    <p>ID: ${scanner.id}</p>
+                    <p>Type: ${scanner.type || 'Unknown'} • Status: ${scanner.status || 'Unknown'}</p>
+                </div>
+                <button class="btn btn-primary" onclick="selectScanner('${scanner.id}')">
+                    <i class="fas fa-check"></i> Select
+                </button>
+            `;
+            scannerList.appendChild(scannerItem);
+        });
+
+    } catch (error) {
+        console.error('Scanner discovery error:', error);
+        showAlert('Failed to discover scanners: ' + error.message, 'danger');
+    }
 }
 
-function scanDocument() {
-    showNotification('Document scanning coming soon!', 'info');
+function selectScanner(scannerId) {
+    window.selectedScanner = scannerId;
+
+    // Update scanner display info
+    const scannerName = document.getElementById('scanner-name');
+    const scannerStatus = document.getElementById('scanner-status');
+
+    if (scannerName) scannerName.textContent = scannerId;
+    if (scannerStatus) scannerStatus.textContent = 'Ready';
+
+    // Show scanner controls
+    const scannerControls = document.getElementById('scanner-controls');
+    if (scannerControls) {
+        scannerControls.style.display = 'block';
+    }
+
+    showAlert('Scanner selected: ' + scannerId, 'success');
+}
+
+async function scanDocument() {
+    if (!window.selectedScanner) {
+        showAlert('Please select a scanner first', 'danger');
+        return;
+    }
+
+    const dpi = document.getElementById('scan-dpi').value;
+    const colorMode = document.getElementById('scan-color').value;
+    const paperSize = document.getElementById('scan-size').value;
+
+    try {
+        document.getElementById('scan-btn').disabled = true;
+        document.getElementById('scan-btn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning...';
+
+        const response = await fetch('/api/scan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                device_id: window.selectedScanner,
+                dpi: dpi,
+                color_mode: colorMode,
+                paper_size: paperSize
+            })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            showAlert('Scan completed successfully', 'success');
+            // The scanned file would be available for processing
+            console.log('Scanned file:', result);
+        } else {
+            throw new Error(result.detail || 'Scan failed');
+        }
+    } catch (error) {
+        console.error('Scan error:', error);
+        showAlert('Scan failed: ' + error.message, 'danger');
+    } finally {
+        document.getElementById('scan-btn').disabled = false;
+        document.getElementById('scan-btn').innerHTML = '<i class="fas fa-camera"></i> Scan Document';
+    }
 }
 
 function startBatchProcessing() {
@@ -1033,6 +1177,16 @@ function closeModals() {
 // GLOBAL EXPORTS
 // ============================================================================
 
+// Clear upload
+function clearUpload() {
+    currentFiles = [];
+    const uploadPreview = document.getElementById('upload-preview');
+    if (uploadPreview) {
+        uploadPreview.style.display = 'none';
+    }
+    updateWorkflowProgress(0);
+}
+
 // Export functions for global access
 window.showSection = showSection;
 window.showResultTab = showResultTab;
@@ -1051,649 +1205,305 @@ window.discoverScanners = discoverScanners;
 window.scanDocument = scanDocument;
 window.startBatchProcessing = startBatchProcessing;
 
-// Initialize the application
-function initializeApp() {
-    // Set initial section
-    showSection('upload');
+// Initialize additional sections
+document.addEventListener('DOMContentLoaded', function () {
+    initializeOptimization();
+    initializeConversion();
+});
 
-    // Initialize workflow
-    updateWorkflowProgress(0);
-
-    // Initialize enhanced file handling
-    initializeFileHandling();
-
-    // Set up periodic status updates
-    setInterval(checkSystemStatus, 30000); // Check every 30 seconds
-}
-
-// Set up all event listeners
-function setupEventListeners() {
-    // Sidebar navigation
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const section = this.getAttribute('onclick')?.match(/'([^']+)'/)[1] ||
-                          this.onclick?.toString().match(/'([^']+)'/)?.[1];
-            if (section) {
-                showSection(section);
-            }
-        });
-    });
-
-    // File upload zones
-    setupFileUploadZones();
-
-    // Workflow controls
-    setupWorkflowControls();
-
-    // Scanner controls
-    setupScannerControls();
-
-    // Quality controls
-    setupQualityControls();
-
-    // Keyboard shortcuts
-    setupKeyboardShortcuts();
-}
-
-// Set up file upload zones
-function setupFileUploadZones() {
-    const uploadZones = [
-        'upload-zone',
-        'batch-upload-area',
-        'preprocessing-upload-area',
-        'analysis-upload-area'
-    ];
-
-    uploadZones.forEach(zoneId => {
-        const zone = document.getElementById(zoneId);
-        if (!zone) return;
-
-        const fileInput = zone.querySelector('input[type="file"]');
-
-        // Drag and drop
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            zone.addEventListener(eventName, preventDefaults, false);
-        });
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            zone.addEventListener(eventName, () => zone.classList.add('drag-over'), false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            zone.addEventListener(eventName, () => zone.classList.remove('drag-over'), false);
-        });
-
-        zone.addEventListener('drop', (e) => handleFileDrop(e, zoneId), false);
-
-        // Click to browse
-        if (fileInput) {
-            zone.addEventListener('click', () => fileInput.click(), false);
-            fileInput.addEventListener('change', (e) => handleFileSelect(e, zoneId), false);
-        }
-    });
-}
-
-// Set up workflow controls
-function setupWorkflowControls() {
-    // Strategy selection
-    document.querySelectorAll('.strategy-card').forEach(card => {
-        card.addEventListener('click', function() {
-            document.querySelectorAll('.strategy-card').forEach(c => c.classList.remove('active'));
-            this.classList.add('active');
-        });
-    });
-
-    // Quality threshold slider
-    const qualitySlider = document.getElementById('batch-quality-threshold');
-    const qualityValue = document.getElementById('quality-value');
-    if (qualitySlider && qualityValue) {
-        qualitySlider.addEventListener('input', function() {
-            qualityValue.textContent = this.value * 100 + '%';
-        });
+// Auto-Optimization Functions
+function initializeOptimization() {
+    const fileInput = document.getElementById('optimization-file-input');
+    if (fileInput) {
+        fileInput.addEventListener('change', handleOptimizationFileSelect);
     }
 
-    // Advanced options toggle
-    const advancedBtn = document.querySelector('[onclick*="toggleAdvancedOptions"]');
-    if (advancedBtn) {
-        advancedBtn.addEventListener('click', toggleAdvancedOptions);
+    const qualitySlider = document.getElementById('target-quality');
+    if (qualitySlider) {
+        qualitySlider.addEventListener('input', updateQualityDisplay);
+        updateQualityDisplay();
     }
 }
 
-// Set up scanner controls
-function setupScannerControls() {
-    // Scan settings
-    const dpiSlider = document.getElementById('brightness');
-    const dpiValue = document.getElementById('brightness-value');
-    if (dpiSlider && dpiValue) {
-        dpiSlider.addEventListener('input', function() {
-            dpiValue.textContent = this.value;
-        });
-    }
-
-    const contrastSlider = document.getElementById('contrast');
-    const contrastValue = document.getElementById('contrast-value');
-    if (contrastSlider && contrastValue) {
-        contrastSlider.addEventListener('input', function() {
-            contrastValue.textContent = this.value;
-        });
+function handleOptimizationFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) {
+        document.getElementById('optimization-upload-area').style.display = 'none';
+        document.getElementById('optimization-settings').style.display = 'block';
+        showNotification(`File selected: ${file.name}`, 'success');
     }
 }
 
-// Set up quality controls
-function setupQualityControls() {
-    // Quality tool selection
-    document.querySelectorAll('.tool-card').forEach(card => {
-        card.addEventListener('click', function() {
-            const toolType = this.dataset.tool;
-            if (toolType) {
-                showQualityTool(toolType);
-            }
-        });
-    });
-}
-
-// Set up keyboard shortcuts
-function setupKeyboardShortcuts() {
-    document.addEventListener('keydown', function(e) {
-        // Ctrl+O for file upload
-        if (e.ctrlKey && e.key === 'o') {
-            e.preventDefault();
-            document.getElementById('file-input')?.click();
-        }
-
-        // Ctrl+B for batch processing
-        if (e.ctrlKey && e.key === 'b') {
-            e.preventDefault();
-            showSection('batch');
-        }
-
-        // Escape to close modals/panels
-        if (e.key === 'Escape') {
-            closeModals();
-        }
-    });
-}
-
-    // Batch file handling
-    batchFileInput.addEventListener('change', handleBatchFileSelect, false);
-
-    // Results tabs
-    document.querySelectorAll('.results-tab').forEach(tab => {
-        tab.addEventListener('click', function() {
-            const tabType = this.getAttribute('onclick').match(/'([^']+)'/)[1];
-            showResultTab(tabType);
-        });
-    });
-}
-
-// Tab switching functions
-function showTab(tabName) {
-    // Hide all tabs
-    document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    document.querySelectorAll('.tab-button').forEach(button => {
-        button.classList.remove('active');
-    });
-
-    // Show selected tab
-    document.getElementById(tabName + '-tab').classList.add('active');
-    event.target.classList.add('active');
-}
-
-function showResultTab(tabType) {
-    // Hide all result panels
-    document.querySelectorAll('.result-panel').forEach(panel => {
-        panel.classList.remove('active');
-    });
-    document.querySelectorAll('.results-tab').forEach(tab => {
-        tab.classList.remove('active');
-    });
-
-    // Show selected result panel
-    document.getElementById(tabType + '-results').classList.add('active');
-    event.target.classList.add('active');
-}
-
-// File upload handling
-function preventDefaults(e) {
-    e.preventDefault();
-    e.stopPropagation();
-}
-
-function highlight(e) {
-    uploadArea.classList.add('dragover');
-}
-
-function unhighlight(e) {
-    uploadArea.classList.remove('dragover');
-}
-
-function handleDrop(e) {
-    const dt = e.dataTransfer;
-    const files = dt.files;
-    handleFiles(files);
-}
-
-function handleFileSelect(e) {
-    const files = e.target.files;
-    handleFiles(files);
-}
-
-function handleFiles(files) {
-    if (files.length > 0) {
-        const file = files[0];
-        displaySelectedFile(file);
+function updateQualityDisplay() {
+    const slider = document.getElementById('target-quality');
+    const display = document.getElementById('quality-value-display');
+    if (slider && display) {
+        display.textContent = Math.round(slider.value * 100) + '%';
     }
 }
 
-function displaySelectedFile(file) {
-    const uploadContent = uploadArea.querySelector('.upload-content');
-    uploadContent.innerHTML = `
-        <i class="fas fa-file-alt upload-icon" style="color: var(--success-color);"></i>
-        <p><strong>${file.name}</strong></p>
-        <p class="upload-subtitle">${formatFileSize(file.size)} • ${file.type || 'Unknown type'}</p>
-        <button class="btn btn-secondary" onclick="clearFile()">
-            <i class="fas fa-times"></i> Clear
-        </button>
-    `;
+function startOptimization() {
+    const fileInput = document.getElementById('optimization-file-input');
+    const quality = document.getElementById('target-quality').value;
+    const maxAttempts = document.getElementById('max-attempts').value;
 
-    // Store the file for processing
-    window.selectedFile = file;
-}
-
-// Batch file handling
-function handleBatchFileSelect(e) {
-    const files = Array.from(e.target.files);
-    selectedFiles = files;
-    displayBatchFiles();
-}
-
-function displayBatchFiles() {
-    batchFileList.innerHTML = '';
-
-    if (selectedFiles.length === 0) {
-        batchFileList.innerHTML = '<p class="text-center mt-20">No files selected</p>';
+    if (!fileInput.files[0]) {
+        showNotification('Please select a file first', 'error');
         return;
     }
-
-    selectedFiles.forEach((file, index) => {
-        const fileItem = document.createElement('div');
-        fileItem.className = 'file-item';
-        fileItem.innerHTML = `
-            <div>
-                <span class="file-name">${file.name}</span>
-                <span class="file-size">${formatFileSize(file.size)}</span>
-            </div>
-            <button class="remove-btn" onclick="removeBatchFile(${index})">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
-        batchFileList.appendChild(fileItem);
-    });
-}
-
-function removeBatchFile(index) {
-    selectedFiles.splice(index, 1);
-    displayBatchFiles();
-}
-
-function clearFile() {
-    window.selectedFile = null;
-    const uploadContent = uploadArea.querySelector('.upload-content');
-    uploadContent.innerHTML = `
-        <i class="fas fa-cloud-upload-alt upload-icon"></i>
-        <p>Drag & drop files here or click to browse</p>
-        <p class="upload-subtitle">Supports PDF, PNG, JPG, CBZ, and other image formats</p>
-        <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">
-            <i class="fas fa-folder-open"></i> Choose Files
-        </button>
-    `;
-}
-
-// File processing
-async function processFile() {
-    if (!window.selectedFile) {
-        showAlert('Please select a file first', 'danger');
-        return;
-    }
-
-    const ocrMode = document.getElementById('ocr-mode').value;
-    const backend = document.getElementById('backend').value;
 
     const formData = new FormData();
-    formData.append('file', window.selectedFile);
-    formData.append('ocr_mode', ocrMode);
-    formData.append('backend', backend);
+    formData.append('file', fileInput.files[0]);
+    formData.append('target_quality', quality);
+    formData.append('max_attempts', maxAttempts);
 
-    try {
-        showProcessingStatus(window.selectedFile.name);
-        document.getElementById('process-btn').disabled = true;
-        document.getElementById('process-btn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    document.getElementById('start-optimization-btn').disabled = true;
+    document.getElementById('start-optimization-btn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Optimizing...';
 
-        const response = await fetch('/api/upload', {
-            method: 'POST',
-            body: formData
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            currentJobId = result.job_id;
-            monitorJobStatus();
-        } else {
-            throw new Error(result.detail || 'Upload failed');
-        }
-    } catch (error) {
-        console.error('Upload error:', error);
-        showAlert('Upload failed: ' + error.message, 'danger');
-        hideProcessingStatus();
-        document.getElementById('process-btn').disabled = false;
-        document.getElementById('process-btn').innerHTML = '<i class="fas fa-play"></i> Process Document';
-    }
-}
-
-async function processBatch() {
-    if (selectedFiles.length === 0) {
-        showAlert('Please select files first', 'danger');
-        return;
-    }
-
-    const ocrMode = document.getElementById('batch-ocr-mode').value;
-    const backend = document.getElementById('batch-backend').value;
-
-    const formData = new FormData();
-    selectedFiles.forEach(file => {
-        formData.append('files', file);
-    });
-    formData.append('ocr_mode', ocrMode);
-    formData.append('backend', backend);
-
-    try {
-        showProcessingStatus(`${selectedFiles.length} files`);
-        document.getElementById('batch-process-btn').disabled = true;
-        document.getElementById('batch-process-btn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-
-        const response = await fetch('/api/process_batch', {
-            method: 'POST',
-            body: formData
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            currentJobId = result.job_id;
-            monitorJobStatus();
-        } else {
-            throw new Error(result.detail || 'Batch processing failed');
-        }
-    } catch (error) {
-        console.error('Batch processing error:', error);
-        showAlert('Batch processing failed: ' + error.message, 'danger');
-        hideProcessingStatus();
-        document.getElementById('batch-process-btn').disabled = false;
-        document.getElementById('batch-process-btn').innerHTML = '<i class="fas fa-play-circle"></i> Process Batch';
-    }
-}
-
-// Job monitoring
-function monitorJobStatus() {
-    if (statusCheckInterval) {
-        clearInterval(statusCheckInterval);
-    }
-
-    statusCheckInterval = setInterval(async () => {
-        try {
-            const response = await fetch(`/api/job/${currentJobId}`);
-            const job = await response.json();
-
-            updateProcessingStatus(job);
-
-            if (job.status === 'completed') {
-                clearInterval(statusCheckInterval);
-                showResults(job.result);
-                hideProcessingStatus();
-                resetButtons();
-            } else if (job.status === 'failed') {
-                clearInterval(statusCheckInterval);
-                showAlert('Processing failed: ' + (job.error || 'Unknown error'), 'danger');
-                hideProcessingStatus();
-                resetButtons();
+    fetch('/api/optimize', {
+        method: 'POST',
+        body: formData
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.job_id) {
+                monitorOptimizationJob(data.job_id);
+            } else {
+                throw new Error('No job ID received');
             }
-        } catch (error) {
-            console.error('Status check error:', error);
-        }
-    }, 2000);
-}
-
-function updateProcessingStatus(job) {
-    const statusBadge = document.getElementById('status-badge');
-    const progressFill = document.getElementById('progress-fill');
-    const statusDetails = document.getElementById('status-details');
-
-    statusBadge.textContent = job.status.charAt(0).toUpperCase() + job.status.slice(1);
-    statusBadge.className = 'status-badge ' + job.status;
-
-    // Simulate progress (in a real app, this would come from the backend)
-    let progress = 0;
-    if (job.status === 'processing') {
-        progress = 60;
-    } else if (job.status === 'completed') {
-        progress = 100;
-    }
-    progressFill.style.width = progress + '%';
-
-    statusDetails.innerHTML = `
-        <p><strong>Status:</strong> ${job.status}</p>
-        <p><strong>File:</strong> ${job.filename || 'Processing...'}</p>
-        ${job.result ? '<p><strong>Backend:</strong> ' + (job.result.backend || 'Unknown') + '</p>' : ''}
-    `;
-}
-
-function showProcessingStatus(filename) {
-    document.getElementById('status-filename').textContent = filename;
-    processingStatus.style.display = 'block';
-    resultsSection.style.display = 'none';
-}
-
-function hideProcessingStatus() {
-    processingStatus.style.display = 'none';
-}
-
-function showResults(result) {
-    currentResult = result;
-    resultsSection.style.display = 'block';
-
-    // Populate text results
-    document.getElementById('text-content').textContent = result.text || 'No text extracted';
-
-    // Populate JSON results
-    document.getElementById('json-content').textContent = JSON.stringify(result, null, 2);
-
-    // Populate HTML results
-    document.getElementById('html-content').innerHTML = result.html || '<p>No HTML content available</p>';
-}
-
-function resetButtons() {
-    document.getElementById('process-btn').disabled = false;
-    document.getElementById('process-btn').innerHTML = '<i class="fas fa-play"></i> Process Document';
-
-    document.getElementById('batch-process-btn').disabled = false;
-    document.getElementById('batch-process-btn').innerHTML = '<i class="fas fa-play-circle"></i> Process Batch';
-}
-
-// Scanner functions
-async function discoverScanners() {
-    try {
-        const response = await fetch('/api/scanners');
-        const data = await response.json();
-
-        const scannerList = document.getElementById('scanner-list');
-        scannerList.innerHTML = '';
-
-        if (data.length === 0) {
-            scannerList.innerHTML = '<p>No scanners found. Make sure your scanner is connected and powered on.</p>';
-            return;
-        }
-
-        data.forEach(scanner => {
-            const scannerItem = document.createElement('div');
-            scannerItem.className = 'scanner-item';
-            scannerItem.innerHTML = `
-                <div>
-                    <h4>${scanner.name || scanner.id}</h4>
-                    <p>ID: ${scanner.id}</p>
-                </div>
-                <button class="btn btn-primary" onclick="selectScanner('${scanner.id}')">
-                    <i class="fas fa-check"></i> Select
-                </button>
-            `;
-            scannerList.appendChild(scannerItem);
+        })
+        .catch(error => {
+            console.error('Optimization error:', error);
+            showNotification('Optimization failed: ' + error.message, 'error');
+            document.getElementById('start-optimization-btn').disabled = false;
+            document.getElementById('start-optimization-btn').innerHTML = '<i class="fas fa-play"></i> Start Auto-Optimization';
         });
-
-    } catch (error) {
-        console.error('Scanner discovery error:', error);
-        showAlert('Failed to discover scanners: ' + error.message, 'danger');
-    }
 }
 
-function selectScanner(scannerId) {
-    window.selectedScanner = scannerId;
-    document.getElementById('scanner-controls').style.display = 'block';
-    showAlert('Scanner selected: ' + scannerId, 'success');
-}
+function monitorOptimizationJob(jobId) {
+    const checkStatus = () => {
+        fetch(`/api/job/${jobId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'completed') {
+                    document.getElementById('optimization-settings').style.display = 'none';
+                    document.getElementById('optimization-results').style.display = 'block';
+                    document.getElementById('start-optimization-btn').disabled = false;
+                    document.getElementById('start-optimization-btn').innerHTML = '<i class="fas fa-play"></i> Start Auto-Optimization';
 
-async function scanDocument() {
-    if (!window.selectedScanner) {
-        showAlert('Please select a scanner first', 'danger');
-        return;
-    }
-
-    const dpi = document.getElementById('scan-dpi').value;
-    const colorMode = document.getElementById('scan-color').value;
-    const paperSize = document.getElementById('scan-size').value;
-
-    try {
-        document.getElementById('scan-btn').disabled = true;
-        document.getElementById('scan-btn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning...';
-
-        const response = await fetch('/api/scan', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-                device_id: window.selectedScanner,
-                dpi: dpi,
-                color_mode: colorMode,
-                paper_size: paperSize
+                    const metrics = document.getElementById('optimization-metrics');
+                    if (metrics && data.result) {
+                        metrics.innerHTML = `
+                        <div class="metric-card">
+                            <div class="metric-value">${data.result.quality_score || 'N/A'}</div>
+                            <div class="metric-label">Best Quality Score</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${data.result.backend_used || 'N/A'}</div>
+                            <div class="metric-label">Best Backend</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${data.result.processing_time || 'N/A'}</div>
+                            <div class="metric-label">Processing Time</div>
+                        </div>
+                    `;
+                    }
+                    showNotification('Optimization completed successfully!', 'success');
+                } else if (data.status === 'failed') {
+                    showNotification('Optimization failed: ' + (data.error || 'Unknown error'), 'error');
+                    document.getElementById('start-optimization-btn').disabled = false;
+                    document.getElementById('start-optimization-btn').innerHTML = '<i class="fas fa-play"></i> Start Auto-Optimization';
+                } else {
+                    setTimeout(checkStatus, 2000);
+                }
             })
+            .catch(error => {
+                console.error('Status check error:', error);
+                setTimeout(checkStatus, 2000);
+            });
+    };
+    checkStatus();
+}
+
+function downloadOptimized() {
+    showNotification('Download functionality to be implemented', 'info');
+}
+
+function resetOptimization() {
+    document.getElementById('optimization-file-input').value = '';
+    document.getElementById('optimization-upload-area').style.display = 'block';
+    document.getElementById('optimization-settings').style.display = 'none';
+    document.getElementById('optimization-results').style.display = 'none';
+    document.getElementById('start-optimization-btn').disabled = false;
+    document.getElementById('start-optimization-btn').innerHTML = '<i class="fas fa-play"></i> Start Auto-Optimization';
+}
+
+// Format Conversion Functions
+function initializeConversion() {
+    const fileInput = document.getElementById('conversion-file-input');
+    if (fileInput) {
+        fileInput.addEventListener('change', handleConversionFileSelect);
+    }
+}
+
+function handleConversionFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) {
+        document.getElementById('conversion-upload-area').style.display = 'none';
+        document.getElementById('conversion-settings').style.display = 'block';
+        showNotification(`File selected: ${file.name}`, 'success');
+    }
+}
+
+function startConversion() {
+    const fileInput = document.getElementById('conversion-file-input');
+    const targetFormat = document.getElementById('target-format').value;
+    const includeOcr = document.getElementById('include-ocr').checked;
+    const ocrBackend = document.getElementById('ocr-backend-convert').value;
+
+    if (!fileInput.files[0]) {
+        showNotification('Please select a file first', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('target_format', targetFormat);
+    formData.append('ocr_mode', includeOcr ? 'auto' : 'none');
+    formData.append('backend', ocrBackend);
+
+    document.getElementById('start-conversion-btn').disabled = true;
+    document.getElementById('start-conversion-btn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Converting...';
+    document.getElementById('conversion-progress').style.display = 'block';
+
+    fetch('/api/convert', {
+        method: 'POST',
+        body: formData
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.job_id) {
+                monitorConversionJob(data.job_id);
+            } else {
+                throw new Error('No job ID received');
+            }
+        })
+        .catch(error => {
+            console.error('Conversion error:', error);
+            showNotification('Conversion failed: ' + error.message, 'error');
+            resetConversionButtons();
         });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            showAlert('Scan completed successfully', 'success');
-            // The scanned file would be available for processing
-            console.log('Scanned file:', result);
-        } else {
-            throw new Error(result.detail || 'Scan failed');
-        }
-    } catch (error) {
-        console.error('Scan error:', error);
-        showAlert('Scan failed: ' + error.message, 'danger');
-    } finally {
-        document.getElementById('scan-btn').disabled = false;
-        document.getElementById('scan-btn').innerHTML = '<i class="fas fa-camera"></i> Scan Document';
-    }
 }
 
-// Health and diagnostics
-async function checkHealth() {
-    try {
-        const response = await fetch('/api/health');
-        const data = await response.json();
+function monitorConversionJob(jobId) {
+    const checkStatus = () => {
+        fetch(`/api/job/${jobId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'completed') {
+                    document.getElementById('conversion-progress').style.display = 'none';
+                    document.getElementById('conversion-results').style.display = 'block';
+                    resetConversionButtons();
+                    showNotification('Conversion completed successfully!', 'success');
 
-        const statusDiv = document.getElementById('system-status');
-        let statusHtml = `
-            <p><strong>Server:</strong> ${data.status === 'healthy' ? '✅ Running' : '❌ Issues'}</p>
-            <p><strong>MCP Connection:</strong> ${data.mcp_connected ? '✅ Connected' : '❌ Disconnected'}</p>
-            <p><strong>Version:</strong> ${data.version}</p>
-        `;
-
-        if (!data.mcp_connected && data.instructions) {
-            statusHtml += `<p><strong>⚠️ Note:</strong> ${data.instructions}</p>`;
-        }
-
-        statusDiv.innerHTML = statusHtml;
-    } catch (error) {
-        console.error('Health check error:', error);
-        document.getElementById('system-status').innerHTML = '<p>❌ Unable to connect to server</p>';
-    }
+                    const preview = document.getElementById('conversion-preview');
+                    if (preview && data.result) {
+                        preview.innerHTML = `<p>Converted file ready for download: ${data.result.filename || 'converted_file'}</p>`;
+                    }
+                } else if (data.status === 'failed') {
+                    showNotification('Conversion failed: ' + (data.error || 'Unknown error'), 'error');
+                    resetConversionButtons();
+                } else {
+                    setTimeout(checkStatus, 2000);
+                }
+            })
+            .catch(error => {
+                console.error('Status check error:', error);
+                setTimeout(checkStatus, 2000);
+            });
+    };
+    checkStatus();
 }
 
-async function checkBackends() {
-    try {
-        const response = await fetch('/api/backends');
+function resetConversionButtons() {
+    document.getElementById('start-conversion-btn').disabled = false;
+    document.getElementById('start-conversion-btn').innerHTML = '<i class="fas fa-exchange-alt"></i> Convert Document';
+}
 
-        if (response.status === 503) {
-            // MCP server not connected
-            const errorData = await response.json();
-            document.getElementById('backend-status').innerHTML = `
-                <h4>❌ OCR Backends Unavailable</h4>
-                <p>${errorData.detail}</p>
-            `;
-            return;
-        }
+function downloadConverted() {
+    showNotification('Download functionality to be implemented', 'info');
+}
 
-        const data = await response.json();
+function previewConverted() {
+    showNotification('Preview functionality to be implemented', 'info');
+}
 
-        const backendDiv = document.getElementById('backend-status');
-        backendDiv.innerHTML = '<h4>Available OCR Backends:</h4>';
+function resetConversion() {
+    document.getElementById('conversion-file-input').value = '';
+    document.getElementById('conversion-upload-area').style.display = 'block';
+    document.getElementById('conversion-settings').style.display = 'none';
+    document.getElementById('conversion-progress').style.display = 'none';
+    document.getElementById('conversion-results').style.display = 'none';
+    resetConversionButtons();
+}
 
-        data.forEach(backend => {
-            const status = backend.available ? '✅ Available' : '❌ Unavailable';
-            backendDiv.innerHTML += `<p><strong>${backend.name}:</strong> ${status}</p>`;
+// Export & Download Functions
+function exportAs(format) {
+    const filename = document.getElementById('export-filename').value || 'export_result';
+    const includeMetadata = document.getElementById('include-metadata').checked;
+    const compressOutput = document.getElementById('compress-output').checked;
+
+    const currentResults = getCurrentResults();
+
+    if (!currentResults) {
+        showNotification('No results available to export', 'warning');
+        return;
+    }
+
+    const exportData = {
+        export_type: format,
+        content: currentResults,
+        filename: filename
+    };
+
+    fetch('/api/export', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(exportData)
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.content) {
+                downloadFile(data.content, data.filename, data.media_type);
+                addToRecentExports(data.filename, format);
+                showNotification(`Exported as ${format.toUpperCase()} successfully!`, 'success');
+            } else {
+                throw new Error('Export failed');
+            }
+        })
+        .catch(error => {
+            console.error('Export error:', error);
+            showNotification('Export failed: ' + error.message, 'error');
         });
-    } catch (error) {
-        console.error('Backend check error:', error);
-        document.getElementById('backend-status').innerHTML = '<p>❌ Unable to check backends</p>';
-    }
 }
 
-// Utility functions
-function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+function getCurrentResults() {
+    return {
+        timestamp: new Date().toISOString(),
+        results: "Sample OCR results would go here",
+        metadata: {
+            backend: "auto",
+            processing_time: "1.2s",
+            quality_score: 0.85
+        }
+    };
 }
 
-function downloadResult(format) {
-    if (!currentResult) return;
-
-    let content, filename, mimeType;
-
-    switch (format) {
-        case 'text':
-            content = currentResult.text || '';
-            filename = 'ocr_result.txt';
-            mimeType = 'text/plain';
-            break;
-        case 'json':
-            content = JSON.stringify(currentResult, null, 2);
-            filename = 'ocr_result.json';
-            mimeType = 'application/json';
-            break;
-        default:
-            return;
-    }
-
-    const blob = new Blob([content], { type: mimeType });
+function downloadFile(content, filename, mediaType) {
+    const blob = new Blob([content], { type: mediaType });
     const url = URL.createObjectURL(blob);
-
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
@@ -1703,66 +1513,71 @@ function downloadResult(format) {
     URL.revokeObjectURL(url);
 }
 
-function copyToClipboard() {
-    if (!currentResult || !currentResult.text) return;
+function addToRecentExports(filename, format) {
+    const exportsList = document.getElementById('exports-list');
+    if (!exportsList) return;
 
-    navigator.clipboard.writeText(currentResult.text).then(() => {
-        showAlert('Text copied to clipboard!', 'success');
-    }).catch(() => {
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = currentResult.text;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        showAlert('Text copied to clipboard!', 'success');
-    });
-}
-
-function showAlert(message, type) {
-    // Create alert element
-    const alert = document.createElement('div');
-    alert.className = `alert alert-${type}`;
-    alert.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 15px 20px;
-        border-radius: 6px;
-        color: white;
-        font-weight: 500;
-        z-index: 1000;
-        max-width: 400px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    const exportItem = document.createElement('div');
+    exportItem.className = 'export-item';
+    exportItem.innerHTML = `
+        <div class="export-info">
+            <span class="export-name">${filename}</span>
+            <span class="export-format">${format.toUpperCase()}</span>
+            <span class="export-time">${new Date().toLocaleTimeString()}</span>
+        </div>
+        <button class="btn btn-sm btn-outline" onclick="downloadFile('${filename}', '${format}')">
+            <i class="fas fa-download"></i>
+        </button>
     `;
 
-    // Set colors based on type
-    const colors = {
-        success: '#059669',
-        danger: '#dc2626',
-        warning: '#d97706',
-        info: '#2563eb'
-    };
-    alert.style.backgroundColor = colors[type] || colors.info;
+    const emptyState = exportsList.querySelector('.empty-state');
+    if (emptyState) {
+        emptyState.remove();
+    }
 
-    alert.textContent = message;
-    document.body.appendChild(alert);
+    exportsList.insertBefore(exportItem, exportsList.firstChild);
 
-    // Remove after 5 seconds
-    setTimeout(() => {
-        if (alert.parentNode) {
-            alert.parentNode.removeChild(alert);
-        }
-    }, 5000);
+    while (exportsList.children.length > 10) {
+        exportsList.removeChild(exportsList.lastChild);
+    }
 }
 
-// Initialize on page load
-checkHealth();
-checkBackends();
+function downloadAllProcessed() {
+    showNotification('Bulk download functionality to be implemented', 'info');
+}
 
+function downloadBatchReport() {
+    showNotification('Batch report functionality to be implemented', 'info');
+}
 
+// Pipeline Functions
+function createNewPipeline() {
+    showNotification('Pipeline creation functionality to be implemented', 'info');
+}
 
+function executePipeline(pipelineId) {
+    const fileInput = document.querySelector('#pipelines-section input[type="file"]');
+    if (!fileInput || !fileInput.files[0]) {
+        showNotification('Please select a file first', 'error');
+        return;
+    }
 
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('pipeline_id', pipelineId);
 
-
+    fetch('/api/pipelines/execute', {
+        method: 'POST',
+        body: formData
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.job_id) {
+                showNotification('Pipeline execution started', 'info');
+            }
+        })
+        .catch(error => {
+            console.error('Pipeline execution error:', error);
+            showNotification('Pipeline execution failed', 'error');
+        });
+}

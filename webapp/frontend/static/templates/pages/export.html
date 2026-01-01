@@ -1,0 +1,218 @@
+<div class="content-section">
+    <div class="page-header">
+        <h1><i class="fas fa-download"></i> Export & Download</h1>
+        <p>Export processed results in various formats and download processed documents with comprehensive options.</p>
+    </div>
+
+    <div class="export-workspace">
+        <!-- Export Options -->
+        <div class="export-options-panel">
+            <div class="export-formats">
+                <h3>Export Formats</h3>
+                <div class="format-grid">
+                    <div class="format-card" data-format="json">
+                        <div class="format-icon">
+                            <i class="fas fa-brackets-curly"></i>
+                        </div>
+                        <div class="format-content">
+                            <h4>JSON</h4>
+                            <p>Structured data format with full metadata</p>
+                            <button class="btn btn-sm btn-outline" onclick="exportAs('json')">
+                                Export
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="format-card" data-format="xml">
+                        <div class="format-icon">
+                            <i class="fas fa-code-branch"></i>
+                        </div>
+                        <div class="format-content">
+                            <h4>XML</h4>
+                            <p>Extensible markup with schema validation</p>
+                            <button class="btn btn-sm btn-outline" onclick="exportAs('xml')">
+                                Export
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="format-card" data-format="csv">
+                        <div class="format-icon">
+                            <i class="fas fa-table"></i>
+                        </div>
+                        <div class="format-content">
+                            <h4>CSV</h4>
+                            <p>Spreadsheet format for data analysis</p>
+                            <button class="btn btn-sm btn-outline" onclick="exportAs('csv')">
+                                Export
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="format-card" data-format="txt">
+                        <div class="format-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="format-content">
+                            <h4>Plain Text</h4>
+                            <p>Clean text extraction</p>
+                            <button class="btn btn-sm btn-outline" onclick="exportAs('txt')">
+                                Export
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="format-card" data-format="pdf">
+                        <div class="format-icon">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="format-content">
+                            <h4>PDF</h4>
+                            <p>Portable document with OCR text layer</p>
+                            <button class="btn btn-sm btn-outline" onclick="exportAs('pdf')">
+                                Export
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="format-card" data-format="docx">
+                        <div class="format-icon">
+                            <i class="fas fa-file-word"></i>
+                        </div>
+                        <div class="format-content">
+                            <h4>Word Document</h4>
+                            <p>Editable document with formatting</p>
+                            <button class="btn btn-sm btn-outline" onclick="exportAs('docx')">
+                                Export
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="format-card" data-format="html">
+                        <div class="format-icon">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        <div class="format-content">
+                            <h4>HTML</h4>
+                            <p>Web-ready format with styling</p>
+                            <button class="btn btn-sm btn-outline" onclick="exportAs('html')">
+                                Export
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="format-card" data-format="markdown">
+                        <div class="format-icon">
+                            <i class="fas fa-hashtag"></i>
+                        </div>
+                        <div class="format-content">
+                            <h4>Markdown</h4>
+                            <p>Lightweight markup format</p>
+                            <button class="btn btn-sm btn-outline" onclick="exportAs('markdown')">
+                                Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export Settings -->
+            <div class="export-settings">
+                <h3>Export Settings</h3>
+                <div class="settings-grid">
+                    <div class="setting-group">
+                        <label for="export-filename">Filename:</label>
+                        <input type="text" id="export-filename" class="form-control" placeholder="export_result">
+                    </div>
+                    <div class="setting-group">
+                        <label for="export-quality">Quality Level:</label>
+                        <select id="export-quality" class="form-control">
+                            <option value="high">High Quality</option>
+                            <option value="standard" selected>Standard</option>
+                            <option value="compressed">Compressed</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="include-metadata" checked>
+                            <span class="checkmark"></span>
+                            Include metadata
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="include-images">
+                            <span class="checkmark"></span>
+                            Include images
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Exports -->
+        <div class="recent-exports">
+            <h3>Recent Exports</h3>
+            <div class="exports-list" id="exports-list">
+                <div class="empty-state">
+                    <i class="fas fa-history"></i>
+                    <p>No recent exports</p>
+                    <small>Exported files will appear here</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk Download -->
+        <div class="bulk-download">
+            <h3>Bulk Operations</h3>
+            <div class="bulk-options">
+                <div class="bulk-actions">
+                    <button class="btn btn-outline" onclick="downloadAllProcessed()">
+                        <i class="fas fa-download"></i> Download All Processed Files
+                    </button>
+                    <button class="btn btn-outline" onclick="downloadBatchReport()">
+                        <i class="fas fa-file-alt"></i> Generate Batch Report
+                    </button>
+                    <button class="btn btn-outline" onclick="clearProcessedFiles()">
+                        <i class="fas fa-trash"></i> Clear All Processed Files
+                    </button>
+                </div>
+
+                <div class="bulk-stats">
+                    <div class="stat-item">
+                        <span class="stat-value" id="total-processed">0</span>
+                        <span class="stat-label">Files Processed</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="total-size">0 MB</span>
+                        <span class="stat-label">Total Size</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="avg-quality">0%</span>
+                        <span class="stat-label">Avg Quality</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Queue -->
+        <div class="export-queue">
+            <h3>Export Queue</h3>
+            <div id="export-queue-list" class="queue-list">
+                <div class="empty-queue">
+                    <i class="fas fa-list"></i>
+                    <p>No exports in queue</p>
+                    <small>Select an export format above to add to queue</small>
+                </div>
+            </div>
+            <div class="queue-actions" id="queue-actions" style="display: none;">
+                <button class="btn btn-outline" onclick="clearExportQueue()">
+                    <i class="fas fa-trash"></i> Clear Queue
+                </button>
+                <button class="btn btn-primary" onclick="processExportQueue()">
+                    <i class="fas fa-play"></i> Process All Exports
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

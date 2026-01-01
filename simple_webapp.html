@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR-MCP Webapp</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #2c3e50;
+            color: white;
+            padding: 20px 0;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 18px;
+        }
+
+        .nav-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .nav-item:hover {
+            background: #34495e;
+            border-left-color: #3498db;
+        }
+
+        .nav-item.active {
+            background: #3498db;
+            border-left-color: #2980b9;
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px;
+            background: #ecf0f1;
+        }
+
+        .section {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .section h1 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .section p {
+            line-height: 1.6;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>OCR-MCP</h2>
+        <div class="nav-item active" onclick="showSection('upload')">📤 Single Document</div>
+        <div class="nav-item" onclick="showSection('batch')">📚 Batch Processing</div>
+        <div class="nav-item" onclick="showSection('scanner')">🖨️ Scanner Control</div>
+        <div class="nav-item" onclick="showSection('preprocessing')">✨ Preprocessing</div>
+        <div class="nav-item" onclick="showSection('analysis')">🔍 Analysis</div>
+        <div class="nav-item" onclick="showSection('quality')">📊 Quality</div>
+        <div class="nav-item" onclick="showSection('pipelines')">🔧 Pipelines</div>
+        <div class="nav-item" onclick="showSection('optimization')">⚡ Optimization</div>
+        <div class="nav-item" onclick="showSection('conversion')">🔄 Conversion</div>
+        <div class="nav-item" onclick="showSection('export')">💾 Export</div>
+    </div>
+
+    <div class="content">
+        <div id="upload" class="section active">
+            <h1>Single Document Processing</h1>
+            <p>Upload and process individual documents with advanced OCR and analysis.</p>
+            <div style="margin-top: 20px; padding: 20px; border: 2px dashed #bdc3c7; text-align: center;">
+                <p>Drop files here or click to browse</p>
+                <input type="file" style="margin-top: 10px;">
+            </div>
+        </div>
+
+        <div id="batch" class="section">
+            <h1>Batch Processing</h1>
+            <p>Process multiple documents with automatic optimization and quality control.</p>
+            <p>Status: Demo mode - functional interface ready</p>
+        </div>
+
+        <div id="scanner" class="section">
+            <h1>Scanner Control</h1>
+            <p>Direct control of connected scanners and scanning hardware.</p>
+            <p>Status: Demo mode - interface ready</p>
+        </div>
+
+        <div id="preprocessing" class="section">
+            <h1>Image Preprocessing</h1>
+            <p>Enhance image quality before OCR processing.</p>
+            <p>Status: Demo mode - tools available</p>
+        </div>
+
+        <div id="analysis" class="section">
+            <h1>Document Analysis</h1>
+            <p>Extract tables, forms, layout information, and document metadata.</p>
+            <p>Status: Demo mode - analysis tools ready</p>
+        </div>
+
+        <div id="quality" class="section">
+            <h1>Quality Assessment</h1>
+            <p>Evaluate and compare OCR accuracy across different engines.</p>
+            <p>Status: Demo mode - quality metrics available</p>
+        </div>
+
+        <div id="pipelines" class="section">
+            <h1>Custom Pipelines</h1>
+            <p>Create and execute automated document processing workflows.</p>
+            <p>Status: Demo mode - pipeline builder ready</p>
+        </div>
+
+        <div id="optimization" class="section">
+            <h1>Auto-Optimization</h1>
+            <p>Automatically optimize OCR processing for best quality and performance.</p>
+            <p>Status: Demo mode - optimization algorithms ready</p>
+        </div>
+
+        <div id="conversion" class="section">
+            <h1>Format Conversion</h1>
+            <p>Convert documents between different formats with optional OCR enhancement.</p>
+            <p>Status: Demo mode - conversion tools ready</p>
+        </div>
+
+        <div id="export" class="section">
+            <h1>Export & Download</h1>
+            <p>Export processed results in various formats and download processed documents.</p>
+            <p>Status: Demo mode - export functionality ready</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('OCR-MCP Webapp loaded successfully');
+            
+            // Add click handlers to all nav items
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                // Add click event listener
+                item.addEventListener('click', function() {
+                    // Get target section from onclick attribute (parsing 'showSection(\'name\')')
+                    // OR better: rely on a data attribute if we add it. 
+                    // Let's parse the onclick for backward compatibility with existing HTML structure
+                    // defined above, OR just infer from text content if simple.
+                    // But looking at the HTML, the onclicks are: showSection('upload'), etc.
+                    
+                    // Let's use the explicit section names map or parsing
+                    // Actually, let's fix the HTML to be robust.
+                    // Instead of parsing, we will rely on valid onclicks interacting with this function
+                    // explicitly if we keep inline, OR we switch to data-attributes.
+                    
+                    // Since we are rewriting the SCRIPT block only, we need to support the inline calls
+                    // UNLESS we also update the HTML.
+                    // The robust fix is to use the global function showSection but fix the logic inside it.
+                });
+            });
+        });
+
+        function showSection(sectionName, element) {
+            // Hide all sections
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Show target section
+            const targetSection = document.getElementById(sectionName);
+            if (targetSection) {
+                targetSection.classList.add('active');
+            }
+
+            // Update navigation
+            const navItems = document.querySelectorAll('.nav-item');
+            
+            // Remove active from all
+            navItems.forEach(item => item.classList.remove('active'));
+
+            // Activate the correct nav item
+            // 1. If element was passed (this), use it
+            if (element) {
+                element.classList.add('active');
+            } else {
+                // 2. Fallback: Find by checking onclick string (legacy support)
+                navItems.forEach(item => {
+                    const onClickAttr = item.getAttribute('onclick');
+                    if (onClickAttr && onClickAttr.includes(`'${sectionName}'`)) {
+                        item.classList.add('active');
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

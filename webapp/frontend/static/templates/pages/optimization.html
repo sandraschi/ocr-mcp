@@ -1,0 +1,168 @@
+<div class="content-section">
+    <div class="page-header">
+        <h1><i class="fas fa-tachometer-alt"></i> Auto-Optimization</h1>
+        <p>Automatically optimize OCR processing for best quality and performance with intelligent parameter tuning.</p>
+    </div>
+
+    <div class="optimization-workspace">
+        <!-- Optimization Upload -->
+        <div class="optimization-upload">
+            <div class="upload-area" id="optimization-upload-area">
+                <div class="upload-content">
+                    <i class="fas fa-rocket"></i>
+                    <h3>Upload document for optimization</h3>
+                    <p>The system will automatically test different OCR engines and settings</p>
+                    <input type="file" id="optimization-file-input" style="display: none;">
+                    <button class="btn btn-primary" onclick="document.getElementById('optimization-file-input').click()">
+                        <i class="fas fa-folder-open"></i> Choose Document
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Optimization Settings -->
+        <div class="optimization-settings" id="optimization-settings" style="display: none;">
+            <div class="settings-panel">
+                <h3>Optimization Parameters</h3>
+                <div class="settings-grid">
+                    <div class="setting-group">
+                        <label for="target-quality">Target Quality:</label>
+                        <input type="range" id="target-quality" min="0.5" max="1.0" step="0.1" value="0.8">
+                        <span id="quality-value-display">80%</span>
+                    </div>
+                    <div class="setting-group">
+                        <label for="max-attempts">Max Attempts:</label>
+                        <select id="max-attempts" class="form-control">
+                            <option value="1">1 (Fast)</option>
+                            <option value="3" selected>3 (Balanced)</option>
+                            <option value="5">5 (Thorough)</option>
+                            <option value="10">10 (Exhaustive)</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label for="optimization-mode">Optimization Mode:</label>
+                        <select id="optimization-mode" class="form-control">
+                            <option value="auto">Auto (Recommended)</option>
+                            <option value="quality">Quality Priority</option>
+                            <option value="speed">Speed Priority</option>
+                            <option value="balanced">Balanced</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="optimization-options">
+                    <h4>Test Engines:</h4>
+                    <div class="engine-checkboxes">
+                        <label><input type="checkbox" checked> Florence-2</label>
+                        <label><input type="checkbox" checked> PP-OCRv5</label>
+                        <label><input type="checkbox"> Tesseract</label>
+                        <label><input type="checkbox"> EasyOCR</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Optimization Progress -->
+        <div class="optimization-progress" id="optimization-progress" style="display: none;">
+            <div class="progress-card">
+                <div class="progress-header">
+                    <i class="fas fa-cog fa-spin"></i>
+                    <span>Testing OCR configurations...</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="optimization-progress-fill"></div>
+                </div>
+                <div class="progress-details" id="optimization-details">
+                    <div class="current-test">Testing: Florence-2 with auto settings</div>
+                    <div class="test-results">Results: 0/3 configurations tested</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Optimization Results -->
+        <div class="optimization-results" id="optimization-results" style="display: none;">
+            <div class="results-header">
+                <h3>Optimization Complete</h3>
+                <div class="results-controls">
+                    <button class="btn btn-sm" onclick="downloadOptimized()">
+                        <i class="fas fa-download"></i> Download Best Result
+                    </button>
+                    <button class="btn btn-sm" onclick="viewOptimizationReport()">
+                        <i class="fas fa-file-alt"></i> View Report
+                    </button>
+                </div>
+            </div>
+
+            <div class="optimization-metrics" id="optimization-metrics">
+                <div class="metrics-grid">
+                    <div class="metric-card best-result">
+                        <div class="metric-icon">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-value" id="best-quality">87%</div>
+                            <div class="metric-label">Best Quality Score</div>
+                            <div class="metric-detail" id="best-engine">Florence-2</div>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-value" id="total-time">45s</div>
+                            <div class="metric-label">Total Optimization Time</div>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon">
+                            <i class="fas fa-flask"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-value" id="tests-run">12</div>
+                            <div class="metric-label">Configurations Tested</div>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-value" id="improvement">+23%</div>
+                            <div class="metric-label">Quality Improvement</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Optimization Report -->
+            <div class="optimization-report" id="optimization-report" style="display: none;">
+                <h4>Detailed Results</h4>
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Engine</th>
+                            <th>Settings</th>
+                            <th>Quality Score</th>
+                            <th>Processing Time</th>
+                            <th>Rank</th>
+                        </tr>
+                    </thead>
+                    <tbody id="optimization-results-table">
+                        <!-- Results will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Optimization Actions -->
+    <div class="optimization-actions">
+        <button class="btn btn-secondary" onclick="resetOptimization()">
+            <i class="fas fa-redo"></i> Start Over
+        </button>
+        <button class="btn btn-primary" onclick="startOptimization()" id="start-optimization-btn">
+            <i class="fas fa-rocket"></i> Start Auto-Optimization
+        </button>
+    </div>
+</div>

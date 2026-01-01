@@ -11,8 +11,8 @@
 - **Advanced Processing**: Plain text, formatted text, layout preservation, HTML rendering
 - **MCP Ecosystem**: Serve any MCP client with OCR capabilities
 
-### **🌐 OCR-MCP Frontend (Future Repo)**
-- **Web Application**: Modern React-based interface for scanner control and OCR workflow
+### **🌐 OCR-MCP Frontend (Integrated)**
+- **Web Application**: Modern React-based interface for scanner control and OCR workflow (Integrated)
 - **Windows 64-bit App**: Native desktop application with full scanner integration
 - **Batch Processing**: Multi-document scanning and processing pipelines
 - **Results Management**: Organized storage and export of OCR results
@@ -198,16 +198,18 @@ class WIAScannerManager:
 - [x] WIA (Windows Image Acquisition) backend implementation
 - [x] Scanner device discovery and enumeration
 - [x] Scan parameter configuration (DPI, color mode, paper size)
-- [x] Batch scanning capabilities
+- [x] Robust WIA 2.0 acquisition (Items property, COM threading fixes)
+- [x] Singleton Backend Management (prevents WIA context corruption)
+- [x] Reconnection logic for "WIA Device Busy" (0x8021006B)
 - [ ] TWAIN scanner support for broader compatibility
 - [ ] Image preprocessing pipeline (deskew, enhance, crop)
 
 ### **Phase 3: GOT-OCR2.0 Integration (Week 5)**
-- [ ] GOT-OCR2.0 backend implementation
-- [ ] Model loading and caching
-- [ ] Basic OCR processing pipeline
-- [ ] Plain text and formatted OCR modes
-- [ ] HTML rendering capability
+- [x] GOT-OCR2.0 backend implementation
+- [x] Model loading and caching
+- [x] Basic OCR processing pipeline
+- [x] Plain text and formatted OCR modes
+- [x] HTML rendering capability
 
 ### **Phase 3: Multi-Backend Support (Week 4)**
 - [ ] Tesseract backend integration
@@ -326,8 +328,8 @@ ocr-mcp-ecosystem/
 │   │   └── tools/           # MCP tool definitions
 │   └── pyproject.toml
 │
-└── ocr-mcp-frontend/         # Future repo - User interface
-    ├── webapp/              # React-based web application
+└── webapp/                  # Integrated - User interface
+    ├── frontend-new/        # React-based web application
     ├── desktop/             # Electron/Tauri Windows app
     ├── mobile/              # React Native iOS/Android app
     └── shared/              # Shared components and utilities
@@ -473,10 +475,12 @@ User Request → MCP Tool → Scanner Manager → WIA Backend → Hardware → I
 ## 📊 Current Implementation Status
 
 ### **✅ Completed Features**
-- **OCR Backends**: GOT-OCR2.0, Tesseract (EasyOCR pending installation)
-- **Scanner Control**: Complete WIA implementation for Windows flatbed scanners
-- **Tool Ecosystem**: 9 MCP tools registered and functional
-- **Architecture**: Modular backend system with unified interfaces
+- **OCR Backends**: Mistral 7B OCR (API), GOT-OCR2.0, Tesseract, Florence-2, DeepSeek-OCR, PP-OCRv5, DOTS.OCR.
+- **Scanner Control**: Robust WIA 2.0 integration with Singleton backend management and COM threading optimization.
+- **Hardware Verified**: Full acquisition support for Canon LiDE 400 (WIA 2.0).
+- **Web Application**: Professional React/Next.js-style interface with real-time hardware status and job management.
+- **Tool Ecosystem**: 12+ MCP tools registered and functional with portmanteau architecture.
+- **Architecture**: Modular backend system with unified interfaces and global singleton management.
 
 ### **🔧 Tool Count Breakdown**
 - **OCR Tools (2)**: `process_document`, `ocr_health_check`
@@ -493,14 +497,15 @@ User Request → MCP Tool → Scanner Manager → WIA Backend → Hardware → I
 - [x] Advanced manga features (scaffold separation, panel analysis)
 - [x] Batch document processing with concurrency control
 - [x] File type auto-detection and routing
-- [ ] Complete GOT-OCR2.0 model integration with actual inference
-- [ ] Image preprocessing pipeline (deskew, enhance, crop)
-- [ ] TWAIN scanner support for broader compatibility
-
-**Phase 4: Production Readiness (Week 7-8)**
-- [ ] Comprehensive testing and error handling
-- [ ] Documentation and usage examples
-- [ ] Performance benchmarking
+**Phase 4: Advanced UI & Real-time Integration (Week 7-8)** ✅ **COMPLETED**
+- [x] Real-time file processing with backend API
+- [x] Advanced status polling and job management
+- [x] Results visualization with `OCRResultViewer`
+- [x] Modals for Logging and Help
+- [x] Functional Preprocessing and Conversion pages
+- [x] Finalized `ScannerPage` with real device discovery and acquisition
+- [x] Resolved Canon LiDE 400 "WIA_ERROR_BUSY" via singleton refactoring
+- [x] Verified real-time scan image preview data flow
 - [ ] Docker containerization
 - [ ] MCPB packaging for distribution
 

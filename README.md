@@ -5,7 +5,7 @@
 [![OCR Engines](https://img.shields.io/badge/OCR--Engines-7+-orange)]()
 [![Web Interface](https://img.shields.io/badge/Web--Interface-Professional-purple)]()
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Production--Ready-brightgreen)](OCR-MCP_MASTER_PLAN.md)
+[![Status](https://img.shields.io/badge/Status-Fully--Integrated-brightgreen)](OCR-MCP_MASTER_PLAN.md)
 
 **Complete document processing solution with 7 state-of-the-art OCR engines, intelligent preprocessing, document analysis, quality assessment, workflow automation, and professional web interface.**
 
@@ -34,7 +34,7 @@
 
 OCR-MCP is a **complete document processing suite** built on FastMCP, providing enterprise-grade OCR capabilities with intelligent automation, professional web interface, and comprehensive document understanding tools.
 
-### 🚀 Complete Document Processing Pipeline
+### 🚀 Complete Document Processing Suite (Integrated)
 
 OCR-MCP provides a full document processing ecosystem:
 
@@ -179,13 +179,14 @@ Current OCR landscape shows rapid evolution:
 - **Batch Scanning**: ADF support with page separation
 - **Preview Mode**: Positioning and cropping verification
 
-### 🌐 Professional Web Interface
-- **Modern UI**: Responsive design with sidebar navigation
-- **Workflow-Based**: Step-by-step processing guidance
-- **Real-time Updates**: Live progress and status indicators
-- **Batch Dashboard**: Concurrent processing monitoring
-- **Results Visualization**: Multiple output format viewers
-- **Quality Metrics**: Real-time accuracy and confidence display
+#### 🌐 Professional Web Interface
+
+The OCR-MCP web interface is accessible at:
+- **URL**: `http://localhost:8765`
+- **Dashboard**: Real-time monitoring of all OCR and scanner operations
+- **Scanner Control**: Direct hardware acquisition with live preview
+- **Batch Processing**: Parallel document processing with progress tracking
+- **Hardware Backend**: Robust WIA 2.0 implementation with global singleton management for device stability.
 
 ## 🏗️ Architecture
 

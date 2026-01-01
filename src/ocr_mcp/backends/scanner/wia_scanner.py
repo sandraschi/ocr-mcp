@@ -22,11 +22,27 @@ if IS_WINDOWS:
         import comtypes.client as cc
         import pythoncom
 
+        # Try to generate WIA type library if missing
+        try:
+            from comtypes.gen import WIALib
+        except ImportError:
+            try:
+                logger.info("Generating WIA type library...")
+                # WIA 2.0 GUID
+                cc.GetModule("{94A0E92D-43C0-494E-AC29-FD45948A5221}")
+                from comtypes.gen import WIALib
+            except Exception as e:
+                logger.warning(f"Could not generate WIA type library: {e}")
+                WIALib = None
+
         # Test WIA availability by trying to create DeviceManager
         try:
-            pythoncom.CoInitialize()
-            test_dm = cc.CreateObject('WIA.DeviceManager')
-            pythoncom.CoUninitialize()
+            try:
+                pythoncom.CoInitialize()
+            except Exception:
+                # Already initialized
+                pass
+            test_dm = cc.CreateObject("WIA.DeviceManager")
             WIA_AVAILABLE = True
             logger.info("WIA is available and working")
         except Exception as e:
@@ -49,6 +65,7 @@ else:
 @dataclass
 class ScannerInfo:
     """Information about a scanner device."""
+
     device_id: str
     name: str
     manufacturer: str
@@ -62,6 +79,7 @@ class ScannerInfo:
 @dataclass
 class ScanSettings:
     """Scanner configuration settings."""
+
     dpi: int = 300
     color_mode: str = "Color"  # "Color", "Grayscale", "BlackWhite"
     paper_size: str = "A4"  # "A4", "Letter", "Legal", "Custom"
@@ -76,6 +94,7 @@ class ScanSettings:
 @dataclass
 class ScannerProperties:
     """Detailed scanner capabilities."""
+
     supported_resolutions: List[int]
     supported_color_modes: List[str]
     supported_paper_sizes: List[str]
@@ -111,7 +130,10 @@ class WIABackend:
 
         try:
             # Initialize COM
-            pythoncom.CoInitialize()
+            try:
+                pythoncom.CoInitialize()
+            except Exception:
+                pass
 
             # Create WIA manager
             self._wia_manager = cc.CreateObject("WIA.DeviceManager")
@@ -167,7 +189,9 @@ class WIABackend:
             # Basic device info
             device_id = str(device.DeviceID)
             name = self._get_property_value(properties, "Name") or "Unknown Scanner"
-            manufacturer = self._get_property_value(properties, "Manufacturer") or "Unknown"
+            manufacturer = (
+                self._get_property_value(properties, "Manufacturer") or "Unknown"
+            )
             description = self._get_property_value(properties, "Description") or name
 
             # Device type and capabilities
@@ -177,20 +201,23 @@ class WIABackend:
 
             # Check for document handling capabilities
             try:
-                # Look for feeder capabilities
-                feeder_props = device.GetItems()[0].Properties if len(device.GetItems()) > 0 else None
-                if feeder_props:
+                # Use Items property for WIA 2.0
+                items = getattr(device, "Items", None)
+                if items and len(items) > 0:
                     # Check if device supports ADF
                     supports_adf = True
                     device_type = "Feeder"
-            except Exception:
+            except Exception as e:
+                logger.debug(f"Failed to check ADF capabilities: {e}")
                 pass
 
             # Get maximum DPI
             max_dpi = 600  # Default
             try:
                 # Try to get horizontal resolution
-                horiz_res = self._get_property_value(properties, "Horizontal Resolution")
+                horiz_res = self._get_property_value(
+                    properties, "Horizontal Resolution"
+                )
                 if horiz_res:
                     max_dpi = max(max_dpi, int(horiz_res))
             except Exception:
@@ -204,7 +231,7 @@ class WIABackend:
                 device_type=device_type,
                 supports_adf=supports_adf,
                 supports_duplex=supports_duplex,
-                max_dpi=max_dpi
+                max_dpi=max_dpi,
             )
 
         except Exception as e:
@@ -247,16 +274,28 @@ class WIABackend:
             supported_color_modes = ["Color", "Grayscale", "BlackWhite"]
             supported_paper_sizes = ["A4", "Letter", "Legal"]
 
-            manufacturer = self._get_property_value(properties, "Manufacturer") or "Unknown"
+            manufacturer = (
+                self._get_property_value(properties, "Manufacturer") or "Unknown"
+            )
             model = self._get_property_value(properties, "Model") or "Unknown"
-            firmware_version = self._get_property_value(properties, "Firmware Version") or "Unknown"
+            firmware_version = (
+                self._get_property_value(properties, "Firmware Version") or "Unknown"
+            )
 
             # Try to get actual capabilities
+            supports_adf = False
+            supports_duplex = False
             try:
                 # Get supported resolutions from device
-                horiz_res = self._get_property_value(properties, "Horizontal Resolution")
-                if horiz_res:
-                    supported_resolutions = [int(horiz_res)]
+                item_list = getattr(device, "Items", None)
+                if item_list and len(item_list) > 0:
+                    props = item_list[0].Properties
+                    horiz_res = self._get_property_value(props, "Horizontal Resolution")
+                    if horiz_res:
+                        supported_resolutions = [int(horiz_res)]
+
+                    # Try to detect ADF
+                    supports_adf = True
             except Exception:
                 pass
 
@@ -266,12 +305,12 @@ class WIABackend:
                 supported_paper_sizes=supported_paper_sizes,
                 max_paper_width=5100,  # A4 at 600 DPI
                 max_paper_height=6600,  # A4 at 600 DPI
-                supports_adf=False,  # TODO: Implement ADF detection
-                supports_duplex=False,  # TODO: Implement duplex detection
+                supports_adf=supports_adf,
+                supports_duplex=supports_duplex,
                 supports_preview=True,
                 manufacturer=manufacturer,
                 model=model,
-                firmware_version=firmware_version
+                firmware_version=firmware_version,
             )
 
         except Exception as e:
@@ -298,8 +337,9 @@ class WIABackend:
 
         try:
             # Get the scan item (usually the flatbed or feeder)
-            items = device.GetItems()
-            if len(items) == 0:
+            # WIA 2.0 uses Items collection
+            items = getattr(device, "Items", None)
+            if not items or len(items) == 0:
                 logger.error(f"No scan items available for scanner {device_id}")
                 return False
 
@@ -312,9 +352,9 @@ class WIABackend:
 
             # Configure color mode
             color_mode_map = {
-                "Color": 1,      # WIA_PHOTO_COLOR
+                "Color": 1,  # WIA_PHOTO_COLOR
                 "Grayscale": 2,  # WIA_PHOTO_GRAYSCALE
-                "BlackWhite": 4  # WIA_PHOTO_BLACKWHITE
+                "BlackWhite": 4,  # WIA_PHOTO_BLACKWHITE
             }
             color_value = color_mode_map.get(settings.color_mode, 1)
             self._set_property_value(properties, "Current Intent", color_value)
@@ -323,7 +363,9 @@ class WIABackend:
             self._set_property_value(properties, "Brightness", settings.brightness)
             self._set_property_value(properties, "Contrast", settings.contrast)
 
-            logger.info(f"Scanner {device_id} configured: {settings.dpi} DPI, {settings.color_mode}")
+            logger.info(
+                f"Scanner {device_id} configured: {settings.dpi} DPI, {settings.color_mode}"
+            )
             return True
 
         except Exception as e:
@@ -344,18 +386,50 @@ class WIABackend:
         if not self.is_available():
             return None
 
+        # Ensure COM is initialized for this thread
+        try:
+            pythoncom.CoInitialize()
+        except Exception:
+            pass
+
         device = self._devices.get(device_id)
         if not device:
+            # Try to reconnect
+            try:
+                for device_info in self._wia_manager.DeviceInfos:
+                    if str(device_info.DeviceID) == device_id:
+                        device = device_info.Connect()
+                        self._devices[device_id] = device
+                        break
+            except Exception as e:
+                logger.error(
+                    f"Failed to reconnect to scanner {device_id} for scan: {e}"
+                )
+                return None
+
+        if not device:
+            logger.error(f"Scanner {device_id} not found")
             return None
 
         try:
             # Configure scanner first
             if not self.configure_scan(device_id, settings):
-                return None
+                # Try one more time with a fresh connection if it failed with busy
+                try:
+                    logger.info("Retrying scan with fresh connection...")
+                    for device_info in self._wia_manager.DeviceInfos:
+                        if str(device_info.DeviceID) == device_id:
+                            device = device_info.Connect()
+                            self._devices[device_id] = device
+                            if not self.configure_scan(device_id, settings):
+                                return None
+                            break
+                except:
+                    return None
 
             # Get scan item
-            items = device.GetItems()
-            if len(items) == 0:
+            items = getattr(device, "Items", None)
+            if not items or len(items) == 0:
                 logger.error(f"No scan items available for scanner {device_id}")
                 return None
 
@@ -370,7 +444,7 @@ class WIABackend:
             import io
 
             # WIA returns image data, convert to PIL
-            if hasattr(image_file, 'FileData'):
+            if hasattr(image_file, "FileData"):
                 # Handle WIA ImageFile format
                 image_data = image_file.FileData.getvalue()
                 image = Image.open(io.BytesIO(image_data))
@@ -408,14 +482,8 @@ class WIABackend:
 
     def __del__(self):
         """Cleanup COM resources."""
-        if hasattr(self, '_wia_manager') and self._wia_manager:
+        if hasattr(self, "_wia_manager") and self._wia_manager:
             try:
                 pythoncom.CoUninitialize()
             except Exception:
                 pass
-
-
-
-
-
-

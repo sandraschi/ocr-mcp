@@ -47,7 +47,7 @@ class MCPClient:
                 cwd=str(project_root),
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,  # Redirect stderr to avoid interference
                 text=True,
                 env=env,
                 bufsize=0  # Unbuffered
@@ -71,18 +71,9 @@ class MCPClient:
             await asyncio.sleep(10)
             logger.info("Finished waiting for MCP server initialization")
 
-            # Test connection
-            logger.info("Testing MCP connection...")
+            # Initialize MCP protocol connection directly
+            logger.info("Initializing MCP protocol connection...")
             try:
-                # Send a simple ping first to test if the server responds
-                logger.info("Sending ping to MCP server...")
-                ping_result = await self._send_request("ping", {})
-                logger.info(f"Ping response: {ping_result}")
-            except Exception as e:
-                logger.warning(f"Ping failed: {e}")
-
-            try:
-                logger.info("Initializing MCP protocol connection...")
                 await self._initialize_connection()
                 self.connected = True
                 logger.info("MCP client connected successfully")
@@ -195,9 +186,18 @@ class MCPClient:
 
         try:
             logger.info("Starting to read MCP server responses...")
-            for line in iter(self.process.stdout.readline, ''):
-                if line.strip():
-                    line_stripped = line.strip()
+            buffer = ""
+            while True:
+                char = self.process.stdout.read(1)
+                if not char:
+                    break
+                buffer += char
+                if char == '\n':
+                    line_stripped = buffer.strip()
+                    buffer = ""
+                    if not line_stripped:
+                        continue
+
                     logger.debug(f"Received line from MCP server: {line_stripped}")
 
                     # Skip non-JSON lines (log messages, etc.)

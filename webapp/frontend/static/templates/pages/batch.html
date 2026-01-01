@@ -1,0 +1,218 @@
+<div class="content-section">
+    <div class="page-header">
+        <h1><i class="fas fa-layer-group"></i> Intelligent Batch Processing</h1>
+        <p>Process multiple documents with automatic optimization and quality control.</p>
+    </div>
+
+    <div class="batch-workflow">
+        <!-- File Upload -->
+        <div class="batch-upload-zone">
+            <div class="upload-area" id="batch-upload-area">
+                <div class="upload-content">
+                    <i class="fas fa-folder-plus"></i>
+                    <h3>Drop multiple documents here</h3>
+                    <p>or <button class="link-btn" onclick="document.getElementById('batch-file-input').click()">select files</button></p>
+                    <input type="file" id="batch-file-input" multiple accept=".pdf,.png,.jpg,.jpeg,.tiff,.bmp,.cbz,.cbr" style="display: none;">
+                </div>
+            </div>
+            <div id="batch-file-list" class="file-queue">
+                <!-- File list will be populated here -->
+            </div>
+        </div>
+
+        <!-- Processing Options -->
+        <div class="batch-options-panel">
+            <div class="options-header">
+                <h3>Processing Strategy</h3>
+            </div>
+            <div class="strategy-options">
+                <div class="strategy-card active" data-strategy="auto">
+                    <div class="strategy-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div class="strategy-content">
+                        <h4>Intelligent Auto</h4>
+                        <p>Automatically optimize for each document type</p>
+                    </div>
+                </div>
+                <div class="strategy-card" data-strategy="quality">
+                    <div class="strategy-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="strategy-content">
+                        <h4>Quality Focused</h4>
+                        <p>Multiple attempts to achieve high accuracy</p>
+                    </div>
+                </div>
+                <div class="strategy-card" data-strategy="speed">
+                    <div class="strategy-icon">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <div class="strategy-content">
+                        <h4>Speed Optimized</h4>
+                        <p>Fast processing with good accuracy</p>
+                    </div>
+                </div>
+                <div class="strategy-card" data-strategy="custom">
+                    <div class="strategy-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <div class="strategy-content">
+                        <h4>Custom Pipeline</h4>
+                        <p>Use a predefined processing pipeline</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="advanced-batch-options">
+                <div class="option-row">
+                    <div class="option-group">
+                        <label for="batch-quality-threshold">Quality Threshold:</label>
+                        <input type="range" id="batch-quality-threshold" min="0.5" max="1.0" step="0.1" value="0.8">
+                        <span id="quality-value">80%</span>
+                    </div>
+                    <div class="option-group">
+                        <label for="batch-concurrent">Concurrent Jobs:</label>
+                        <select id="batch-concurrent" class="form-control">
+                            <option value="1">1 (Sequential)</option>
+                            <option value="2">2</option>
+                            <option value="3" selected>3</option>
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Processing Dashboard -->
+        <div class="batch-dashboard" id="batch-dashboard" style="display: none;">
+            <div class="dashboard-header">
+                <h3>Processing Dashboard</h3>
+                <div class="dashboard-controls">
+                    <button class="btn btn-outline" onclick="pauseBatch()">
+                        <i class="fas fa-pause"></i> Pause
+                    </button>
+                    <button class="btn btn-outline" onclick="stopBatch()">
+                        <i class="fas fa-stop"></i> Stop
+                    </button>
+                </div>
+            </div>
+
+            <!-- Progress Overview -->
+            <div class="progress-overview">
+                <div class="progress-metrics">
+                    <div class="metric">
+                        <div class="metric-value" id="total-files">0</div>
+                        <div class="metric-label">Total Files</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="processed-files">0</div>
+                        <div class="metric-label">Processed</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="successful-files">0</div>
+                        <div class="metric-label">Successful</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="failed-files">0</div>
+                        <div class="metric-label">Failed</div>
+                    </div>
+                </div>
+                <div class="overall-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="batch-progress-fill"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span id="progress-percentage">0%</span> Complete
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Status Table -->
+            <div class="file-status-table">
+                <table id="batch-status-table">
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>Status</th>
+                            <th>Quality</th>
+                            <th>Time</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="batch-status-body">
+                        <!-- Status rows will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Results Summary -->
+        <div class="batch-results" id="batch-results" style="display: none;">
+            <div class="results-summary">
+                <h3>Batch Processing Complete</h3>
+                <div class="summary-metrics">
+                    <div class="metric-card">
+                        <div class="metric-icon success">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-value" id="summary-successful">0</div>
+                            <div class="metric-label">Successful</div>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-value" id="summary-failed">0</div>
+                            <div class="metric-label">Failed</div>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon info">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-value" id="summary-time">-</div>
+                            <div class="metric-label">Total Time</div>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon primary">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-value" id="summary-quality">-</div>
+                            <div class="metric-label">Avg Quality</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="batch-actions">
+                <button class="btn btn-primary" onclick="downloadBatchResults()">
+                    <i class="fas fa-download"></i> Download All Results
+                </button>
+                <button class="btn btn-outline" onclick="exportBatchReport()">
+                    <i class="fas fa-file-alt"></i> Generate Report
+                </button>
+                <button class="btn btn-outline" onclick="retryFailedFiles()">
+                    <i class="fas fa-redo"></i> Retry Failed
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Batch Action Buttons -->
+    <div class="batch-actions">
+        <button class="btn btn-secondary" onclick="clearBatch()">
+            <i class="fas fa-trash"></i> Clear All
+        </button>
+        <button class="btn btn-primary" onclick="startBatchProcessing()" id="start-batch-btn">
+            <i class="fas fa-play-circle"></i> Start Batch Processing
+        </button>
+    </div>
+</div>
