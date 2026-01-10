@@ -22,24 +22,37 @@ if IS_WINDOWS:
         import comtypes.client as cc
         import pythoncom
 
-        # Try to generate WIA type library if missing
+        # WIA 2.0 Device Manager ID
+        WIA_DEVICE_MANAGER_ID = "{E1C5D730-1228-487F-9675-91F3E1F5483E}"
+
+        # Try to import WIA type library
+        logger.info("Attempting to import WIA type library...")
         try:
-            from comtypes.gen import WIALib
-        except ImportError:
+            from comtypes.gen import WIA
+
+            logger.info("Successfully imported WIA type library")
+        except Exception as e:
+            logger.warning(
+                f"Initial WIA import failed: {e}. Attempting to generate wrapper..."
+            )
+            # If not generated or failed to import, try to generate it
             try:
-                logger.info("Generating WIA type library...")
-                # WIA 2.0 GUID
-                cc.GetModule("{94A0E92D-43C0-494E-AC29-FD45948A5221}")
-                from comtypes.gen import WIALib
+                # WIA 2.0 Type Library GUID
+                WIA_LIB_ID = "{94A0E92D-43C0-494E-AC29-FD45948A5221}"
+                comtypes.client.GetModule((WIA_LIB_ID, 1, 0))
+                from comtypes.gen import WIA
+
+                logger.info("Successfully generated and imported WIA type library")
             except Exception as e:
-                logger.warning(f"Could not generate WIA type library: {e}")
-                WIALib = None
+                logger.error(f"Could not load WIA type library: {e}")
+                WIA = None
+        WIALib = WIA  # Alias for backward compatibility if needed, or remove if WIA is used directly
 
         # Test WIA availability by trying to create DeviceManager
         try:
             try:
                 pythoncom.CoInitialize()
-            except Exception:
+            except Exception as e:
                 # Already initialized
                 pass
             test_dm = cc.CreateObject("WIA.DeviceManager")
@@ -132,7 +145,7 @@ class WIABackend:
             # Initialize COM
             try:
                 pythoncom.CoInitialize()
-            except Exception:
+            except Exception as e:
                 pass
 
             # Create WIA manager
@@ -220,7 +233,7 @@ class WIABackend:
                 )
                 if horiz_res:
                     max_dpi = max(max_dpi, int(horiz_res))
-            except Exception:
+            except Exception as e:
                 pass
 
             return ScannerInfo(
@@ -296,7 +309,7 @@ class WIABackend:
 
                     # Try to detect ADF
                     supports_adf = True
-            except Exception:
+            except Exception as e:
                 pass
 
             return ScannerProperties(
@@ -389,7 +402,7 @@ class WIABackend:
         # Ensure COM is initialized for this thread
         try:
             pythoncom.CoInitialize()
-        except Exception:
+        except Exception as e:
             pass
 
         device = self._devices.get(device_id)
@@ -424,7 +437,7 @@ class WIABackend:
                             if not self.configure_scan(device_id, settings):
                                 return None
                             break
-                except:
+                except Exception as e:
                     return None
 
             # Get scan item
@@ -465,7 +478,7 @@ class WIABackend:
             for prop in properties:
                 if prop.Name == property_name:
                     return prop.Value
-        except:
+        except Exception as e:
             pass
         return None
 
@@ -485,5 +498,5 @@ class WIABackend:
         if hasattr(self, "_wia_manager") and self._wia_manager:
             try:
                 pythoncom.CoUninitialize()
-            except Exception:
+            except Exception as e:
                 pass

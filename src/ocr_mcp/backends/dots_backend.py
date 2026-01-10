@@ -10,24 +10,33 @@ from typing import Dict, Any, Optional, List
 import torch
 from PIL import Image
 
+from ..core.backend_manager import OCRBackend
+from ..core.config import OCRConfig
+
 try:
     from transformers import AutoModelForCausalLM, AutoProcessor
+
     TRANSFORMERS_AVAILABLE = True
 except ImportError:
     TRANSFORMERS_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
-class DOTSBackend:
+
+class DOTSBackend(OCRBackend):
     """DOTS.OCR backend for document structure analysis and content extraction"""
 
-    def __init__(self, config: Dict[str, Any]):
-        self.config = config
+    def __init__(self, config: OCRConfig):
+        super().__init__("dots-ocr", config)
         self.model = None
         self.processor = None
-        self.device = config.get('device', 'cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = getattr(config, "ocr_device", None) or (
+            "cuda" if torch.cuda.is_available() else "cpu"
+        )
         self.model_name = "rednote-hilab/dots.ocr"
-        self.cache_dir = Path(config.get('cache_dir', Path.home() / ".cache" / "ocr_mcp"))
+        self.cache_dir = Path(
+            getattr(config, "ocr_cache_dir", None) or Path.home() / ".cache" / "ocr_mcp"
+        )
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def is_available(self) -> bool:
@@ -37,6 +46,7 @@ class DOTSBackend:
 
         try:
             from huggingface_hub import model_info
+
             model_info(self.model_name)
             return True
         except Exception as e:
@@ -54,20 +64,18 @@ class DOTSBackend:
 
             # Load processor and model
             self.processor = AutoProcessor.from_pretrained(
-                self.model_name,
-                cache_dir=str(self.cache_dir),
-                trust_remote_code=True
+                self.model_name, cache_dir=str(self.cache_dir), trust_remote_code=True
             )
 
             self.model = AutoModelForCausalLM.from_pretrained(
                 self.model_name,
                 cache_dir=str(self.cache_dir),
                 trust_remote_code=True,
-                torch_dtype=torch.float16 if self.device == 'cuda' else torch.float32,
-                device_map="auto" if self.device == 'cuda' else None
+                torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
+                device_map="auto" if self.device == "cuda" else None,
             )
 
-            if self.device == 'cpu':
+            if self.device == "cpu":
                 self.model = self.model.to(self.device)
 
             logger.info("DOTS.OCR model loaded successfully")
@@ -81,7 +89,7 @@ class DOTSBackend:
         self,
         image_path: str,
         ocr_mode: str = "text",
-        region: Optional[List[int]] = None
+        region: Optional[List[int]] = None,
     ) -> Dict[str, Any]:
         """Process document with DOTS.OCR"""
 
@@ -90,7 +98,7 @@ class DOTSBackend:
 
         try:
             # Load and preprocess image
-            image = Image.open(image_path).convert('RGB')
+            image = Image.open(image_path).convert("RGB")
 
             # Apply region cropping if specified
             if region and len(region) == 4:
@@ -103,7 +111,7 @@ class DOTSBackend:
             # Process image
             inputs = self.processor(images=image, text=task_prompt, return_tensors="pt")
 
-            if self.device == 'cuda':
+            if self.device == "cuda":
                 inputs = {k: v.cuda() for k, v in inputs.items()}
 
             # Generate structured output
@@ -113,7 +121,7 @@ class DOTSBackend:
                     max_length=2048,
                     num_beams=3,
                     do_sample=False,
-                    early_stopping=True
+                    early_stopping=True,
                 )
 
             # Decode and parse results
@@ -131,11 +139,13 @@ class DOTSBackend:
         prompts = {
             "text": "Extract all text from this document.",
             "format": "Extract text with layout information from this document.",
-            "fine-grained": "Extract text with precise region information from this document."
+            "fine-grained": "Extract text with precise region information from this document.",
         }
         return prompts.get(ocr_mode, prompts["text"])
 
-    def _parse_dots_output(self, raw_output: str, ocr_mode: str, image_size: tuple) -> Dict[str, Any]:
+    def _parse_dots_output(
+        self, raw_output: str, ocr_mode: str, image_size: tuple
+    ) -> Dict[str, Any]:
         """Parse DOTS.OCR structured output"""
         # DOTS.OCR provides rich structured output
         parsed = self._parse_json_output(raw_output)
@@ -145,7 +155,7 @@ class DOTSBackend:
                 "text": parsed.get("text", "").strip(),
                 "backend": "dots",
                 "confidence": parsed.get("confidence", 0.90),
-                "regions": []
+                "regions": [],
             }
         elif ocr_mode == "format":
             return {
@@ -153,7 +163,7 @@ class DOTSBackend:
                 "backend": "dots",
                 "confidence": parsed.get("confidence", 0.90),
                 "structured": parsed.get("structure", {}),
-                "regions": []
+                "regions": [],
             }
         else:  # fine-grained
             return {
@@ -161,7 +171,7 @@ class DOTSBackend:
                 "backend": "dots",
                 "confidence": parsed.get("confidence", 0.90),
                 "regions": parsed.get("regions", []),
-                "structured": parsed.get("structure", {})
+                "structured": parsed.get("structure", {}),
             }
 
     def _parse_json_output(self, raw_output: str) -> Dict[str, Any]:
@@ -180,7 +190,7 @@ class DOTSBackend:
             "text": raw_output.strip(),
             "confidence": 0.90,
             "structure": {},
-            "regions": []
+            "regions": [],
         }
 
     def get_capabilities(self) -> Dict[str, Any]:
@@ -191,7 +201,11 @@ class DOTSBackend:
             "modes": ["text", "format", "fine-grained"],
             "languages": ["en", "zh", "multilingual"],
             "gpu_support": True,
-            "strengths": ["document_structure", "table_extraction", "formula_recognition"],
+            "strengths": [
+                "document_structure",
+                "table_extraction",
+                "formula_recognition",
+            ],
             "limitations": ["complex_setup", "resource_intensive"],
-            "model_size": "~3GB"
+            "model_size": "~3GB",
         }

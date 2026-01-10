@@ -8,24 +8,29 @@ from typing import Dict, Any, Optional, List
 from PIL import Image
 import numpy as np
 
+from ..core.backend_manager import OCRBackend
+from ..core.config import OCRConfig
+
 try:
     import paddle
     import paddleocr
+
     PADDLE_AVAILABLE = True
 except ImportError:
     PADDLE_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
-class PPOCRBackend:
+
+class PPOCRBackend(OCRBackend):
     """PP-OCRv5 backend for high-performance industrial OCR"""
 
-    def __init__(self, config: Dict[str, Any]):
-        self.config = config
+    def __init__(self, config: OCRConfig):
+        super().__init__("pp-ocrv5", config)
         self.ocr = None
-        self.device = config.get('device', 'cpu')  # PP-OCR works well on CPU
-        self.lang = config.get('lang', 'en')
-        self.use_gpu = self.device == 'cuda' and paddle.device.cuda.device_count() > 0
+        self.device = getattr(config, "ocr_device", "cpu") or "cpu"
+        self.lang = "en"  # Default lang, can be made configurable
+        self.use_gpu = self.device == "cuda" and paddle.device.cuda.device_count() > 0
 
     def is_available(self) -> bool:
         """Check if PP-OCRv5 is available"""
@@ -47,7 +52,9 @@ class PPOCRBackend:
             return False
 
         try:
-            logger.info(f"Loading PP-OCRv5 model (GPU: {self.use_gpu}, Lang: {self.lang})")
+            logger.info(
+                f"Loading PP-OCRv5 model (GPU: {self.use_gpu}, Lang: {self.lang})"
+            )
 
             # Initialize PaddleOCR
             self.ocr = paddleocr.PaddleOCR(
@@ -55,8 +62,12 @@ class PPOCRBackend:
                 lang=self.lang,
                 show_log=False,
                 use_angle_cls=True,  # Text direction detection
-                use_space_char=True  # Space character recognition
+                use_space_char=True,  # Space character recognition
             )
+
+            if self.ocr is None:
+                logger.error("PaddleOCR initialization returned None")
+                return False
 
             logger.info("PP-OCRv5 model loaded successfully")
             return True
@@ -69,7 +80,7 @@ class PPOCRBackend:
         self,
         image_path: str,
         ocr_mode: str = "text",
-        region: Optional[List[int]] = None
+        region: Optional[List[int]] = None,
     ) -> Dict[str, Any]:
         """Process document with PP-OCRv5"""
 
@@ -78,7 +89,7 @@ class PPOCRBackend:
 
         try:
             # Load image
-            image = Image.open(image_path).convert('RGB')
+            image = Image.open(image_path).convert("RGB")
 
             # Apply region cropping if specified
             if region and len(region) == 4:
@@ -92,7 +103,9 @@ class PPOCRBackend:
             results = self.ocr.ocr(img_array, cls=True)
 
             # Process results
-            processed_results = self._process_ppocr_results(results, ocr_mode, image.size)
+            processed_results = self._process_ppocr_results(
+                results, ocr_mode, image.size
+            )
 
             return processed_results
 
@@ -100,15 +113,12 @@ class PPOCRBackend:
             logger.error(f"PP-OCRv5 processing failed: {e}")
             raise RuntimeError(f"OCR processing failed: {str(e)}")
 
-    def _process_ppocr_results(self, results: List, ocr_mode: str, image_size: tuple) -> Dict[str, Any]:
+    def _process_ppocr_results(
+        self, results: List, ocr_mode: str, image_size: tuple
+    ) -> Dict[str, Any]:
         """Process PP-OCRv5 results into standardized format"""
         if not results or not results[0]:
-            return {
-                "text": "",
-                "backend": "ppocr",
-                "confidence": 0.0,
-                "regions": []
-            }
+            return {"text": "", "backend": "ppocr", "confidence": 0.0, "regions": []}
 
         # Extract text and regions
         text_parts = []
@@ -122,14 +132,16 @@ class PPOCRBackend:
             total_confidence += confidence
             region_count += 1
 
-            regions.append({
-                "bbox": [int(coord) for coord in bbox],
-                "text": text,
-                "confidence": float(confidence)
-            })
+            regions.append(
+                {
+                    "bbox": [int(coord) for coord in bbox],
+                    "text": text,
+                    "confidence": float(confidence),
+                }
+            )
 
         # Combine text
-        full_text = ' '.join(text_parts)
+        full_text = " ".join(text_parts)
         avg_confidence = total_confidence / region_count if region_count > 0 else 0
 
         if ocr_mode == "text":
@@ -137,7 +149,7 @@ class PPOCRBackend:
                 "text": full_text,
                 "backend": "ppocr",
                 "confidence": float(avg_confidence),
-                "regions": []
+                "regions": [],
             }
         elif ocr_mode == "format":
             return {
@@ -145,7 +157,7 @@ class PPOCRBackend:
                 "backend": "ppocr",
                 "confidence": float(avg_confidence),
                 "structured": self._create_structured_output(regions),
-                "regions": []
+                "regions": [],
             }
         else:  # fine-grained
             return {
@@ -153,10 +165,12 @@ class PPOCRBackend:
                 "backend": "ppocr",
                 "confidence": float(avg_confidence),
                 "regions": regions,
-                "structured": {}
+                "structured": {},
             }
 
-    def _create_structured_output(self, regions: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _create_structured_output(
+        self, regions: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """Create structured output from PP-OCRv5 regions"""
         # Group regions by lines and paragraphs
         if not regions:
@@ -184,7 +198,7 @@ class PPOCRBackend:
 
         return {
             "paragraphs": [" ".join([r["text"] for r in line]) for line in lines],
-            "lines": lines
+            "lines": lines,
         }
 
     def get_capabilities(self) -> Dict[str, Any]:
@@ -197,5 +211,5 @@ class PPOCRBackend:
             "gpu_support": True,
             "strengths": ["speed", "accuracy", "industrial_use", "cpu_efficient"],
             "limitations": ["gpu_optional", "language_specific"],
-            "model_size": "~100MB"
+            "model_size": "~100MB",
         }

@@ -9,23 +9,33 @@ from typing import Dict, Any, Optional, List
 import torch
 from PIL import Image
 
+from ..core.backend_manager import OCRBackend
+from ..core.config import OCRConfig
+
 try:
     from diffusers import QwenImageLayeredPipeline
+
     DIFFUSERS_AVAILABLE = True
 except ImportError:
     DIFFUSERS_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
-class QwenLayeredBackend:
+
+class QwenLayeredBackend(OCRBackend):
     """Qwen-Image-Layered backend for image decomposition and layered OCR"""
 
-    def __init__(self, config: Dict[str, Any]):
-        self.config = config
+    def __init__(self, config: OCRConfig):
+        super().__init__("qwen-layered", config)
         self.pipeline = None
-        self.device = config.get('device', 'cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = getattr(config, "ocr_device", None) or (
+            "cuda" if torch.cuda.is_available() else "cpu"
+        )
         self.model_name = "Qwen/Qwen-Image-Layered"
-        self.cache_dir = Path(config.get('cache_dir', Path.home() / ".cache" / "ocr_mcp"))
+        self.cache_dir = Path(
+            getattr(config, "ocr_cache_dir", None)
+            or str(Path.home() / ".cache" / "qwen-layered")
+        )
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def is_available(self) -> bool:
@@ -35,6 +45,7 @@ class QwenLayeredBackend:
 
         try:
             from huggingface_hub import model_info
+
             model_info(self.model_name)
             return True
         except Exception as e:
@@ -54,10 +65,10 @@ class QwenLayeredBackend:
             self.pipeline = QwenImageLayeredPipeline.from_pretrained(
                 self.model_name,
                 cache_dir=str(self.cache_dir),
-                torch_dtype=torch.float16 if self.device == 'cuda' else torch.float32
+                torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
             )
 
-            if self.device == 'cuda':
+            if self.device == "cuda":
                 self.pipeline = self.pipeline.to(self.device)
 
             logger.info("Qwen-Image-Layered model loaded successfully")
@@ -71,7 +82,7 @@ class QwenLayeredBackend:
         self,
         image_path: str,
         ocr_mode: str = "text",
-        region: Optional[List[int]] = None
+        region: Optional[List[int]] = None,
     ) -> Dict[str, Any]:
         """Process document with Qwen-Image-Layered decomposition"""
 
@@ -80,7 +91,7 @@ class QwenLayeredBackend:
 
         try:
             # Load and preprocess image
-            image = Image.open(image_path).convert('RGB')
+            image = Image.open(image_path).convert("RGB")
 
             # Apply region cropping if specified
             if region and len(region) == 4:
@@ -105,7 +116,6 @@ class QwenLayeredBackend:
             # Generate layered decomposition
             # This is a simplified implementation - actual Qwen-Image-Layered
             # would decompose into semantic layers
-            prompt = "Decompose this image into text, background, and graphic layers"
 
             # Placeholder for actual Qwen-Image-Layered processing
             # result = self.pipeline(
@@ -124,9 +134,7 @@ class QwenLayeredBackend:
             return [image]  # Fallback to original image
 
     async def _process_layers_for_ocr(
-        self,
-        layers: List[Image.Image],
-        ocr_mode: str
+        self, layers: List[Image.Image], ocr_mode: str
     ) -> Dict[str, Any]:
         """Process decomposed layers for OCR"""
         # This would use another OCR backend to process the layers
@@ -139,22 +147,24 @@ class QwenLayeredBackend:
         for i, layer in enumerate(layers):
             # Process each layer
             # In practice, this would use a text-focused OCR backend
-            layer_text = f"Layer {i+1} content"  # Placeholder
+            layer_text = f"Layer {i + 1} content"  # Placeholder
             combined_text += layer_text + "\n"
 
-            regions.append({
-                "bbox": [0, 0, layer.width, layer.height],
-                "text": layer_text,
-                "confidence": confidence,
-                "layer": i
-            })
+            regions.append(
+                {
+                    "bbox": [0, 0, layer.width, layer.height],
+                    "text": layer_text,
+                    "confidence": confidence,
+                    "layer": i,
+                }
+            )
 
         if ocr_mode == "text":
             return {
                 "text": combined_text.strip(),
                 "backend": "qwen-layered",
                 "confidence": confidence,
-                "regions": []
+                "regions": [],
             }
         elif ocr_mode == "format":
             return {
@@ -162,7 +172,7 @@ class QwenLayeredBackend:
                 "backend": "qwen-layered",
                 "confidence": confidence,
                 "structured": self._create_layered_structure(layers),
-                "regions": []
+                "regions": [],
             }
         else:  # fine-grained
             return {
@@ -170,7 +180,7 @@ class QwenLayeredBackend:
                 "backend": "qwen-layered",
                 "confidence": confidence,
                 "regions": regions,
-                "structured": self._create_layered_structure(layers)
+                "structured": self._create_layered_structure(layers),
             }
 
     def _create_layered_structure(self, layers: List[Image.Image]) -> Dict[str, Any]:
@@ -181,11 +191,11 @@ class QwenLayeredBackend:
                 {
                     "index": i,
                     "dimensions": f"{layer.width}x{layer.height}",
-                    "type": "unknown"  # Would be determined by decomposition
+                    "type": "unknown",  # Would be determined by decomposition
                 }
                 for i, layer in enumerate(layers)
             ],
-            "decomposition_method": "qwen-layered"
+            "decomposition_method": "qwen-layered",
         }
 
     def get_capabilities(self) -> Dict[str, Any]:
@@ -198,5 +208,5 @@ class QwenLayeredBackend:
             "gpu_support": True,
             "strengths": ["layer_decomposition", "mixed_content", "complex_documents"],
             "limitations": ["experimental", "resource_intensive"],
-            "model_size": "~7GB"
+            "model_size": "~7GB",
         }

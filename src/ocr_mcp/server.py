@@ -3,15 +3,14 @@ OCR-MCP Server: Revolutionary Document Understanding Server
 """
 
 import logging
+import asyncio
+from pathlib import Path
 
 from fastmcp import FastMCP
 
 from .core.config import OCRConfig
 from .core.backend_manager import BackendManager
-from .tools.ocr_tools import register_document_processing_tools
-from .tools.image_tools import register_image_management_tools
-from .tools.scanner_tools import register_scanner_operations_tools
-from .tools.workflow_tools import register_workflow_management_tools
+from .tools.ocr_tools import register_sota_tools
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -54,18 +53,65 @@ BACKEND SELECTION:
 - PP-OCRv5: Industrial-grade OCR, fast and reliable
 - Tesseract: Classic OCR, good fallback option
 
-Always provide clear, actionable results with confidence scores and processing details."""
+Always provide clear, actionable results with confidence scores and processing details.""",
 )
+
+
+# Resources
+@app.resource("resource://ocr/logs")
+def get_ocr_logs() -> str:
+    """Get the latest OCR processing logs"""
+    try:
+        log_path = Path("ocr_processing.log")
+        if log_path.exists():
+            return log_path.read_text()
+        return "No OCR logs found."
+    except Exception as e:
+        return f"Error reading logs: {e}"
+
+
+# Prompts
+@app.prompt("prompt://ocr/process-instructions")
+def get_process_instructions_prompt() -> str:
+    """Prompt for helping users construct OCR processing instructions"""
+    return """You are helping a user construct OCR processing instructions for the ocr-mcp server.
+The user wants to process a document. Ask them for:
+1. The path to the document (file://...)
+2. The preferred backend (auto, deepseek-ocr, florence-2, etc.)
+3. Any specific regions of interest [x1, y1, x2, y2]
+4. Whether they need format conversion (e.g., to searchable PDF)
+
+Then, help them call the `document_processing` tool with the appropriate `operation="process_document"`."""
+
 
 # Global instances
 config = OCRConfig()
 backend_manager = BackendManager(config)
 
-# Register portmanteau tools (replacing individual tools for better discoverability)
-register_document_processing_tools(app, backend_manager, config)
-register_image_management_tools(app, backend_manager, config)
-register_scanner_operations_tools(app, backend_manager, config)
-register_workflow_management_tools(app, backend_manager, config)
+# Register all tools using SOTA registration
+# Register all tools using SOTA registration
+register_sota_tools(app, backend_manager, config)
+
+
+async def run_server():
+    """Run the server with background services."""
+    from .services.watch_folder import WatchFolderService
+
+    # Initialize and start watch folder service
+    watch_service = WatchFolderService(backend_manager)
+    # We can't await start() directly as it runs forever, so just start the task
+    # The start method manages its own loop
+    watch_task = asyncio.create_task(watch_service.start())
+
+    try:
+        await app.run_stdio_async()
+    finally:
+        watch_service.stop()
+        try:
+            # Give it a moment to stop gracefully
+            await asyncio.wait_for(watch_task, timeout=2.0)
+        except (asyncio.TimeoutError, asyncio.CancelledError):
+            pass
 
 
 def main():
@@ -75,7 +121,11 @@ def main():
 
     # Start the MCP server
     import asyncio
-    asyncio.run(app.run_stdio_async())
+
+    try:
+        asyncio.run(run_server())
+    except KeyboardInterrupt:
+        logger.info("Server stopped by user")
 
 
 if __name__ == "__main__":

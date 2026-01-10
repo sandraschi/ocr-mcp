@@ -8,6 +8,7 @@ import logging
 from typing import Dict, Any, Optional, List
 
 from .wia_scanner import WIABackend, ScannerInfo, ScanSettings, ScannerProperties
+from .bridge_scanner import BridgeScannerBackend
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ class ScannerManager:
     def __init__(self):
         self.backends = {
             "wia": WIABackend(),
+            "bridge": BridgeScannerBackend(),
             # Future: "twain": TWAINBackend(),
             # Future: "sane": SANEBackend(),
         }
@@ -61,7 +63,9 @@ class ScannerManager:
                         self._discovered_scanners[unique_id] = scanner
                         all_scanners.append(scanner)
 
-                    logger.info(f"{backend_name.upper()} backend found {len(scanners)} scanners")
+                    logger.info(
+                        f"{backend_name.upper()} backend found {len(scanners)} scanners"
+                    )
                 except Exception as e:
                     logger.error(f"Error discovering scanners with {backend_name}: {e}")
 
@@ -163,7 +167,7 @@ class ScannerManager:
         device_id: str,
         settings: Dict[str, Any],
         count: int = 10,
-        auto_process: bool = True
+        auto_process: bool = True,
     ) -> List[Any]:
         """
         Perform batch scanning of multiple documents.
@@ -225,7 +229,9 @@ class ScannerManager:
 
     def get_available_backends(self) -> List[str]:
         """Get list of available scanner backends."""
-        return [name for name, backend in self.backends.items() if backend.is_available()]
+        return [
+            name for name, backend in self.backends.items() if backend.is_available()
+        ]
 
     def get_backend_status(self) -> Dict[str, bool]:
         """Get status of all scanner backends."""
@@ -234,9 +240,3 @@ class ScannerManager:
 
 # Global scanner manager instance
 scanner_manager = ScannerManager()
-
-
-
-
-
-

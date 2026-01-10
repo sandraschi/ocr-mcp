@@ -1,0 +1,51 @@
+Could not generate WIA type library: [WinError -2147312566] Error loading type library/DLL
+INFO: Could not find files for the given pattern(s).
+C:\Users\sandr\AppData\Local\Programs\Python\Python310\lib\site-packages\paddle\utils\cpp_extension\extension_utils.py:718: UserWarning: No ccache found. Please be aware that recompiling all source files may be required. You can download and install ccache from: https://github.com/ccache/ccache/blob/master/doc/INSTALL.md
+  warnings.warn(warning_message)
+Checking connectivity to the model hosters, this may take a while. To bypass this check, set `DISABLE_MODEL_SOURCE_CHECK` to `True`.
+[2026-01-01 14:34:13,517] [ WARNING] mistral_ocr_backend.py:41 - Mistral OCR backend not available: No API key configured
+Creating model: ('PP-LCNet_x1_0_doc_ori', None)
+Model files already exist. Using cached files. To redownload, please delete the directory manually: `C:\Users\sandr\.paddlex\official_models\PP-LCNet_x1_0_doc_ori`.
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I0101 14:34:21.470067 366776 onednn_context.cc:81] oneDNN v3.6.2
+Creating model: ('UVDoc', None)
+Model files already exist. Using cached files. To redownload, please delete the directory manually: `C:\Users\sandr\.paddlex\official_models\UVDoc`.
+Creating model: ('PP-LCNet_x1_0_textline_ori', None)
+Model files already exist. Using cached files. To redownload, please delete the directory manually: `C:\Users\sandr\.paddlex\official_models\PP-LCNet_x1_0_textline_ori`.
+Creating model: ('PP-OCRv5_server_det', None)
+Model files already exist. Using cached files. To redownload, please delete the directory manually: `C:\Users\sandr\.paddlex\official_models\PP-OCRv5_server_det`.
+Creating model: ('en_PP-OCRv5_mobile_rec', None)
+Model files already exist. Using cached files. To redownload, please delete the directory manually: `C:\Users\sandr\.paddlex\official_models\en_PP-OCRv5_mobile_rec`.
+Starting OCR Multi-Backend Test
+Source Image: D:\Dev\repos\ocr-mcp\tests\fixtures\test_sample.png
+------------------------------------------------------------
+
+[Testing Backend: tesseract]
+Status: SUCCESS
+Processing Time: 0.58s
+Extracted Text (first 200 chars):
+>>>>>>>>>>>>>>>>>>>>
+OCR-MCP Verification Test
+
+Date: 2026-01-01
+
+Backend: Multi-Engine Test
+
+This is a sample document for testing OCR extraction.
+It contains multiple lines of text to verify
+segmentation and character r...
+>>>>>>>>>>>>>>>>>>>>
+
+[Testing Backend: easyocr]
+Status: SUCCESS
+Processing Time: 4.56s
+Extracted Text (first 200 chars):
+>>>>>>>>>>>>>>>>>>>>
+OCR-MCP Verification Test Date: 2026-01-01 Backend: Multi-Engine Test This is a sample document for testing OCR extraction: It contains multiple lines of text to verify segmentation and character reco...
+>>>>>>>>>>>>>>>>>>>>
+
+[Testing Backend: pp-ocr]
+Status: FAILED
+Error: 'PPOCRBackend' object has no attribute 'name'
+------------------------------------------------------------
+OCR Multi-Backend Test Completed

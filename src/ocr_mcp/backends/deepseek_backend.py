@@ -9,24 +9,33 @@ from typing import Dict, Any, Optional, List
 import torch
 from PIL import Image
 
+from ..core.backend_manager import OCRBackend
+from ..core.config import OCRConfig
+
 try:
     from transformers import AutoModelForCausalLM, AutoTokenizer
+
     TRANSFORMERS_AVAILABLE = True
 except ImportError:
     TRANSFORMERS_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
-class DeepSeekOCRBackend:
+
+class DeepSeekOCRBackend(OCRBackend):
     """DeepSeek-OCR backend for high-accuracy document processing"""
 
-    def __init__(self, config: Dict[str, Any]):
-        self.config = config
+    def __init__(self, config: OCRConfig):
+        super().__init__("deepseek-ocr", config)
         self.model = None
         self.tokenizer = None
-        self.device = config.get('device', 'cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = getattr(config, "ocr_device", None) or (
+            "cuda" if torch.cuda.is_available() else "cpu"
+        )
         self.model_name = "deepseek-ai/DeepSeek-OCR"
-        self.cache_dir = Path(config.get('cache_dir', Path.home() / ".cache" / "ocr_mcp"))
+        self.cache_dir = Path(
+            getattr(config, "ocr_cache_dir", None) or Path.home() / ".cache" / "ocr_mcp"
+        )
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def is_available(self) -> bool:
@@ -37,6 +46,7 @@ class DeepSeekOCRBackend:
         try:
             # Check if model can be loaded
             from huggingface_hub import model_info
+
             model_info(self.model_name)
             return True
         except Exception as e:
@@ -54,20 +64,18 @@ class DeepSeekOCRBackend:
 
             # Load tokenizer and model
             self.tokenizer = AutoTokenizer.from_pretrained(
-                self.model_name,
-                cache_dir=str(self.cache_dir),
-                trust_remote_code=True
+                self.model_name, cache_dir=str(self.cache_dir), trust_remote_code=True
             )
 
             self.model = AutoModelForCausalLM.from_pretrained(
                 self.model_name,
                 cache_dir=str(self.cache_dir),
                 trust_remote_code=True,
-                torch_dtype=torch.float16 if self.device == 'cuda' else torch.float32,
-                device_map="auto" if self.device == 'cuda' else None
+                torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
+                device_map="auto" if self.device == "cuda" else None,
             )
 
-            if self.device == 'cpu':
+            if self.device == "cpu":
                 self.model = self.model.to(self.device)
 
             logger.info("DeepSeek-OCR model loaded successfully")
@@ -81,7 +89,7 @@ class DeepSeekOCRBackend:
         self,
         image_path: str,
         ocr_mode: str = "text",
-        region: Optional[List[int]] = None
+        region: Optional[List[int]] = None,
     ) -> Dict[str, Any]:
         """Process document with DeepSeek-OCR"""
 
@@ -90,7 +98,7 @@ class DeepSeekOCRBackend:
 
         try:
             # Load and preprocess image
-            image = Image.open(image_path).convert('RGB')
+            image = Image.open(image_path).convert("RGB")
 
             # Apply region cropping if specified
             if region and len(region) == 4:
@@ -100,7 +108,7 @@ class DeepSeekOCRBackend:
             # Convert to tensor
             inputs = self.tokenizer(image, return_tensors="pt")
 
-            if self.device == 'cuda':
+            if self.device == "cuda":
                 inputs = {k: v.cuda() for k, v in inputs.items()}
 
             # Generate OCR results
@@ -110,7 +118,7 @@ class DeepSeekOCRBackend:
                     max_length=1024,
                     num_beams=4,
                     early_stopping=True,
-                    do_sample=False
+                    do_sample=False,
                 )
 
             # Decode results
@@ -122,7 +130,7 @@ class DeepSeekOCRBackend:
                     "text": text.strip(),
                     "backend": "deepseek",
                     "confidence": 0.95,  # DeepSeek typically has high confidence
-                    "regions": []
+                    "regions": [],
                 }
             elif ocr_mode == "format":
                 # Parse structured output if available
@@ -131,7 +139,7 @@ class DeepSeekOCRBackend:
                     "backend": "deepseek",
                     "confidence": 0.95,
                     "structured": self._parse_structured_output(text),
-                    "regions": []
+                    "regions": [],
                 }
             else:  # fine-grained
                 result = {
@@ -139,7 +147,7 @@ class DeepSeekOCRBackend:
                     "backend": "deepseek",
                     "confidence": 0.95,
                     "regions": self._extract_regions(text, image.size),
-                    "structured": {}
+                    "structured": {},
                 }
 
             return result
@@ -154,9 +162,9 @@ class DeepSeekOCRBackend:
         # This is a placeholder for actual parsing logic
         return {
             "title": "",
-            "paragraphs": text.split('\n\n'),
+            "paragraphs": text.split("\n\n"),
             "tables": [],
-            "figures": []
+            "figures": [],
         }
 
     def _extract_regions(self, text: str, image_size: tuple) -> List[Dict[str, Any]]:
@@ -164,11 +172,9 @@ class DeepSeekOCRBackend:
         # This would parse region information if available
         # For now, return a single region covering the whole image
         width, height = image_size
-        return [{
-            "bbox": [0, 0, width, height],
-            "text": text.strip(),
-            "confidence": 0.95
-        }]
+        return [
+            {"bbox": [0, 0, width, height], "text": text.strip(), "confidence": 0.95}
+        ]
 
     def get_capabilities(self) -> Dict[str, Any]:
         """Get backend capabilities"""
@@ -180,5 +186,5 @@ class DeepSeekOCRBackend:
             "gpu_support": True,
             "strengths": ["high_accuracy", "complex_layouts", "mathematical_formulas"],
             "limitations": ["gpu_required", "large_model_size"],
-            "model_size": "~7GB"
+            "model_size": "~7GB",
         }

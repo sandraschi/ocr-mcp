@@ -1,3 +1,6 @@
+import logging
+
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 """
 Run the OCR-MCP WebApp
@@ -12,19 +15,18 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / "src"))
 
-from webapp.backend.app import main
+from backend.app import main
 
 if __name__ == "__main__":
-    port = os.getenv("WEBAPP_PORT", "7460")
-    print("STARTING OCR-MCP WebApp...")
-    print(f"Web interface will be available at: http://localhost:{port}")
-    print("Press Ctrl+C to stop the server")
-    print()
+    port = os.getenv("WEBAPP_PORT", "15000")
+    logger.info("STARTING OCR-MCP WebApp...")
+    logger.info(f"Web interface will be available at: http://localhost:{port}")
+    logger.info("Press Ctrl+C to stop the server")
 
     try:
         main()
     except KeyboardInterrupt:
-        print("\nOCR-MCP WebApp stopped")
+        logger.info("\nOCR-MCP WebApp stopped")
     except Exception as e:
-        print(f"ERROR starting webapp: {e}")
+        logger.info(f"ERROR starting webapp: {e}")
         sys.exit(1)

@@ -56,7 +56,9 @@ OCR-MCP provides a full document processing ecosystem:
 #### Primary OCR Engines
 
 **🚀 Mistral OCR 3 (December 2025)** - *State-of-the-Art Document Processing*
-- **Performance**: 74% win rate over Mistral OCR 2 on forms, scanned docs, complex tables, handwriting
+- **Performance**: 74% win rate over Mistral OCR 2 on forms, scanned docs, complex tables, handwriting.
+- **Latency**: ~0.7s average processing time (OCR-2512 SOTA API).
+- **Integration**: Dedicated SOTA OCR payload for high-fidelity Markdown extraction.
 - **Capabilities**: Advanced handwriting recognition, form processing, scanned document handling, complex table reconstruction
 - **Strengths**: Superior accuracy on enterprise document types, cost-effective at $2/1K pages, HTML table reconstruction
 - **Repository**: https://mistral.ai/products/ocr
@@ -202,7 +204,7 @@ The OCR-MCP web interface is accessible at:
 | **Qwen-Image-Layered** | ✅ | ✅ | ✅ | ✅ | ✅ | 200K+ | Mixed content, comics |
 | **EasyOCR** | ✅ | ❌ | ✅ | ✅ | ✅ | - | Handwriting, general |
 
-### Portmanteau Tool Ecosystem (4 Tools)
+### Portmanteau Tool Ecosystem (6 Tools)
 
 #### 🎯 Document Processing (Portmanteau Tool)
 **`document_processing(operation="...")`** - Consolidates OCR, analysis, and quality assessment
@@ -250,17 +252,20 @@ The OCR-MCP web interface is accessible at:
 - `"ocr_health_check"`: System health and backend status
 - `"list_backends"`: Available OCR backends and capabilities
 - `"manage_models"`: GPU memory and model lifecycle management
-- **`list_scanners`** - Device discovery
-- **`scanner_properties`** - Capability detection
-- **`get_scanner_settings`** - Current configuration query
-- **`set_scanner_settings`** - Parameter configuration
-- **`get_raw_scan`** - Raw scan acquisition (no OCR)
-- **`scan_document`** / **`scan_batch`** / **`preview_scan`** - Scanning operations
 
-#### 🔧 System Management (3 tools)
-- **`ocr_health_check`** - Backend availability status
-- **`list_backends`** - Engine capabilities overview
-- **`monitor_batch_progress`** - Processing status monitoring
+#### ❓ Help & Documentation (Portmanteau Tool)
+**`help(level="...", topic="...")`** - Contextual help and documentation
+- `"basic"`: Quick start guide and essential commands
+- `"intermediate"`: Detailed tool descriptions and workflows
+- `"advanced"`: Technical architecture and implementation details
+- `"expert"`: Development troubleshooting and system internals
+
+#### 📊 System Status (Portmanteau Tool)
+**`status(level="...", focus="...")`** - System monitoring and diagnostics
+- `"basic"`: Quick system health overview
+- `"intermediate"`: Detailed backend and resource status
+- `"advanced"`: Comprehensive diagnostics with performance metrics
+- Custom focus areas: `"backends"`, `"memory"`, `"disk"`, `"network"`
 
 ### WebApp Architecture
 
@@ -722,23 +727,25 @@ result = await calibre_ocr(
 
 ## 📈 Roadmap
 
-### Immediate (Next 4 weeks)
-- [ ] Complete core infrastructure
-- [ ] GOT-OCR2.0 integration
-- [ ] Basic tool implementation
-- [ ] Documentation and examples
+### ✅ Completed Milestones
+- [x] FastMCP 2.13+ Core Infrastructure
+- [x] GOT-OCR2.0 Multi-mode Integration
+- [x] Robust WIA 2.0 Hardware Integration (Canon LiDE 400 verified)
+- [x] Professional React/Next.js Web Interface
+- [x] Mistral OCR 3 (OCR-2512) SOTA Backend Implementation
+- [x] Multi-format Pipeline (PDF, CBZ, Scanned Docs)
+
+### Immediate (Next 2-4 weeks)
+- [ ] Performance Benchmarking Suite
+- [ ] Advanced Image Preprocessing (Deskew/Enhance)
+- [ ] TWAIN Backend Support
+- [ ] Multi-language Model Fine-tuning
 
 ### Medium-term (2-3 months)
-- [ ] Multi-backend support
-- [ ] Advanced processing modes
-- [ ] Batch processing optimization
-- [ ] Performance benchmarking
-
-### Long-term (6+ months)
-- [ ] Community backend integrations
-- [ ] Specialized domain models
-- [ ] Real-time processing capabilities
-- [ ] Mobile app integration
+- [ ] Advanced Layout Intelligence (Panel analysis for Manga)
+- [ ] Batch processing concurrency optimizations
+- [ ] Cloud deployment (Docker/Kubernetes)
+- [ ] Mobile scanning workflow integration
 
 ## 🤝 Contributing
 

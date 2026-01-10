@@ -1,14 +1,14 @@
 [tool.poetry]
 name = "ocr-mcp"
-version = "0.1.0"
+version = "0.2.0"
 description = "FastMCP server providing comprehensive OCR capabilities to the MCP ecosystem"
 authors = ["Your Name <your.email@example.com>"]
 readme = "README.md"
-packages = [{include = "ocr_mcp"}]
+packages = [{include = "ocr_mcp", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-fastmcp = {extras = ["server"], version = ">=2.13.0,<2.14.0"}
+fastmcp = {extras = ["server"], version = "^2.14.1"}
 
 # Core ML/AI dependencies
 transformers = "^4.35.0"
@@ -23,6 +23,7 @@ huggingface-hub = "^0.17.0"
 pytesseract = "^0.3.10"
 easyocr = "^1.7.0"
 httpx = "^0.28.1"  # For Mistral OCR API
+requests = "^2.31.0"
 
 # Image processing
 pillow = "^10.0.0"
@@ -86,6 +87,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+select = ["E", "W", "F", "I", "B", "UP"]
 
 [tool.black]
 line-length = 100

@@ -81,7 +81,7 @@ class ModelInstaller:
             except Exception as e:
                 logger.warning(f"Could not load status file: {e}")
 
-    async def _install_python_package(self, package_name: str, dry_run: bool = False) -> bool:
+    asynasync def _install_python_package(self, package_name: str, dry_run: bool = False) -> bool:
         """Install a Python package using pip."""
         logger.info(f"Installing Python package: {package_name}...")
         if dry_run:
@@ -120,7 +120,7 @@ class ModelInstaller:
         except Exception as e:
             logger.warning(f"Could not save status file: {e}")
 
-    async def install_deepseek_ocr(self, dry_run: bool = False) -> bool:
+    asynasync def install_deepseek_ocr(self, dry_run: bool = False) -> bool:
         """Install DeepSeek-OCR model."""
         logger.info("Installing DeepSeek-OCR...")
 
@@ -169,7 +169,7 @@ class ModelInstaller:
 
         return True
 
-    async def install_mistral_ocr(self, dry_run: bool = False) -> bool:
+    asynasync def install_mistral_ocr(self, dry_run: bool = False) -> bool:
         """Install Mistral OCR 3 (API-based)."""
         logger.info("Installing Mistral OCR 3...")
 
@@ -206,7 +206,7 @@ class ModelInstaller:
 
         return True
 
-    async def install_florence_2(self, dry_run: bool = False) -> bool:
+    asynasync def install_florence_2(self, dry_run: bool = False) -> bool:
         """Install Florence-2 model."""
         logger.info("Installing Florence-2...")
 
@@ -247,7 +247,7 @@ class ModelInstaller:
 
         return True
 
-    async def install_dots_ocr(self, dry_run: bool = False) -> bool:
+    asynasync def install_dots_ocr(self, dry_run: bool = False) -> bool:
         """Install DOTS.OCR model."""
         logger.info("Installing DOTS.OCR...")
 
@@ -269,7 +269,7 @@ class ModelInstaller:
 
         return True
 
-    async def install_pp_ocrv5(self, dry_run: bool = False) -> bool:
+    asynasync def install_pp_ocrv5(self, dry_run: bool = False) -> bool:
         """Install PP-OCRv5 (PaddlePaddle)."""
         logger.info("Installing PP-OCRv5...")
 
@@ -298,7 +298,7 @@ class ModelInstaller:
 
         return True
 
-    async def install_qwen_image_layered(self, dry_run: bool = False) -> bool:
+    asynasync def install_qwen_image_layered(self, dry_run: bool = False) -> bool:
         """Install Qwen-Image-Layered model."""
         logger.info("Installing Qwen-Image-Layered...")
 
@@ -330,7 +330,7 @@ class ModelInstaller:
 
         return True
 
-    async def install_got_ocr(self, dry_run: bool = False) -> bool:
+    asynasync def install_got_ocr(self, dry_run: bool = False) -> bool:
         """Install GOT-OCR2.0."""
         logger.info("Installing GOT-OCR2.0...")
 
@@ -359,7 +359,7 @@ class ModelInstaller:
 
         return True
 
-    async def install_tesseract(self, dry_run: bool = False) -> bool:
+    asynasync def install_tesseract(self, dry_run: bool = False) -> bool:
         """Install Tesseract OCR."""
         logger.info("Installing Tesseract OCR...")
 
@@ -372,7 +372,7 @@ class ModelInstaller:
                 try:
                     version = pytesseract.get_tesseract_version()
                     logger.info(f"Tesseract version: {version}")
-                except Exception:
+                except Exception as e:
                     logger.warning("Tesseract binary not found in PATH")
                     logger.info("Please install Tesseract OCR from: https://github.com/UB-Mannheim/tesseract/wiki")
                     logger.info("Or run: choco install tesseract (Windows) / brew install tesseract (macOS)")
@@ -401,7 +401,7 @@ class ModelInstaller:
 
         return True
 
-    async def install_easyocr(self, dry_run: bool = False) -> bool:
+    asynasync def install_easyocr(self, dry_run: bool = False) -> bool:
         """Install EasyOCR."""
         logger.info("Installing EasyOCR...")
 
@@ -427,7 +427,7 @@ class ModelInstaller:
 
         return True
 
-    async def install_system_dependencies(self, dry_run: bool = False) -> bool:
+    asynasync def install_system_dependencies(self, dry_run: bool = False) -> bool:
         """Install system-level dependencies."""
         logger.info("Checking system dependencies...")
 
@@ -452,7 +452,7 @@ class ModelInstaller:
 
         return True
 
-    async def verify_installation(self, backends: List[str]) -> bool:
+    asynasync def verify_installation(self, backends: List[str]) -> bool:
         """Verify that all requested backends are properly installed."""
         logger.info("Verifying installations...")
 
@@ -535,7 +535,7 @@ class ModelInstaller:
 
         return success
 
-    async def install_all(self, backends: List[str], dry_run: bool = False, skip_verification: bool = False) -> bool:
+    asynasync def install_all(self, backends: List[str], dry_run: bool = False, skip_verification: bool = False) -> bool:
         """Install all specified backends."""
         logger.info(f"Installing backends: {', '.join(backends)}")
         if dry_run:
@@ -617,7 +617,7 @@ class ModelInstaller:
         return success
 
 
-async def main():
+asynasync def main():
     """Main installation function."""
     parser = argparse.ArgumentParser(
         description="OCR-MCP Model Installation Script",
@@ -717,7 +717,7 @@ async def main():
     return success
 
 
-async def main():
+asynasync def main():
     """Main installation function (renamed to avoid conflict)."""
     parser = argparse.ArgumentParser(
         description="OCR-MCP Model Installation Script",

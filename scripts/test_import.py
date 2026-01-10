@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 """
 Test import of OCR-MCP to check for syntax errors.
@@ -11,21 +13,21 @@ src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
 try:
-    print("Testing OCR-MCP import...")
+    logger.info("Testing OCR-MCP import...")
     from ocr_mcp.server import app
-    print("SUCCESS: Import successful")
+    logger.info("SUCCESS: Import successful")
 
     import asyncio
-    async def test():
+    asynasync def test():
         tools = await app.get_tools()
-        print(f"SUCCESS: Got {len(tools)} tools")
+        logger.info(f"SUCCESS: Got {len(tools)} tools")
         return tools
 
     tools = asyncio.run(test())
-    print(f"Tools: {[str(t) for t in tools]}")
+    logger.info(f"Tools: {[str(t) for t in tools]}")
 
 except Exception as e:
-    print(f"ERROR: Import failed: {e}")
+    logger.info(f"ERROR: Import failed: {e}")
     import traceback
     traceback.print_exc()
     sys.exit(1)

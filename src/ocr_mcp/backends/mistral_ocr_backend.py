@@ -24,8 +24,8 @@ class MistralOCRBackend(OCRBackend):
         super().__init__("mistral-ocr", config)
 
         # Check if we have API key and can connect
-        self.api_key = getattr(config, 'mistral_api_key', None)
-        self.base_url = getattr(config, 'mistral_base_url', 'https://api.mistral.ai/v1')
+        self.api_key = getattr(config, "mistral_api_key", None)
+        self.base_url = getattr(config, "mistral_base_url", "https://api.mistral.ai/v1")
 
         if self.api_key:
             try:
@@ -38,7 +38,7 @@ class MistralOCRBackend(OCRBackend):
                 logger.warning(f"Mistral OCR backend not available: {e}")
         else:
             self._available = False
-            logger.warning("Mistral OCR backend not available: No API key configured")
+            logger.info("Mistral OCR backend not available: No API key configured")
 
     def _test_api_connection(self) -> bool:
         """Test connection to Mistral API."""
@@ -46,10 +46,10 @@ class MistralOCRBackend(OCRBackend):
             with httpx.Client(timeout=10.0) as client:
                 response = client.get(
                     f"{self.base_url}/models",
-                    headers={"Authorization": f"Bearer {self.api_key}"}
+                    headers={"Authorization": f"Bearer {self.api_key}"},
                 )
                 return response.status_code == 200
-        except Exception:
+        except Exception as e:
             return False
 
     async def process_image(
@@ -59,7 +59,7 @@ class MistralOCRBackend(OCRBackend):
         output_format: str = "text",
         language: Optional[str] = None,
         region: Optional[List[int]] = None,
-        **kwargs
+        **kwargs,
     ) -> Dict[str, Any]:
         """
         Process image with Mistral OCR 3 API.
@@ -75,10 +75,7 @@ class MistralOCRBackend(OCRBackend):
             OCR processing results
         """
         if not self.is_available():
-            return {
-                "success": False,
-                "error": "Mistral OCR backend not available"
-            }
+            return {"success": False, "error": "Mistral OCR backend not available"}
 
         try:
             # Read and encode image
@@ -86,17 +83,17 @@ class MistralOCRBackend(OCRBackend):
             if not image_path_obj.exists():
                 return {
                     "success": False,
-                    "error": f"Image file not found: {image_path}"
+                    "error": f"Image file not found: {image_path}",
                 }
 
-            with open(image_path_obj, 'rb') as f:
-                image_data = base64.b64encode(f.read()).decode('utf-8')
+            with open(image_path_obj, "rb") as f:
+                image_data = base64.b64encode(f.read()).decode("utf-8")
 
             # Prepare API request
-            url = f"{self.base_url}/vision/ocr"
+            url = f"{self.base_url}/ocr"
             headers = {
                 "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
             }
 
             # Determine output format
@@ -107,25 +104,10 @@ class MistralOCRBackend(OCRBackend):
 
             payload = {
                 "model": model,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": f"Please extract all text from this image. Return in {'markdown' if mode == 'markdown' else 'plain text'} format."
-                            },
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{image_data}"
-                                }
-                            }
-                        ]
-                    }
-                ],
-                "max_tokens": 4096,
-                "temperature": 0.1  # Low temperature for consistent OCR results
+                "document": {
+                    "type": "image_url",
+                    "image_url": f"data:image/jpeg;base64,{image_data}",
+                },
             }
 
             # Make API request
@@ -136,15 +118,18 @@ class MistralOCRBackend(OCRBackend):
                     return {
                         "success": False,
                         "error": f"Mistral API error: {response.status_code} - {response.text}",
-                        "backend": "mistral-ocr"
+                        "backend": "mistral-ocr",
                     }
 
                 result = response.json()
-                content = result["choices"][0]["message"]["content"]
 
-                # Estimate processing time and confidence
-                usage = result.get("usage", {})
-                processing_time = usage.get("total_tokens", 1000) * 0.001  # Rough estimate
+                # Combine markdown content from all pages
+                pages = result.get("pages", [])
+                content = "\n\n".join([page.get("markdown", "") for page in pages])
+
+                # Get usage stats
+                usage = result.get("usage_info", {})
+                processing_time = usage.get("total_time", 1.0)  # Seconds if available
 
                 return {
                     "success": True,
@@ -157,11 +142,10 @@ class MistralOCRBackend(OCRBackend):
                     "processing_time": processing_time,
                     "metadata": {
                         "api_model": model,
-                        "tokens_used": usage.get("total_tokens", 0),
-                        "finish_reason": result["choices"][0].get("finish_reason", "unknown"),
-                        "language": language or "auto",
-                        "mistral_ocr_version": "3"
-                    }
+                        "pages": len(pages),
+                        "mistral_ocr_version": "3",
+                        "usage": usage,
+                    },
                 }
 
         except Exception as e:
@@ -169,42 +153,51 @@ class MistralOCRBackend(OCRBackend):
             return {
                 "success": False,
                 "error": f"Mistral OCR processing failed: {str(e)}",
-                "backend": "mistral-ocr"
+                "backend": "mistral-ocr",
             }
 
     def get_capabilities(self) -> Dict[str, Any]:
         """Get Mistral OCR capabilities."""
         base_capabilities = super().get_capabilities()
-        base_capabilities.update({
-            "modes": ["text", "markdown", "json"],
-            "output_formats": ["text", "markdown", "json"],
-            "gpu_support": True,  # Cloud-based, uses GPU infrastructure
-            "languages": ["auto", "en", "fr", "de", "es", "it", "pt", "nl", "ru", "zh", "ja", "ko"],
-            "features": [
-                "state_of_the_art_accuracy",
-                "handwriting_recognition",
-                "form_processing",
-                "table_reconstruction",
-                "complex_layout_analysis",
-                "multi_language_support",
-                "markdown_output",
-                "json_structured_output",
-                "cloud_based_processing"
-            ],
-            "limitations": [
-                "requires_api_key",
-                "cloud_dependency",
-                "api_rate_limits",
-                "no_offline_support"
-            ],
-            "cost_per_1000_pages": "$2.00 (batch discount: $1.00)",
-            "model_version": "mistral-ocr-2512",
-            "benchmark_performance": "74% win rate over Mistral OCR 2"
-        })
+        base_capabilities.update(
+            {
+                "modes": ["text", "markdown", "json"],
+                "output_formats": ["text", "markdown", "json"],
+                "gpu_support": True,  # Cloud-based, uses GPU infrastructure
+                "languages": [
+                    "auto",
+                    "en",
+                    "fr",
+                    "de",
+                    "es",
+                    "it",
+                    "pt",
+                    "nl",
+                    "ru",
+                    "zh",
+                    "ja",
+                    "ko",
+                ],
+                "features": [
+                    "state_of_the_art_accuracy",
+                    "handwriting_recognition",
+                    "form_processing",
+                    "table_reconstruction",
+                    "complex_layout_analysis",
+                    "multi_language_support",
+                    "markdown_output",
+                    "json_structured_output",
+                    "cloud_based_processing",
+                ],
+                "limitations": [
+                    "requires_api_key",
+                    "cloud_dependency",
+                    "api_rate_limits",
+                    "no_offline_support",
+                ],
+                "cost_per_1000_pages": "$2.00 (batch discount: $1.00)",
+                "model_version": "mistral-ocr-2512",
+                "benchmark_performance": "74% win rate over Mistral OCR 2",
+            }
+        )
         return base_capabilities
-
-
-
-
-
-

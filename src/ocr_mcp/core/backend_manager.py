@@ -12,6 +12,7 @@ from .model_manager import model_manager
 # Import scanner manager (optional)
 try:
     from ..backends.scanner.scanner_manager import scanner_manager
+
     SCANNER_AVAILABLE = scanner_manager.is_available()
 except (ImportError, AttributeError):
     SCANNER_AVAILABLE = False
@@ -20,6 +21,7 @@ except (ImportError, AttributeError):
 # Import document processor (optional)
 try:
     from ..backends.document_processor import document_processor
+
     DOCUMENT_PROCESSOR_AVAILABLE = document_processor.is_available()
 except (ImportError, AttributeError):
     DOCUMENT_PROCESSOR_AVAILABLE = False
@@ -43,9 +45,16 @@ class MockOCRBackend:
         """Mock backends can't load models"""
         return False
 
-    async def process_document(self, image_path: str, ocr_mode: str = "text", region: Optional[List[int]] = None) -> Dict[str, Any]:
+    async def process_document(
+        self,
+        image_path: str,
+        ocr_mode: str = "text",
+        region: Optional[List[int]] = None,
+    ) -> Dict[str, Any]:
         """Mock backends raise informative errors"""
-        raise RuntimeError(f"{self.backend_name} backend is not available: {self.error_message}")
+        raise RuntimeError(
+            f"{self.backend_name} backend is not available: {self.error_message}"
+        )
 
     def get_capabilities(self) -> Dict[str, Any]:
         """Return mock capabilities"""
@@ -58,8 +67,9 @@ class MockOCRBackend:
             "gpu_support": False,
             "strengths": [],
             "limitations": ["not_available"],
-            "model_size": "unknown"
+            "model_size": "unknown",
         }
+
 
 logger = logging.getLogger(__name__)
 
@@ -77,10 +87,7 @@ class OCRBackend:
         return self._available
 
     async def process_image(
-        self,
-        image_path: str,
-        mode: str = "text",
-        **kwargs
+        self, image_path: str, mode: str = "text", **kwargs
     ) -> Dict[str, Any]:
         """Process an image with this backend."""
         raise NotImplementedError("Subclasses must implement process_image")
@@ -92,7 +99,7 @@ class OCRBackend:
             "available": self.is_available(),
             "modes": ["text"],  # Default capabilities
             "languages": ["en"],
-            "gpu_support": False
+            "gpu_support": False,
         }
 
 
@@ -121,7 +128,8 @@ class BackendManager:
         # DeepSeek-OCR backend
         try:
             from ..backends.deepseek_backend import DeepSeekOCRBackend
-            self.backends["deepseek-ocr"] = DeepSeekOCRBackend(self.config.__dict__)
+
+            self.backends["deepseek-ocr"] = DeepSeekOCRBackend(self.config)
             logger.info("DeepSeek-OCR backend initialized")
         except Exception as e:
             logger.warning(f"Failed to initialize DeepSeek-OCR backend: {e}")
@@ -130,7 +138,8 @@ class BackendManager:
         # Florence-2 backend
         try:
             from ..backends.florence_backend import FlorenceBackend
-            self.backends["florence-2"] = FlorenceBackend(self.config.__dict__)
+
+            self.backends["florence-2"] = FlorenceBackend(self.config)
             logger.info("Florence-2 backend initialized")
         except Exception as e:
             logger.warning(f"Failed to initialize Florence-2 backend: {e}")
@@ -139,7 +148,8 @@ class BackendManager:
         # DOTS.OCR backend
         try:
             from ..backends.dots_backend import DOTSBackend
-            self.backends["dots-ocr"] = DOTSBackend(self.config.__dict__)
+
+            self.backends["dots-ocr"] = DOTSBackend(self.config)
             logger.info("DOTS.OCR backend initialized")
         except Exception as e:
             logger.warning(f"Failed to initialize DOTS.OCR backend: {e}")
@@ -148,7 +158,8 @@ class BackendManager:
         # PP-OCRv5 backend
         try:
             from ..backends.ppocr_backend import PPOCRBackend
-            self.backends["pp-ocrv5"] = PPOCRBackend(self.config.__dict__)
+
+            self.backends["pp-ocrv5"] = PPOCRBackend(self.config)
             logger.info("PP-OCRv5 backend initialized")
         except Exception as e:
             logger.warning(f"Failed to initialize PP-OCRv5 backend: {e}")
@@ -157,7 +168,8 @@ class BackendManager:
         # Qwen-Image-Layered backend
         try:
             from ..backends.qwen_backend import QwenLayeredBackend
-            self.backends["qwen-layered"] = QwenLayeredBackend(self.config.__dict__)
+
+            self.backends["qwen-layered"] = QwenLayeredBackend(self.config)
             logger.info("Qwen-Image-Layered backend initialized")
         except Exception as e:
             logger.warning(f"Failed to initialize Qwen-Image-Layered backend: {e}")
@@ -166,6 +178,7 @@ class BackendManager:
         # Mistral OCR 3 backend (Cloud API)
         try:
             from ..backends.mistral_ocr_backend import MistralOCRBackend
+
             self.backends["mistral-ocr"] = MistralOCRBackend(self.config)
             logger.info("Mistral OCR 3 backend initialized")
         except Exception as e:
@@ -175,6 +188,7 @@ class BackendManager:
         # Legacy backends for compatibility
         try:
             from ..backends.got_ocr_backend import GOTOCRBackend
+
             self.backends["got-ocr"] = GOTOCRBackend(self.config)
             logger.info("GOT-OCR2.0 legacy backend initialized")
         except Exception as e:
@@ -183,6 +197,7 @@ class BackendManager:
 
         try:
             from ..backends.tesseract_backend import TesseractBackend
+
             self.backends["tesseract"] = TesseractBackend(self.config)
             logger.info("Tesseract legacy backend initialized")
         except Exception as e:
@@ -191,6 +206,7 @@ class BackendManager:
 
         try:
             from ..backends.easyocr_backend import EasyOCRBackend
+
             self.backends["easyocr"] = EasyOCRBackend(self.config)
             logger.info("EasyOCR legacy backend initialized")
         except Exception as e:
@@ -199,39 +215,50 @@ class BackendManager:
 
     def get_available_backends(self) -> List[str]:
         """Get list of available backend names."""
-        return [name for name, backend in self.backends.items() if backend.is_available()]
+        return [
+            name for name, backend in self.backends.items() if backend.is_available()
+        ]
 
     def get_backend(self, name: str) -> Optional[OCRBackend]:
         """Get a specific backend by name."""
         return self.backends.get(name)
 
-    def select_backend(self, requested_backend: str = "auto", image_path: Optional[str] = None) -> Optional[OCRBackend]:
+    def select_backend(
+        self, requested_backend: str = "auto", image_path: Optional[str] = None
+    ) -> Optional[OCRBackend]:
         """Select an appropriate backend based on request."""
         if requested_backend == "auto":
             # Intelligent auto-selection based on document analysis
             if image_path:
                 try:
                     from pathlib import Path
-                    optimal_backend_name = self.optimizer.select_optimal_backend(Path(image_path))
+
+                    optimal_backend_name = self.optimizer.select_optimal_backend(
+                        Path(image_path)
+                    )
                     if optimal_backend_name != "auto":
                         backend = self.get_backend(optimal_backend_name)
                         if backend and backend.is_available():
-                            logger.info(f"Intelligent selection: {optimal_backend_name} for {Path(image_path).name}")
+                            logger.info(
+                                f"Intelligent selection: {optimal_backend_name} for {Path(image_path).name}"
+                            )
                             return backend
                 except Exception as e:
-                    logger.warning(f"Intelligent backend selection failed: {e}, falling back to preference order")
+                    logger.warning(
+                        f"Intelligent backend selection failed: {e}, falling back to preference order"
+                    )
 
             # Fallback to preference order if intelligent selection fails
             preference_order = [
-                "mistral-ocr",   # Mistral OCR 3: 74% win rate over OCR2, state-of-the-art
+                "mistral-ocr",  # Mistral OCR 3: 74% win rate over OCR2, state-of-the-art
                 "deepseek-ocr",  # 4.7M downloads, vision-language model
-                "florence-2",    # Microsoft's unified vision-language model
-                "dots-ocr",      # Document structure specialist
-                "pp-ocrv5",      # Industrial PaddlePaddle OCR
+                "florence-2",  # Microsoft's unified vision-language model
+                "dots-ocr",  # Document structure specialist
+                "pp-ocrv5",  # Industrial PaddlePaddle OCR
                 "qwen-layered",  # Image decomposition for complex content
-                "got-ocr",       # Legacy GOT-OCR2.0
-                "tesseract",     # Legacy Tesseract
-                "easyocr"        # Legacy EasyOCR
+                "got-ocr",  # Legacy GOT-OCR2.0
+                "tesseract",  # Legacy Tesseract
+                "easyocr",  # Legacy EasyOCR
             ]
             for backend_name in preference_order:
                 backend = self.get_backend(backend_name)
@@ -250,7 +277,7 @@ class BackendManager:
             "qwen": "qwen-layered",
             "got": "got-ocr",
             "tesseract": "tesseract",
-            "easyocr": "easyocr"
+            "easyocr": "easyocr",
         }
 
         # Normalize backend name
@@ -261,15 +288,13 @@ class BackendManager:
             return backend
 
         # Fallback to auto-selection if requested backend not available
-        logger.warning(f"Requested backend '{requested_backend}' not available, falling back to auto-selection")
+        logger.warning(
+            f"Requested backend '{requested_backend}' not available, falling back to auto-selection"
+        )
         return self.select_backend("auto")
 
     async def process_with_backend(
-        self,
-        backend_name: str,
-        image_path: str,
-        mode: str = "text",
-        **kwargs
+        self, backend_name: str, image_path: str, mode: str = "text", **kwargs
     ) -> Dict[str, Any]:
         """Process an image with a specific backend."""
         backend = self.select_backend(backend_name, image_path)
@@ -277,22 +302,44 @@ class BackendManager:
             return {
                 "success": False,
                 "error": f"No suitable OCR backend available for '{backend_name}'",
-                "available_backends": self.get_available_backends()
+                "available_backends": self.get_available_backends(),
             }
 
         try:
+            # Load model if needed (for newer backends)
+            if hasattr(backend, "load_model"):
+                if (
+                    (hasattr(backend, "model") and backend.model is None)
+                    or (hasattr(backend, "ocr") and backend.ocr is None)
+                    or (hasattr(backend, "pipeline") and backend.pipeline is None)
+                ):
+                    logger.info(
+                        f"Automatically loading model/engine for {backend.name}"
+                    )
+                    await backend.load_model()
+
             # Call the appropriate processing method
-            if hasattr(backend, 'process_document'):
+            if hasattr(backend, "process_document"):
                 # New backend interface
-                result = await backend.process_document(image_path, ocr_mode=mode, **kwargs)
-            elif hasattr(backend, 'process_image'):
+                import inspect
+
+                sig = inspect.signature(backend.process_document)
+                if "ocr_mode" in sig.parameters:
+                    result = await backend.process_document(
+                        image_path, ocr_mode=mode, **kwargs
+                    )
+                else:
+                    result = await backend.process_document(
+                        image_path, mode=mode, **kwargs
+                    )
+            elif hasattr(backend, "process_image"):
                 # Legacy backend interface
                 result = await backend.process_image(image_path, mode, **kwargs)
             else:
                 return {
                     "success": False,
                     "error": f"Backend {backend.name} does not implement processing interface",
-                    "backend_used": backend.name
+                    "backend_used": backend.name,
                 }
 
             result["backend_used"] = backend.name
@@ -302,7 +349,7 @@ class BackendManager:
             return {
                 "success": False,
                 "error": f"OCR processing failed with {backend.name}: {str(e)}",
-                "backend_used": backend.name
+                "backend_used": backend.name,
             }
 
     def get_model_stats(self) -> Dict[str, Any]:
@@ -312,23 +359,14 @@ class BackendManager:
     def optimize_models(self, target_free_mb: int = 1024) -> Dict[str, Any]:
         """Optimize model memory usage"""
         freed_memory = model_manager.optimize_memory(target_free_mb)
-        return {
-            "memory_freed_mb": freed_memory,
-            "optimization_complete": True
-        }
+        return {"memory_freed_mb": freed_memory, "optimization_complete": True}
 
     def preload_models(self) -> Dict[str, Any]:
         """Preload commonly used models"""
         preloaded_count = model_manager.preload_common_models()
-        return {
-            "models_preloaded": preloaded_count,
-            "preloading_complete": True
-        }
+        return {"models_preloaded": preloaded_count, "preloading_complete": True}
 
     def cleanup_idle_models(self, max_idle_seconds: int = 300) -> Dict[str, Any]:
         """Clean up idle models"""
         cleaned_count = model_manager.cleanup_idle_models(max_idle_seconds)
-        return {
-            "models_cleaned": cleaned_count,
-            "cleanup_complete": True
-        }
+        return {"models_cleaned": cleaned_count, "cleanup_complete": True}

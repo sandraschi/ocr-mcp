@@ -78,14 +78,14 @@ class TestRunner:
             if result.returncode == 0:
                 logger.info("SUCCESS: Command completed successfully")
                 if result.stdout:
-                    print(result.stdout)
+                    logger.info(result.stdout)
                 return True
             else:
                 logger.error(f"FAILED: Command failed with exit code {result.returncode}")
                 if result.stdout:
-                    print("STDOUT:", result.stdout)
+                    logger.info("STDOUT:", result.stdout)
                 if result.stderr:
-                    print("STDERR:", result.stderr)
+                    logger.info("STDERR:", result.stderr)
                 return False
 
         except subprocess.TimeoutExpired:
@@ -250,10 +250,10 @@ class TestRunner:
 
             for item in sorted(path.iterdir()):
                 if item.is_dir() and not item.name.startswith('.'):
-                    print(f"{prefix}[DIR] {item.name}/")
+                    logger.info(f"{prefix}[DIR] {item.name}/")
                     print_tree(item, prefix + "  ")
                 elif item.is_file() and item.suffix == '.py':
-                    print(f"{prefix}[FILE] {item.name}")
+                    logger.info(f"{prefix}[FILE] {item.name}")
 
         print_tree(self.test_dir)
 
