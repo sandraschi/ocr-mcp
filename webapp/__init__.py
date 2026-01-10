@@ -1,7 +1,0 @@
-# OCR-MCP WebApp Package
-
-
-
-
-
-

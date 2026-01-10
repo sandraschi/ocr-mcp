@@ -1,0 +1,19 @@
+{
+    "name": "ocr-mcp",
+    "version": "1.0.0",
+    "description": "Professional Document Processing Suite",
+    "author": "Sandra Schipal",
+    "license": "MIT",
+    "mcp": {
+        "version": "1.0.0",
+        "runtime": "python",
+        "entrypoint": "src/ocr_mcp/server.py",
+        "install": "pip install -e .",
+        "capabilities": {
+            "tools": true,
+            "resources": true,
+            "prompts": true,
+            "logging": true
+        }
+    }
+}

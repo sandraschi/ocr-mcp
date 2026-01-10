@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 """
 OCR-MCP MCPB Package Builder
@@ -31,9 +33,9 @@ def build_mcpb_package(
 ) -> Path:
     """Build the MCPB package"""
 
-    print("Building OCR-MCP MCPB Package...")
-    print(f"Output Directory: {output_dir}")
-    print(f"Package Version: {version}")
+    logger.info("Building OCR-MCP MCPB Package...")
+    logger.info(f"Output Directory: {output_dir}")
+    logger.info(f"Package Version: {version}")
 
     # Package directory
     package_name = "ocr-mcp"
@@ -45,7 +47,7 @@ def build_mcpb_package(
         shutil.rmtree(package_dir)
 
     # Create package structure
-    print("Creating package structure...")
+    logger.info("Creating package structure...")
     mcpb_dir.mkdir(parents=True)
     (mcpb_dir / "src").mkdir()
     (mcpb_dir / "assets" / "prompts").mkdir(parents=True)
@@ -53,7 +55,7 @@ def build_mcpb_package(
     project_root = Path(__file__).parent.parent
 
     # Copy MCPB files
-    print("Copying MCPB manifest and assets...")
+    logger.info("Copying MCPB manifest and assets...")
     shutil.copy(project_root / "mcp-server" / "manifest.json", mcpb_dir)
     shutil.copytree(
         project_root / "mcp-server" / "assets",
@@ -62,7 +64,7 @@ def build_mcpb_package(
     )
 
     # Copy source code
-    print("Copying source code...")
+    logger.info("Copying source code...")
     shutil.copytree(
         project_root / "src",
         mcpb_dir / "src",
@@ -70,7 +72,7 @@ def build_mcpb_package(
     )
 
     # Copy Python files
-    print("Copying Python dependencies...")
+    logger.info("Copying Python dependencies...")
     shutil.copy(project_root / "pyproject.toml", package_dir)
     shutil.copy(project_root / "requirements.txt", package_dir)
 
@@ -253,13 +255,13 @@ For full documentation, visit: https://github.com/sandraschi/ocr-mcp
 
     # Optional: Include models (significantly increases package size)
     if include_models:
-        print("Including pre-downloaded models...")
+        logger.info("Including pre-downloaded models...")
         # This would require downloading models, which is complex
         # For now, just note it in the manifest
 
     # Create compressed archive if requested
     if compress:
-        print("Creating compressed package...")
+        logger.info("Creating compressed package...")
         archive_name = f"{package_name}-{version}.mcpb"
         archive_path = output_dir / archive_name
 
@@ -268,28 +270,28 @@ For full documentation, visit: https://github.com/sandraschi/ocr-mcp
             subprocess.run([
                 "tar", "czf", str(archive_path), "-C", str(output_dir), f"{package_name}-{version}"
             ], check=True)
-            print(f"Created compressed package: {archive_path}")
+            logger.info(f"Created compressed package: {archive_path}")
         except (subprocess.CalledProcessError, FileNotFoundError):
             try:
                 # Try using zip
                 subprocess.run([
                     "zip", "-r", str(archive_path), f"{package_name}-{version}"
                 ], cwd=output_dir, check=True)
-                print(f"Created compressed package: {archive_path}")
+                logger.info(f"Created compressed package: {archive_path}")
             except (subprocess.CalledProcessError, FileNotFoundError):
-                print("Warning: Could not create compressed archive. tar/zip not available.")
+                logger.info("Warning: Could not create compressed archive. tar/zip not available.")
 
-    print("SUCCESS: OCR-MCP MCPB package created successfully!")
-    print(f"Package location: {package_dir}")
+    logger.info("SUCCESS: OCR-MCP MCPB package created successfully!")
+    logger.info(f"Package location: {package_dir}")
 
     if compress:
-        print(f"Compressed archive: {output_dir / f'{package_name}-{version}.mcpb'}")
+        logger.info(f"Compressed archive: {output_dir / f'{package_name}-{version}.mcpb'}")
 
-    print()
-    print("To install on another system:")
-    print("1. Copy the package directory to the target system")
-    print("2. Run: ./install.sh (Linux/macOS) or install.bat (Windows)")
-    print("3. Add to claude_desktop_config.json")
+    logger.info()
+    logger.info("To install on another system:")
+    logger.info("1. Copy the package directory to the target system")
+    logger.info("2. Run: ./install.sh (Linux/macOS) or install.bat (Windows)")
+    logger.info("3. Add to claude_desktop_config.json")
 
     return package_dir
 

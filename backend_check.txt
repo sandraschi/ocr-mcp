@@ -1,0 +1,40 @@
+Could not generate WIA type library: [WinError -2147312566] Error loading type library/DLL
+INFO: Could not find files for the given pattern(s).
+C:\Users\sandr\AppData\Local\Programs\Python\Python310\lib\site-packages\paddle\utils\cpp_extension\extension_utils.py:718: UserWarning: No ccache found. Please be aware that recompiling all source files may be required. You can download and install ccache from: https://github.com/ccache/ccache/blob/master/doc/INSTALL.md
+  warnings.warn(warning_message)
+Checking connectivity to the model hosters, this may take a while. To bypass this check, set `DISABLE_MODEL_SOURCE_CHECK` to `True`.
+[2026-01-01 14:27:08,019] [ WARNING] mistral_ocr_backend.py:41 - Mistral OCR backend not available: No API key configured
+Creating model: ('PP-LCNet_x1_0_doc_ori', None)
+Model files already exist. Using cached files. To redownload, please delete the directory manually: `C:\Users\sandr\.paddlex\official_models\PP-LCNet_x1_0_doc_ori`.
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I0101 14:27:11.214555 363240 onednn_context.cc:81] oneDNN v3.6.2
+Creating model: ('UVDoc', None)
+Model files already exist. Using cached files. To redownload, please delete the directory manually: `C:\Users\sandr\.paddlex\official_models\UVDoc`.
+Creating model: ('PP-LCNet_x1_0_textline_ori', None)
+Model files already exist. Using cached files. To redownload, please delete the directory manually: `C:\Users\sandr\.paddlex\official_models\PP-LCNet_x1_0_textline_ori`.
+Creating model: ('PP-OCRv5_server_det', None)
+Model files already exist. Using cached files. To redownload, please delete the directory manually: `C:\Users\sandr\.paddlex\official_models\PP-OCRv5_server_det`.
+Creating model: ('en_PP-OCRv5_mobile_rec', None)
+Model files already exist. Using cached files. To redownload, please delete the directory manually: `C:\Users\sandr\.paddlex\official_models\en_PP-OCRv5_mobile_rec`.
+Creating model: ('PP-LCNet_x1_0_doc_ori', None)
+Model files already exist. Using cached files. To redownload, please delete the directory manually: `C:\Users\sandr\.paddlex\official_models\PP-LCNet_x1_0_doc_ori`.
+Creating model: ('UVDoc', None)
+Model files already exist. Using cached files. To redownload, please delete the directory manually: `C:\Users\sandr\.paddlex\official_models\UVDoc`.
+Creating model: ('PP-LCNet_x1_0_textline_ori', None)
+Model files already exist. Using cached files. To redownload, please delete the directory manually: `C:\Users\sandr\.paddlex\official_models\PP-LCNet_x1_0_textline_ori`.
+Creating model: ('PP-OCRv5_server_det', None)
+Model files already exist. Using cached files. To redownload, please delete the directory manually: `C:\Users\sandr\.paddlex\official_models\PP-OCRv5_server_det`.
+Creating model: ('en_PP-OCRv5_mobile_rec', None)
+Model files already exist. Using cached files. To redownload, please delete the directory manually: `C:\Users\sandr\.paddlex\official_models\en_PP-OCRv5_mobile_rec`.
+Checking backends for project root: D:\Dev\repos\ocr-mcp
+
+Backend Availability Status:
+--------------------------------------------------
+[V] deepseek-ocr         : available
+[V] florence-2           : available
+[V] dots-ocr             : available
+[V] pp-ocrv5             : available
+[V] got-ocr              : available
+[V] tesseract            : available
+[V] easyocr              : available
+--------------------------------------------------

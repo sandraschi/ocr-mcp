@@ -1,9 +1,0 @@
-"""
-OCR Tools Package
-"""
-
-
-
-
-
-

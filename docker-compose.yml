@@ -1,0 +1,39 @@
+version: "3.8"
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "15000:15000"
+    environment:
+      - OCR_MODULES=got_ocr,tesseract
+      - RELOAD=true
+    volumes:
+      - ./backend:/app/backend
+    restart: unless-stopped
+    networks:
+      - ocr-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  frontend:
+    build:
+      context: ./frontend
+      target: dev
+    ports:
+      - "15001:15001"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - ocr-network
+
+networks:
+  ocr-network:
+    driver: bridge

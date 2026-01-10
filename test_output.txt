@@ -1,0 +1,16 @@
+INFO:ocr_mcp.core.model_manager:ModelManager initialized. Max GPU memory: 24563MB
+INFO:comtypes.client._code_cache:Imported existing <module 'comtypes.gen' from 'C:\\Users\\sandr\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\comtypes\\gen\\__init__.py'>
+INFO:comtypes.client._code_cache:Using writeable comtypes cache directory: 'C:\Users\sandr\AppData\Local\Programs\Python\Python310\lib\site-packages\comtypes\gen'
+INFO:ocr_mcp.backends.scanner.wia_scanner:Attempting to import WIA type library...
+INFO:ocr_mcp.backends.scanner.wia_scanner:Successfully imported WIA type library
+INFO:ocr_mcp.backends.scanner.wia_scanner:WIA is available and working
+INFO:ocr_mcp.backends.scanner.wia_scanner:WIA scanner backend initialized
+INFO:__main__:Initializing BackendManager...
+INFO:ocr_mcp.core.backend_manager:DeepSeek-OCR backend initialized
+WARNING:ocr_mcp.core.backend_manager:Failed to initialize Florence-2 backend: 'OCRConfig' object has no attribute 'ocr_device'
+INFO:ocr_mcp.core.backend_manager:DOTS.OCR backend initialized
+INFO: Could not find files for the given pattern(s).
+C:\Users\sandr\AppData\Local\Programs\Python\Python310\lib\site-packages\paddle\utils\cpp_extension\extension_utils.py:718: UserWarning: No ccache found. Please be aware that recompiling all source files may be required. You can download and install ccache from: https://github.com/ccache/ccache/blob/master/doc/INSTALL.md
+  warnings.warn(warning_message)
+Checking connectivity to the model hosters, this may take a while. To bypass this check, set `DISABLE_MODEL_SOURCE_CHECK` to `True`.
+WARNING:ocr_mcp.backends.mistral_ocr_backend:Mistral OCR backend not available: No API key configured

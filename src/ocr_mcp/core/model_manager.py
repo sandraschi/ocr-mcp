@@ -134,7 +134,7 @@ class ModelManager:
                     gpu = GPUtil.getGPUs()[device_id]
                     utilization = gpu.load * 100
                     temperature = gpu.temperature
-                except Exception:
+                except Exception as e:
                     pass
 
             total_mb = total_memory // (1024 * 1024)

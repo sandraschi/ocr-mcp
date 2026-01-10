@@ -1,9 +1,0 @@
-"""
-OCR-MCP Core Components
-"""
-
-
-
-
-
-

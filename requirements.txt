@@ -2,6 +2,7 @@
 fastmcp[server]>=2.13.0,<2.14.0
 pydantic>=2.0.0
 httpx>=0.28.1
+requests>=2.31.0
 uvicorn[standard]>=0.35.0
 python-multipart>=0.0.9
 pywin32>=310; sys_platform == "win32"
@@ -26,8 +27,22 @@ click>=8.1.0
 python-dotenv>=1.0.0
 comtypes>=1.2.0; sys_platform == "win32"
 
+# Core ML/AI dependencies (aligned with pyproject.toml)
+transformers>=4.35.0
+accelerate>=0.24.0
+sentencepiece>=0.1.99
+protobuf>=4.25.0
+timm>=0.9.0
+einops>=0.7.0
+huggingface-hub>=0.17.0
+scikit-image>=0.22.0
+pdf2image>=1.17.0
+pypdf>=3.17.0
+aiohttp>=3.9.0
 
 
 
 
 
+
+watchfiles>=0.21.0

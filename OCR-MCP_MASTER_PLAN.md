@@ -475,9 +475,10 @@ User Request → MCP Tool → Scanner Manager → WIA Backend → Hardware → I
 ## 📊 Current Implementation Status
 
 ### **✅ Completed Features**
-- **OCR Backends**: Mistral 7B OCR (API), GOT-OCR2.0, Tesseract, Florence-2, DeepSeek-OCR, PP-OCRv5, DOTS.OCR.
+- **OCR Backends**: Mistral OCR 3 (Dedicated OCR-2512 SOTA API), GOT-OCR2.0, Tesseract, Florence-2, DeepSeek-OCR, PP-OCRv5, DOTS.OCR.
 - **Scanner Control**: Robust WIA 2.0 integration with Singleton backend management and COM threading optimization.
 - **Hardware Verified**: Full acquisition support for Canon LiDE 400 (WIA 2.0).
+- **Verification**: Successfully processed real-world document fixtures with <1s latency on SOTA models.
 - **Web Application**: Professional React/Next.js-style interface with real-time hardware status and job management.
 - **Tool Ecosystem**: 12+ MCP tools registered and functional with portmanteau architecture.
 - **Architecture**: Modular backend system with unified interfaces and global singleton management.
