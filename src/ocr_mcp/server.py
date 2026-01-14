@@ -89,8 +89,17 @@ config = OCRConfig()
 backend_manager = BackendManager(config)
 
 # Register all tools using SOTA registration
-# Register all tools using SOTA registration
 register_sota_tools(app, backend_manager, config)
+
+# Register SEP-1577 agentic document workflow tool
+try:
+    from .tools.agentic_document_workflow import register_agentic_document_workflow
+    register_agentic_document_workflow(app)
+    logger.info("SEP-1577 agentic document workflow tool registered")
+except ImportError as e:
+    logger.warning(f"SEP-1577 agentic document workflow tool not available: {e}")
+except Exception as e:
+    logger.error(f"Failed to register SEP-1577 agentic document workflow tool: {e}")
 
 
 async def run_server():
