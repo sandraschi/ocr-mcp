@@ -10,19 +10,21 @@ Handles various document formats and extracts images for OCR processing:
 """
 
 import logging
-import zipfile
-import rarfile
-from pathlib import Path
-from typing import List, Dict, Any, Union
-import tempfile
 import shutil
+import tempfile
+import zipfile
+from pathlib import Path
+from typing import Any
+
+import rarfile
 
 logger = logging.getLogger(__name__)
 
 # Optional imports - handle gracefully if not available
 try:
-    from PIL import Image
     import fitz  # PyMuPDF for PDF processing
+    from PIL import Image
+
     PIL_AVAILABLE = True
     PYMUPDF_AVAILABLE = True
 except ImportError as e:
@@ -58,7 +60,7 @@ class DocumentProcessor:
         """Check if document processing is available."""
         return self._available
 
-    def detect_file_type(self, file_path: Union[str, Path]) -> str:
+    def detect_file_type(self, file_path: str | Path) -> str:
         """
         Detect the file type and processing requirements.
 
@@ -83,19 +85,19 @@ class DocumentProcessor:
         else:
             # Try to detect by content
             try:
-                with open(file_path, 'rb') as f:
+                with open(file_path, "rb") as f:
                     header = f.read(8)
 
                 # PDF detection
-                if header.startswith(b'%PDF'):
+                if header.startswith(b"%PDF"):
                     return "pdf"
 
                 # ZIP detection (CBZ)
-                if header.startswith(b'PK\x03\x04'):
+                if header.startswith(b"PK\x03\x04"):
                     return "cbz"
 
                 # RAR detection (CBR) - RAR signature
-                if header.startswith(b'Rar!\x1a\x07'):
+                if header.startswith(b"Rar!\x1a\x07"):
                     return "cbr"
 
                 # Try image detection with PIL
@@ -103,7 +105,7 @@ class DocumentProcessor:
                     try:
                         Image.open(file_path).close()
                         return "image"
-                    except (IOError, OSError):
+                    except OSError:
                         pass
 
             except Exception as e:
@@ -111,7 +113,7 @@ class DocumentProcessor:
 
         return "unknown"
 
-    def extract_images(self, file_path: Union[str, Path], **kwargs) -> List[Dict[str, Any]]:
+    def extract_images(self, file_path: str | Path, **kwargs) -> list[dict[str, Any]]:
         """
         Extract images from various document formats.
 
@@ -136,7 +138,7 @@ class DocumentProcessor:
         else:
             raise ValueError(f"Unsupported file type: {file_type}")
 
-    def _extract_pdf_images(self, pdf_path: Path, dpi: int = 300, **kwargs) -> List[Dict[str, Any]]:
+    def _extract_pdf_images(self, pdf_path: Path, dpi: int = 300, **kwargs) -> list[dict[str, Any]]:
         """Extract images from PDF file."""
         if not PYMUPDF_AVAILABLE:
             raise ImportError("PyMuPDF not available for PDF processing")
@@ -169,14 +171,12 @@ class DocumentProcessor:
                     "dpi": dpi,
                     "colorspace": pix.colorspace,
                     "source_type": "pdf",
-                    "total_pages": len(doc)
+                    "total_pages": len(doc),
                 }
 
-                images_info.append({
-                    "image_path": str(image_path),
-                    "page_number": page_num,
-                    "metadata": metadata
-                })
+                images_info.append(
+                    {"image_path": str(image_path), "page_number": page_num, "metadata": metadata}
+                )
 
             doc.close()
             logger.info(f"Extracted {len(images_info)} images from PDF")
@@ -187,14 +187,14 @@ class DocumentProcessor:
 
         return images_info
 
-    def _extract_cbz_images(self, cbz_path: Path, **kwargs) -> List[Dict[str, Any]]:
+    def _extract_cbz_images(self, cbz_path: Path, **kwargs) -> list[dict[str, Any]]:
         """Extract images from CBZ (ZIP) comic archive."""
         images_info = []
 
         try:
             temp_dir = self._get_temp_dir()
 
-            with zipfile.ZipFile(cbz_path, 'r') as zip_ref:
+            with zipfile.ZipFile(cbz_path, "r") as zip_ref:
                 # Get list of image files (common comic image formats)
                 image_files = []
                 for file_info in zip_ref.filelist:
@@ -220,20 +220,22 @@ class DocumentProcessor:
                                     "mode": img.mode,
                                     "source_type": "cbz",
                                     "archive_path": file_info.filename,
-                                    "total_pages": len(image_files)
+                                    "total_pages": len(image_files),
                                 }
                         else:
                             metadata = {
                                 "source_type": "cbz",
                                 "archive_path": file_info.filename,
-                                "total_pages": len(image_files)
+                                "total_pages": len(image_files),
                             }
 
-                        images_info.append({
-                            "image_path": str(extracted_path),
-                            "page_number": page_num,
-                            "metadata": metadata
-                        })
+                        images_info.append(
+                            {
+                                "image_path": str(extracted_path),
+                                "page_number": page_num,
+                                "metadata": metadata,
+                            }
+                        )
 
                     except Exception as e:
                         logger.warning(f"Failed to extract {file_info.filename}: {e}")
@@ -247,22 +249,22 @@ class DocumentProcessor:
 
         return images_info
 
-    def _extract_cbr_images(self, cbr_path: Path, **kwargs) -> List[Dict[str, Any]]:
+    def _extract_cbr_images(self, cbr_path: Path, **kwargs) -> list[dict[str, Any]]:
         """Extract images from CBR (RAR) comic archive."""
         images_info = []
 
         try:
             # Check if rarfile is available
-            if not hasattr(rarfile, 'RarFile'):
+            if not hasattr(rarfile, "RarFile"):
                 raise ImportError("rarfile library not available for CBR processing")
 
             temp_dir = self._get_temp_dir()
 
-            with rarfile.RarFile(cbr_path, 'r') as rar_ref:
+            with rarfile.RarFile(cbr_path, "r") as rar_ref:
                 # Get list of image files
                 image_files = []
                 for file_info in rar_ref.filelist:
-                    if hasattr(file_info, 'filename') and self._is_image_file(file_info.filename):
+                    if hasattr(file_info, "filename") and self._is_image_file(file_info.filename):
                         image_files.append(file_info)
 
                 # Sort by filename
@@ -284,20 +286,22 @@ class DocumentProcessor:
                                     "mode": img.mode,
                                     "source_type": "cbr",
                                     "archive_path": file_info.filename,
-                                    "total_pages": len(image_files)
+                                    "total_pages": len(image_files),
                                 }
                         else:
                             metadata = {
                                 "source_type": "cbr",
                                 "archive_path": file_info.filename,
-                                "total_pages": len(image_files)
+                                "total_pages": len(image_files),
                             }
 
-                        images_info.append({
-                            "image_path": str(extracted_path),
-                            "page_number": page_num,
-                            "metadata": metadata
-                        })
+                        images_info.append(
+                            {
+                                "image_path": str(extracted_path),
+                                "page_number": page_num,
+                                "metadata": metadata,
+                            }
+                        )
 
                     except Exception as e:
                         logger.warning(f"Failed to extract {file_info.filename}: {e}")
@@ -311,7 +315,7 @@ class DocumentProcessor:
 
         return images_info
 
-    def _extract_single_image(self, image_path: Path, **kwargs) -> List[Dict[str, Any]]:
+    def _extract_single_image(self, image_path: Path, **kwargs) -> list[dict[str, Any]]:
         """Handle single image files."""
         if not PIL_AVAILABLE:
             raise ImportError("PIL not available for image processing")
@@ -324,14 +328,10 @@ class DocumentProcessor:
                     "format": img.format,
                     "mode": img.mode,
                     "source_type": "image",
-                    "total_pages": 1
+                    "total_pages": 1,
                 }
 
-            return [{
-                "image_path": str(image_path),
-                "page_number": 0,
-                "metadata": metadata
-            }]
+            return [{"image_path": str(image_path), "page_number": 0, "metadata": metadata}]
 
         except Exception as e:
             logger.error(f"Image processing failed: {e}")
@@ -339,7 +339,7 @@ class DocumentProcessor:
 
     def _is_image_file(self, filename: str) -> bool:
         """Check if file is an image based on extension."""
-        image_extensions = {'.jpg', '.jpeg', '.png', '.tiff', '.tif', '.bmp', '.gif', '.webp'}
+        image_extensions = {".jpg", ".jpeg", ".png", ".tiff", ".tif", ".bmp", ".gif", ".webp"}
         return Path(filename).suffix.lower() in image_extensions
 
     def _get_temp_dir(self) -> Path:
@@ -365,9 +365,3 @@ class DocumentProcessor:
 
 # Global document processor instance
 document_processor = DocumentProcessor()
-
-
-
-
-
-

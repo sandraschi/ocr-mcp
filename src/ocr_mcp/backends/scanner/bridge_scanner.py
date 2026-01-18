@@ -1,10 +1,11 @@
-import logging
-import requests
 import base64
 import io
-from typing import List, Optional, Any
-from PIL import Image
+import logging
 from dataclasses import asdict
+from typing import Any
+
+import requests
+from PIL import Image
 
 from .wia_scanner import ScannerInfo, ScannerProperties, ScanSettings
 
@@ -46,7 +47,7 @@ class BridgeScannerBackend:
             self.check_availability()
         return self._available
 
-    def discover_scanners(self) -> List[ScannerInfo]:
+    def discover_scanners(self) -> list[ScannerInfo]:
         if not self.is_available():
             return []
 
@@ -66,11 +67,9 @@ class BridgeScannerBackend:
             logger.error(f"Bridge discover error: {e}")
             return []
 
-    def get_scanner_properties(self, device_id: str) -> Optional[ScannerProperties]:
+    def get_scanner_properties(self, device_id: str) -> ScannerProperties | None:
         try:
-            resp = requests.get(
-                f"{self.bridge_url}/scanners/{device_id}/properties", timeout=5
-            )
+            resp = requests.get(f"{self.bridge_url}/scanners/{device_id}/properties", timeout=5)
             if resp.status_code == 200:
                 return ScannerProperties(**resp.json())
         except Exception as e:
@@ -83,7 +82,7 @@ class BridgeScannerBackend:
         # We assume True if bridge is up.
         return self.is_available()
 
-    def scan_document(self, device_id: str, settings: ScanSettings) -> Optional[Any]:
+    def scan_document(self, device_id: str, settings: ScanSettings) -> Any | None:
         if not self.is_available():
             return None
 

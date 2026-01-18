@@ -1,9 +1,3 @@
 """
 OCR Utilities Package
 """
-
-
-
-
-
-

@@ -3,10 +3,10 @@ OCR Backend Manager: Manages multiple OCR backends with unified interface
 """
 
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Any
 
-from .config import OCRConfig
 from .backend_optimizer import BackendOptimizer
+from .config import OCRConfig
 from .model_manager import model_manager
 
 # Import scanner manager (optional)
@@ -49,14 +49,12 @@ class MockOCRBackend:
         self,
         image_path: str,
         ocr_mode: str = "text",
-        region: Optional[List[int]] = None,
-    ) -> Dict[str, Any]:
+        region: list[int] | None = None,
+    ) -> dict[str, Any]:
         """Mock backends raise informative errors"""
-        raise RuntimeError(
-            f"{self.backend_name} backend is not available: {self.error_message}"
-        )
+        raise RuntimeError(f"{self.backend_name} backend is not available: {self.error_message}")
 
-    def get_capabilities(self) -> Dict[str, Any]:
+    def get_capabilities(self) -> dict[str, Any]:
         """Return mock capabilities"""
         return {
             "name": self.backend_name,
@@ -86,13 +84,11 @@ class OCRBackend:
         """Check if this backend is available."""
         return self._available
 
-    async def process_image(
-        self, image_path: str, mode: str = "text", **kwargs
-    ) -> Dict[str, Any]:
+    async def process_image(self, image_path: str, mode: str = "text", **kwargs) -> dict[str, Any]:
         """Process an image with this backend."""
         raise NotImplementedError("Subclasses must implement process_image")
 
-    def get_capabilities(self) -> Dict[str, Any]:
+    def get_capabilities(self) -> dict[str, Any]:
         """Get backend capabilities."""
         return {
             "name": self.name,
@@ -108,7 +104,7 @@ class BackendManager:
 
     def __init__(self, config: OCRConfig):
         self.config = config
-        self.backends: Dict[str, OCRBackend] = {}
+        self.backends: dict[str, OCRBackend] = {}
         self.scanner_manager = scanner_manager
         self.document_processor = document_processor
 
@@ -213,19 +209,17 @@ class BackendManager:
             logger.warning(f"Failed to initialize EasyOCR legacy backend: {e}")
             self.backends["easyocr"] = MockOCRBackend("easyocr", str(e))
 
-    def get_available_backends(self) -> List[str]:
+    def get_available_backends(self) -> list[str]:
         """Get list of available backend names."""
-        return [
-            name for name, backend in self.backends.items() if backend.is_available()
-        ]
+        return [name for name, backend in self.backends.items() if backend.is_available()]
 
-    def get_backend(self, name: str) -> Optional[OCRBackend]:
+    def get_backend(self, name: str) -> OCRBackend | None:
         """Get a specific backend by name."""
         return self.backends.get(name)
 
     def select_backend(
-        self, requested_backend: str = "auto", image_path: Optional[str] = None
-    ) -> Optional[OCRBackend]:
+        self, requested_backend: str = "auto", image_path: str | None = None
+    ) -> OCRBackend | None:
         """Select an appropriate backend based on request."""
         if requested_backend == "auto":
             # Intelligent auto-selection based on document analysis
@@ -233,9 +227,7 @@ class BackendManager:
                 try:
                     from pathlib import Path
 
-                    optimal_backend_name = self.optimizer.select_optimal_backend(
-                        Path(image_path)
-                    )
+                    optimal_backend_name = self.optimizer.select_optimal_backend(Path(image_path))
                     if optimal_backend_name != "auto":
                         backend = self.get_backend(optimal_backend_name)
                         if backend and backend.is_available():
@@ -295,7 +287,7 @@ class BackendManager:
 
     async def process_with_backend(
         self, backend_name: str, image_path: str, mode: str = "text", **kwargs
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Process an image with a specific backend."""
         backend = self.select_backend(backend_name, image_path)
         if not backend:
@@ -313,9 +305,7 @@ class BackendManager:
                     or (hasattr(backend, "ocr") and backend.ocr is None)
                     or (hasattr(backend, "pipeline") and backend.pipeline is None)
                 ):
-                    logger.info(
-                        f"Automatically loading model/engine for {backend.name}"
-                    )
+                    logger.info(f"Automatically loading model/engine for {backend.name}")
                     await backend.load_model()
 
             # Call the appropriate processing method
@@ -325,13 +315,9 @@ class BackendManager:
 
                 sig = inspect.signature(backend.process_document)
                 if "ocr_mode" in sig.parameters:
-                    result = await backend.process_document(
-                        image_path, ocr_mode=mode, **kwargs
-                    )
+                    result = await backend.process_document(image_path, ocr_mode=mode, **kwargs)
                 else:
-                    result = await backend.process_document(
-                        image_path, mode=mode, **kwargs
-                    )
+                    result = await backend.process_document(image_path, mode=mode, **kwargs)
             elif hasattr(backend, "process_image"):
                 # Legacy backend interface
                 result = await backend.process_image(image_path, mode, **kwargs)
@@ -352,21 +338,21 @@ class BackendManager:
                 "backend_used": backend.name,
             }
 
-    def get_model_stats(self) -> Dict[str, Any]:
+    def get_model_stats(self) -> dict[str, Any]:
         """Get model memory and performance statistics"""
         return model_manager.get_memory_stats()
 
-    def optimize_models(self, target_free_mb: int = 1024) -> Dict[str, Any]:
+    def optimize_models(self, target_free_mb: int = 1024) -> dict[str, Any]:
         """Optimize model memory usage"""
         freed_memory = model_manager.optimize_memory(target_free_mb)
         return {"memory_freed_mb": freed_memory, "optimization_complete": True}
 
-    def preload_models(self) -> Dict[str, Any]:
+    def preload_models(self) -> dict[str, Any]:
         """Preload commonly used models"""
         preloaded_count = model_manager.preload_common_models()
         return {"models_preloaded": preloaded_count, "preloading_complete": True}
 
-    def cleanup_idle_models(self, max_idle_seconds: int = 300) -> Dict[str, Any]:
+    def cleanup_idle_models(self, max_idle_seconds: int = 300) -> dict[str, Any]:
         """Clean up idle models"""
         cleaned_count = model_manager.cleanup_idle_models(max_idle_seconds)
         return {"models_cleaned": cleaned_count, "cleanup_complete": True}

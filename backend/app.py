@@ -5,19 +5,18 @@ FastAPI server providing web interface for OCR-MCP functionality
 
 import asyncio
 import json
+import logging
 import os
 import tempfile
 from pathlib import Path
-from typing import Dict, List, Any
-import logging
+from typing import Any
 
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException, BackgroundTasks
+import uvicorn
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.requests import Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.requests import Request
-import uvicorn
-
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -36,6 +35,7 @@ from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "http://localhost:11400",
         "http://localhost:13334",
         "http://localhost:15001",
         "http://localhost:3002",
@@ -70,17 +70,17 @@ else:
 demo_mode = False  # Real scanner functionality enabled
 
 # Global state for processing jobs
-processing_jobs: Dict[str, Dict[str, Any]] = {}
+processing_jobs: dict[str, dict[str, Any]] = {}
 
 # Initialize BackendManager globally
 backend_manager = None
 scanner_manager = None
 
 try:
-    from ocr_mcp.core.backend_manager import BackendManager
-    from ocr_mcp.core.config import OCRConfig
     from ocr_mcp.backends.scanner.scanner_manager import ScannerManager
     from ocr_mcp.backends.scanner.wia_scanner import ScanSettings
+    from ocr_mcp.core.backend_manager import BackendManager
+    from ocr_mcp.core.config import OCRConfig
 
     config = OCRConfig()
     backend_manager = BackendManager(config)
@@ -170,9 +170,7 @@ async def upload_file(
         }
 
         # Always use demo processing for now to ensure it works
-        background_tasks.add_task(
-            process_file_demo, job_id, file.filename, ocr_mode, backend
-        )
+        background_tasks.add_task(process_file_demo, job_id, file.filename, ocr_mode, backend)
 
         return {"job_id": job_id, "status": "processing"}
 
@@ -200,7 +198,7 @@ async def get_job_status(job_id: str):
 @app.post("/api/process_batch")
 async def process_batch(
     background_tasks: BackgroundTasks,
-    files: List[UploadFile] = File(...),
+    files: list[UploadFile] = File(...),
     ocr_mode: str = Form("text"),
     backend: str = Form("auto"),
 ):
@@ -233,9 +231,7 @@ async def process_batch(
         }
 
         # Always use demo batch processing for now
-        background_tasks.add_task(
-            process_batch_demo, job_id, filenames, ocr_mode, backend
-        )
+        background_tasks.add_task(process_batch_demo, job_id, filenames, ocr_mode, backend)
 
         return {"job_id": job_id, "status": "processing", "file_count": len(files)}
 
@@ -385,7 +381,7 @@ async def convert_format(
 
 
 @app.post("/api/export")
-async def export_results(data: Dict[str, Any]):
+async def export_results(data: dict[str, Any]):
     """Export processed results in various formats"""
     try:
         export_type = data.get("export_type", "json")
@@ -408,9 +404,7 @@ async def export_results(data: Dict[str, Any]):
             media_type = "text/csv"
             file_extension = "csv"
         else:
-            raise HTTPException(
-                status_code=400, detail=f"Unsupported export type: {export_type}"
-            )
+            raise HTTPException(status_code=400, detail=f"Unsupported export type: {export_type}")
 
         return {
             "filename": f"{filename}.{file_extension}",
@@ -492,9 +486,7 @@ async def execute_pipeline(
         }
 
         # Process in background
-        background_tasks.add_task(
-            execute_pipeline_background, job_id, pipeline_id, temp_file_path
-        )
+        background_tasks.add_task(execute_pipeline_background, job_id, pipeline_id, temp_file_path)
 
         return {"job_id": job_id, "status": "processing"}
 
@@ -503,9 +495,7 @@ async def execute_pipeline(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-async def process_file_background(
-    job_id: str, file_path: str, ocr_mode: str, backend: str
-):
+async def process_file_background(job_id: str, file_path: str, ocr_mode: str, backend: str):
     """Process single file in background"""
     try:
         if not backend_manager:
@@ -515,9 +505,7 @@ async def process_file_background(
         if not ocr_backend:
             raise Exception(f"Backend {backend} not found")
 
-        result = await ocr_backend.process_document(
-            source_path=file_path, ocr_mode=ocr_mode
-        )
+        result = await ocr_backend.process_document(source_path=file_path, ocr_mode=ocr_mode)
 
         processing_jobs[job_id]["status"] = "completed"
         processing_jobs[job_id]["result"] = result
@@ -534,9 +522,7 @@ async def process_file_background(
         processing_jobs[job_id]["error"] = str(e)
 
 
-async def process_batch_background(
-    job_id: str, file_paths: List[str], ocr_mode: str, backend: str
-):
+async def process_batch_background(job_id: str, file_paths: list[str], ocr_mode: str, backend: str):
     """Process batch files in background"""
     try:
         if not backend_manager:
@@ -550,9 +536,7 @@ async def process_batch_background(
         # or implement batch logic in backend_manager
         result = []
         for path in file_paths:
-            res = await ocr_backend.process_document(
-                source_path=path, ocr_mode=ocr_mode
-            )
+            res = await ocr_backend.process_document(source_path=path, ocr_mode=ocr_mode)
             result.append(res)
 
         # Wrap as batch result
@@ -612,9 +596,7 @@ async def process_file_demo(job_id: str, filename: str, ocr_mode: str, backend: 
         processing_jobs[job_id]["error"] = str(e)
 
 
-async def process_batch_demo(
-    job_id: str, filenames: List[str], ocr_mode: str, backend: str
-):
+async def process_batch_demo(job_id: str, filenames: list[str], ocr_mode: str, backend: str):
     """Demo batch processing - simulate results for multiple files"""
     try:
         results = []
@@ -833,7 +815,7 @@ async def execute_pipeline_background(job_id: str, pipeline_id: str, file_path: 
 
 
 # Utility functions for export
-def dict_to_xml(data: Dict[str, Any], root_name: str = "data") -> str:
+def dict_to_xml(data: dict[str, Any], root_name: str = "data") -> str:
     """Convert dictionary to XML string"""
 
     def _dict_to_xml(data: Any, key: str = None) -> str:
@@ -851,10 +833,12 @@ def dict_to_xml(data: Dict[str, Any], root_name: str = "data") -> str:
         else:
             return str(data)
 
-    return f"<?xml version='1.0' encoding='UTF-8'?>\n<{root_name}>{_dict_to_xml(data)}</{root_name}>"
+    return (
+        f"<?xml version='1.0' encoding='UTF-8'?>\n<{root_name}>{_dict_to_xml(data)}</{root_name}>"
+    )
 
 
-def dict_to_csv(data: Dict[str, Any]) -> str:
+def dict_to_csv(data: dict[str, Any]) -> str:
     """Convert dictionary to CSV string"""
     import csv
     import io
@@ -985,7 +969,7 @@ async def scan_document(
 
 def main():
     """Entry point for running the webapp"""
-    port = int(os.getenv("WEBAPP_PORT", "7460"))
+    port = int(os.getenv("WEBAPP_PORT", "11400"))
     reload = os.getenv("RELOAD", "false").lower() == "true"
     uvicorn.run("backend.app:app", host="0.0.0.0", port=port, reload=reload)
 

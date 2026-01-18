@@ -14,9 +14,10 @@ from unittest.mock import Mock
 import pytest
 from PIL import Image
 
+from src.ocr_mcp.core.backend_manager import BackendManager
+
 # Import OCR-MCP modules
 from src.ocr_mcp.core.config import OCRConfig
-from src.ocr_mcp.core.backend_manager import BackendManager
 
 
 # Test Configuration
@@ -47,7 +48,7 @@ def config():
     return OCRConfig(
         cache_dir=Path(tempfile.mkdtemp(prefix="ocr_test_")),
         device="cpu",  # Use CPU for consistent testing
-        default_backend="got-ocr"
+        default_backend="got-ocr",
     )
 
 
@@ -63,7 +64,7 @@ def backend_manager(config):
 def mock_image():
     """Create a mock PIL Image for testing."""
     # Create a simple test image
-    img = Image.new('RGB', (100, 100), color='red')
+    img = Image.new("RGB", (100, 100), color="red")
     return img
 
 
@@ -84,7 +85,7 @@ def mock_ocr_result():
         "confidence": 0.95,
         "backend": "test-backend",
         "processing_time": 0.5,
-        "mode": "text"
+        "mode": "text",
     }
 
 
@@ -99,7 +100,7 @@ def mock_scanner_info():
         "device_type": "Flatbed",
         "supports_adf": True,
         "supports_duplex": False,
-        "max_dpi": 600
+        "max_dpi": 600,
     }
 
 
@@ -113,7 +114,7 @@ def mock_scan_settings():
         "brightness": 0,
         "contrast": 0,
         "use_adf": False,
-        "duplex": False
+        "duplex": False,
     }
 
 
@@ -124,17 +125,15 @@ def mock_deepseek_backend():
     mock_backend = Mock()
     mock_backend.name = "deepseek-ocr"
     mock_backend.is_available.return_value = True
-    mock_backend.process_image = Mock(return_value={
-        "success": True,
-        "text": "DeepSeek OCR result",
-        "backend": "deepseek-ocr"
-    })
+    mock_backend.process_image = Mock(
+        return_value={"success": True, "text": "DeepSeek OCR result", "backend": "deepseek-ocr"}
+    )
     mock_backend.get_capabilities.return_value = {
         "name": "deepseek-ocr",
         "available": True,
         "modes": ["text", "formatted"],
         "languages": ["en", "multilingual"],
-        "gpu_support": False
+        "gpu_support": False,
     }
     return mock_backend
 
@@ -145,17 +144,15 @@ def mock_florence_backend():
     mock_backend = Mock()
     mock_backend.name = "florence-2"
     mock_backend.is_available.return_value = True
-    mock_backend.process_image = Mock(return_value={
-        "success": True,
-        "text": "Florence-2 OCR result",
-        "backend": "florence-2"
-    })
+    mock_backend.process_image = Mock(
+        return_value={"success": True, "text": "Florence-2 OCR result", "backend": "florence-2"}
+    )
     mock_backend.get_capabilities.return_value = {
         "name": "florence-2",
         "available": True,
         "modes": ["text", "formatted", "fine-grained"],
         "languages": ["en", "multilingual"],
-        "gpu_support": False
+        "gpu_support": False,
     }
     return mock_backend
 
@@ -166,18 +163,20 @@ def mock_dots_backend():
     mock_backend = Mock()
     mock_backend.name = "dots-ocr"
     mock_backend.is_available.return_value = True
-    mock_backend.process_image = Mock(return_value={
-        "success": True,
-        "text": "DOTS.OCR result with table analysis",
-        "layout_analysis": {"tables": 1, "paragraphs": 3},
-        "backend": "dots-ocr"
-    })
+    mock_backend.process_image = Mock(
+        return_value={
+            "success": True,
+            "text": "DOTS.OCR result with table analysis",
+            "layout_analysis": {"tables": 1, "paragraphs": 3},
+            "backend": "dots-ocr",
+        }
+    )
     mock_backend.get_capabilities.return_value = {
         "name": "dots-ocr",
         "available": True,
         "modes": ["text", "formatted"],
         "languages": ["en", "multilingual"],
-        "gpu_support": False
+        "gpu_support": False,
     }
     return mock_backend
 
@@ -188,17 +187,19 @@ def mock_ppocr_backend():
     mock_backend = Mock()
     mock_backend.name = "pp-ocrv5"
     mock_backend.is_available.return_value = True
-    mock_backend.process_image = Mock(return_value={
-        "success": True,
-        "text": "PP-OCRv5 industrial OCR result",
-        "backend": "pp-ocrv5"
-    })
+    mock_backend.process_image = Mock(
+        return_value={
+            "success": True,
+            "text": "PP-OCRv5 industrial OCR result",
+            "backend": "pp-ocrv5",
+        }
+    )
     mock_backend.get_capabilities.return_value = {
         "name": "pp-ocrv5",
         "available": True,
         "modes": ["text", "formatted"],
         "languages": ["en", "zh", "multilingual"],
-        "gpu_support": True
+        "gpu_support": True,
     }
     return mock_backend
 
@@ -209,18 +210,20 @@ def mock_qwen_backend():
     mock_backend = Mock()
     mock_backend.name = "qwen-image-layered"
     mock_backend.is_available.return_value = True
-    mock_backend.process_image = Mock(return_value={
-        "success": True,
-        "text": "Qwen image decomposition result",
-        "layers": 4,
-        "backend": "qwen-image-layered"
-    })
+    mock_backend.process_image = Mock(
+        return_value={
+            "success": True,
+            "text": "Qwen image decomposition result",
+            "layers": 4,
+            "backend": "qwen-image-layered",
+        }
+    )
     mock_backend.get_capabilities.return_value = {
         "name": "qwen-image-layered",
         "available": True,
         "modes": ["text", "formatted", "fine-grained"],
         "languages": ["en", "multilingual"],
-        "gpu_support": True
+        "gpu_support": True,
     }
     return mock_backend
 
@@ -231,17 +234,15 @@ def mock_got_backend():
     mock_backend = Mock()
     mock_backend.name = "got-ocr"
     mock_backend.is_available.return_value = True
-    mock_backend.process_image = Mock(return_value={
-        "success": True,
-        "text": "GOT-OCR2.0 advanced result",
-        "backend": "got-ocr"
-    })
+    mock_backend.process_image = Mock(
+        return_value={"success": True, "text": "GOT-OCR2.0 advanced result", "backend": "got-ocr"}
+    )
     mock_backend.get_capabilities.return_value = {
         "name": "got-ocr",
         "available": True,
         "modes": ["text", "formatted", "fine-grained"],
         "languages": ["en", "multilingual"],
-        "gpu_support": True
+        "gpu_support": True,
     }
     return mock_backend
 
@@ -252,17 +253,15 @@ def mock_tesseract_backend():
     mock_backend = Mock()
     mock_backend.name = "tesseract"
     mock_backend.is_available.return_value = True
-    mock_backend.process_image = Mock(return_value={
-        "success": True,
-        "text": "Tesseract OCR result",
-        "backend": "tesseract"
-    })
+    mock_backend.process_image = Mock(
+        return_value={"success": True, "text": "Tesseract OCR result", "backend": "tesseract"}
+    )
     mock_backend.get_capabilities.return_value = {
         "name": "tesseract",
         "available": True,
         "modes": ["text"],
         "languages": ["en", "multilingual"],
-        "gpu_support": False
+        "gpu_support": False,
     }
     return mock_backend
 
@@ -273,17 +272,15 @@ def mock_easyocr_backend():
     mock_backend = Mock()
     mock_backend.name = "easyocr"
     mock_backend.is_available.return_value = True
-    mock_backend.process_image = Mock(return_value={
-        "success": True,
-        "text": "EasyOCR result",
-        "backend": "easyocr"
-    })
+    mock_backend.process_image = Mock(
+        return_value={"success": True, "text": "EasyOCR result", "backend": "easyocr"}
+    )
     mock_backend.get_capabilities.return_value = {
         "name": "easyocr",
         "available": True,
         "modes": ["text", "formatted"],
         "languages": ["en", "ch_sim", "ch_tra"],
-        "gpu_support": True
+        "gpu_support": True,
     }
     return mock_backend
 
@@ -301,7 +298,7 @@ def mock_wia_backend():
             "manufacturer": "Test Corp",
             "device_type": "Flatbed",
             "supports_adf": True,
-            "max_dpi": 600
+            "max_dpi": 600,
         },
         {
             "device_id": "wia:test_scanner_2",
@@ -309,8 +306,8 @@ def mock_wia_backend():
             "manufacturer": "Another Corp",
             "device_type": "Feeder",
             "supports_adf": False,
-            "max_dpi": 300
-        }
+            "max_dpi": 300,
+        },
     ]
     mock_scanner.get_scanner_properties.return_value = {
         "supported_resolutions": [75, 150, 200, 300, 600],
@@ -323,10 +320,10 @@ def mock_wia_backend():
         "supports_preview": True,
         "manufacturer": "Test Corp",
         "model": "Test Scanner",
-        "firmware_version": "1.0.0"
+        "firmware_version": "1.0.0",
     }
     mock_scanner.configure_scan.return_value = True
-    mock_scanner.scan_document.return_value = Image.new('RGB', (1000, 1500), color='white')
+    mock_scanner.scan_document.return_value = Image.new("RGB", (1000, 1500), color="white")
     return mock_scanner
 
 
@@ -361,8 +358,8 @@ def mock_document_processor():
                 "dpi": 300,
                 "format": "PNG",
                 "source_type": "pdf",
-                "total_pages": 1
-            }
+                "total_pages": 1,
+            },
         }
     ]
     mock_processor.cleanup_temp_files.return_value = None
@@ -374,47 +371,51 @@ def mock_document_processor():
 def mock_fastmcp_app():
     """Mock FastMCP application for testing."""
     mock_app = Mock()
-    mock_app.tool = Mock(return_value=lambda func: func)  # Decorator that returns function unchanged
+    mock_app.tool = Mock(
+        return_value=lambda func: func
+    )  # Decorator that returns function unchanged
     mock_app.get_tools = Mock(return_value=[])
     return mock_app
 
 
 # Test Data Fixtures
-@pytest.fixture(params=[
-    "text", "formatted", "fine-grained"
-])
+@pytest.fixture(params=["text", "formatted", "fine-grained"])
 def ocr_mode(request):
     """Parametrize OCR processing modes."""
     return request.param
 
 
-@pytest.fixture(params=[
-    "auto", "deepseek-ocr", "florence-2", "dots-ocr", "pp-ocrv5", "qwen-image-layered", "got-ocr", "tesseract", "easyocr"
-])
+@pytest.fixture(
+    params=[
+        "auto",
+        "deepseek-ocr",
+        "florence-2",
+        "dots-ocr",
+        "pp-ocrv5",
+        "qwen-image-layered",
+        "got-ocr",
+        "tesseract",
+        "easyocr",
+    ]
+)
 def ocr_backend_name(request):
     """Parametrize OCR backend names."""
     return request.param
 
 
-@pytest.fixture(params=[
-    "png", "jpg", "tiff", "bmp"
-])
+@pytest.fixture(params=["png", "jpg", "tiff", "bmp"])
 def image_format(request):
     """Parametrize image formats."""
     return request.param
 
 
-@pytest.fixture(params=[
-    "pdf", "cbz", "cbr", "image"
-])
+@pytest.fixture(params=["pdf", "cbz", "cbr", "image"])
 def document_type(request):
     """Parametrize document types."""
     return request.param
 
 
-@pytest.fixture(params=[
-    "text", "html", "json", "markdown", "xml"
-])
+@pytest.fixture(params=["text", "html", "json", "markdown", "xml"])
 def output_format(request):
     """Parametrize output formats."""
     return request.param
@@ -429,11 +430,11 @@ def clean_env():
 
     # Clear OCR-MCP related environment variables
     ocr_env_vars = [
-        'OCR_CACHE_DIR',
-        'OCR_DEVICE',
-        'OCR_DEFAULT_BACKEND',
-        'OCR_MAX_CONCURRENT',
-        'OCR_MODEL_CACHE_SIZE'
+        "OCR_CACHE_DIR",
+        "OCR_DEVICE",
+        "OCR_DEFAULT_BACKEND",
+        "OCR_MAX_CONCURRENT",
+        "OCR_MODEL_CACHE_SIZE",
     ]
 
     for var in ocr_env_vars:
@@ -477,7 +478,7 @@ def benchmark_config():
         "benchmark_iterations": 10,
         "max_time": 60,  # seconds
         "min_rounds": 5,
-        "timeout": 300  # seconds
+        "timeout": 300,  # seconds
     }
 
 
@@ -485,15 +486,18 @@ def benchmark_config():
 @pytest.fixture(scope="session")
 def create_test_image(temp_dir):
     """Factory fixture for creating test images."""
-    def _create_image(width=100, height=100, color='white', format='PNG'):
-        img = Image.new('RGB', (width, height), color=color)
+
+    def _create_image(width=100, height=100, color="white", format="PNG"):
+        img = Image.new("RGB", (width, height), color=color)
         return img
+
     return _create_image
 
 
 @pytest.fixture(scope="session")
 def create_test_pdf(temp_dir):
     """Factory fixture for creating test PDF files."""
+
     def _create_pdf(pages=1, content="Test PDF content"):
         # This would require a PDF library like reportlab
         # For now, return a mock path
@@ -501,28 +505,27 @@ def create_test_pdf(temp_dir):
         # In real implementation, create actual PDF
         pdf_path.write_text(f"Mock PDF with {pages} pages: {content}")
         return pdf_path
+
     return _create_pdf
 
 
 @pytest.fixture(scope="session")
 def create_test_cbz(temp_dir, create_test_image):
     """Factory fixture for creating test CBZ files."""
+
     def _create_cbz(pages=3):
         cbz_path = temp_dir / f"test_{pages}page.cbz"
         # In real implementation, create actual CBZ archive
         cbz_path.write_text(f"Mock CBZ with {pages} pages")
         return cbz_path
+
     return _create_cbz
 
 
 # Error Testing Fixtures
-@pytest.fixture(params=[
-    "FileNotFoundError",
-    "PermissionError",
-    "OSError",
-    "ValueError",
-    "RuntimeError"
-])
+@pytest.fixture(
+    params=["FileNotFoundError", "PermissionError", "OSError", "ValueError", "RuntimeError"]
+)
 def expected_exception(request):
     """Parametrize expected exceptions for error testing."""
     return request.param
@@ -531,12 +534,7 @@ def expected_exception(request):
 @pytest.fixture
 def exception_context():
     """Provide context for testing exception handling."""
-    return {
-        "raised": False,
-        "exception_type": None,
-        "exception_message": None,
-        "context": {}
-    }
+    return {"raised": False, "exception_type": None, "exception_message": None, "context": {}}
 
 
 # Integration Test Fixtures
@@ -548,7 +546,7 @@ def integration_config():
         "retry_attempts": 3,
         "retry_delay": 1,  # seconds
         "cleanup_temp_files": True,
-        "validate_results": True
+        "validate_results": True,
     }
 
 
@@ -561,11 +559,5 @@ def e2e_config():
         "tool_execution_timeout": 30,  # seconds
         "cleanup_timeout": 5,  # seconds
         "validate_outputs": True,
-        "check_performance": False
+        "check_performance": False,
     }
-
-
-
-
-
-

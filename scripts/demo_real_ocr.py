@@ -1,4 +1,5 @@
 import logging
+
 logger = logging.getLogger(__name__)
 import asyncio
 import os
@@ -13,7 +14,7 @@ from ocr_mcp.core.backend_manager import BackendManager
 from ocr_mcp.core.config import OCRConfig
 
 
-asynasync def run_demo():
+async def run_demo():
     logger.info("=" * 60)
     logger.info("      OCR-MCP REAL-WORLD DEMONSTRATION")
     logger.info("=" * 60)
@@ -22,9 +23,7 @@ asynasync def run_demo():
     config = OCRConfig()
     manager = BackendManager(config)
 
-    sample_path = str(
-        Path(__file__).parent.parent / "tests" / "fixtures" / "test_sample.png"
-    )
+    sample_path = str(Path(__file__).parent.parent / "tests" / "fixtures" / "test_sample.png")
 
     if not os.path.exists(sample_path):
         logger.info(f"ERROR: Sample file not found at {sample_path}")

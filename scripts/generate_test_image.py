@@ -1,7 +1,9 @@
 import logging
+
 logger = logging.getLogger(__name__)
-from PIL import Image, ImageDraw, ImageFont
 import os
+
+from PIL import Image, ImageDraw, ImageFont
 
 
 def generate_sample():
@@ -32,7 +34,7 @@ def generate_sample():
         # On Windows, Arial is usually available
         font = ImageFont.truetype("arial.ttf", 24)
         title_font = ImageFont.truetype("arial.ttf", 32)
-    except Exception as e:
+    except Exception:
         font = ImageFont.load_default()
         title_font = font
 

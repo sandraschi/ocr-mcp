@@ -7,8 +7,8 @@ Supports flatbed scanners, ADF (Automatic Document Feeder), and various scan mod
 
 import logging
 import platform
-from typing import Any, Optional, List
 from dataclasses import dataclass
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +32,7 @@ if IS_WINDOWS:
 
             logger.info("Successfully imported WIA type library")
         except Exception as e:
-            logger.warning(
-                f"Initial WIA import failed: {e}. Attempting to generate wrapper..."
-            )
+            logger.warning(f"Initial WIA import failed: {e}. Attempting to generate wrapper...")
             # If not generated or failed to import, try to generate it
             try:
                 # WIA 2.0 Type Library GUID
@@ -46,13 +44,15 @@ if IS_WINDOWS:
             except Exception as e:
                 logger.error(f"Could not load WIA type library: {e}")
                 WIA = None
-        WIALib = WIA  # Alias for backward compatibility if needed, or remove if WIA is used directly
+        WIALib = (
+            WIA  # Alias for backward compatibility if needed, or remove if WIA is used directly
+        )
 
         # Test WIA availability by trying to create DeviceManager
         try:
             try:
                 pythoncom.CoInitialize()
-            except Exception as e:
+            except Exception:
                 # Already initialized
                 pass
             test_dm = cc.CreateObject("WIA.DeviceManager")
@@ -96,8 +96,8 @@ class ScanSettings:
     dpi: int = 300
     color_mode: str = "Color"  # "Color", "Grayscale", "BlackWhite"
     paper_size: str = "A4"  # "A4", "Letter", "Legal", "Custom"
-    custom_width: Optional[int] = None  # pixels
-    custom_height: Optional[int] = None  # pixels
+    custom_width: int | None = None  # pixels
+    custom_height: int | None = None  # pixels
     brightness: int = 0  # -1000 to 1000
     contrast: int = 0  # -1000 to 1000
     use_adf: bool = False
@@ -108,9 +108,9 @@ class ScanSettings:
 class ScannerProperties:
     """Detailed scanner capabilities."""
 
-    supported_resolutions: List[int]
-    supported_color_modes: List[str]
-    supported_paper_sizes: List[str]
+    supported_resolutions: list[int]
+    supported_color_modes: list[str]
+    supported_paper_sizes: list[str]
     max_paper_width: int  # pixels at max DPI
     max_paper_height: int  # pixels at max DPI
     supports_adf: bool
@@ -145,7 +145,7 @@ class WIABackend:
             # Initialize COM
             try:
                 pythoncom.CoInitialize()
-            except Exception as e:
+            except Exception:
                 pass
 
             # Create WIA manager
@@ -161,7 +161,7 @@ class WIABackend:
         """Check if WIA backend is available and functional."""
         return self._initialized and IS_WINDOWS and WIA_AVAILABLE
 
-    def discover_scanners(self) -> List[ScannerInfo]:
+    def discover_scanners(self) -> list[ScannerInfo]:
         """
         Discover all connected scanners via WIA.
 
@@ -194,7 +194,7 @@ class WIABackend:
         logger.info(f"Discovered {len(scanners)} scanners")
         return scanners
 
-    def _extract_scanner_info(self, device) -> Optional[ScannerInfo]:
+    def _extract_scanner_info(self, device) -> ScannerInfo | None:
         """Extract scanner information from WIA device object."""
         try:
             properties = device.Properties
@@ -202,9 +202,7 @@ class WIABackend:
             # Basic device info
             device_id = str(device.DeviceID)
             name = self._get_property_value(properties, "Name") or "Unknown Scanner"
-            manufacturer = (
-                self._get_property_value(properties, "Manufacturer") or "Unknown"
-            )
+            manufacturer = self._get_property_value(properties, "Manufacturer") or "Unknown"
             description = self._get_property_value(properties, "Description") or name
 
             # Device type and capabilities
@@ -228,12 +226,10 @@ class WIABackend:
             max_dpi = 600  # Default
             try:
                 # Try to get horizontal resolution
-                horiz_res = self._get_property_value(
-                    properties, "Horizontal Resolution"
-                )
+                horiz_res = self._get_property_value(properties, "Horizontal Resolution")
                 if horiz_res:
                     max_dpi = max(max_dpi, int(horiz_res))
-            except Exception as e:
+            except Exception:
                 pass
 
             return ScannerInfo(
@@ -251,7 +247,7 @@ class WIABackend:
             logger.error(f"Failed to extract scanner info: {e}")
             return None
 
-    def get_scanner_properties(self, device_id: str) -> Optional[ScannerProperties]:
+    def get_scanner_properties(self, device_id: str) -> ScannerProperties | None:
         """
         Get detailed properties and capabilities of a scanner.
 
@@ -287,13 +283,9 @@ class WIABackend:
             supported_color_modes = ["Color", "Grayscale", "BlackWhite"]
             supported_paper_sizes = ["A4", "Letter", "Legal"]
 
-            manufacturer = (
-                self._get_property_value(properties, "Manufacturer") or "Unknown"
-            )
+            manufacturer = self._get_property_value(properties, "Manufacturer") or "Unknown"
             model = self._get_property_value(properties, "Model") or "Unknown"
-            firmware_version = (
-                self._get_property_value(properties, "Firmware Version") or "Unknown"
-            )
+            firmware_version = self._get_property_value(properties, "Firmware Version") or "Unknown"
 
             # Try to get actual capabilities
             supports_adf = False
@@ -309,7 +301,7 @@ class WIABackend:
 
                     # Try to detect ADF
                     supports_adf = True
-            except Exception as e:
+            except Exception:
                 pass
 
             return ScannerProperties(
@@ -385,7 +377,7 @@ class WIABackend:
             logger.error(f"Failed to configure scanner {device_id}: {e}")
             return False
 
-    def scan_document(self, device_id: str, settings: ScanSettings) -> Optional[Any]:
+    def scan_document(self, device_id: str, settings: ScanSettings) -> Any | None:
         """
         Perform a document scan with the specified settings.
 
@@ -402,7 +394,7 @@ class WIABackend:
         # Ensure COM is initialized for this thread
         try:
             pythoncom.CoInitialize()
-        except Exception as e:
+        except Exception:
             pass
 
         device = self._devices.get(device_id)
@@ -415,9 +407,7 @@ class WIABackend:
                         self._devices[device_id] = device
                         break
             except Exception as e:
-                logger.error(
-                    f"Failed to reconnect to scanner {device_id} for scan: {e}"
-                )
+                logger.error(f"Failed to reconnect to scanner {device_id} for scan: {e}")
                 return None
 
         if not device:
@@ -437,7 +427,7 @@ class WIABackend:
                             if not self.configure_scan(device_id, settings):
                                 return None
                             break
-                except Exception as e:
+                except Exception:
                     return None
 
             # Get scan item
@@ -453,8 +443,9 @@ class WIABackend:
             image_file = item.Transfer()
 
             # Convert WIA image to PIL Image
-            from PIL import Image
             import io
+
+            from PIL import Image
 
             # WIA returns image data, convert to PIL
             if hasattr(image_file, "FileData"):
@@ -478,7 +469,7 @@ class WIABackend:
             for prop in properties:
                 if prop.Name == property_name:
                     return prop.Value
-        except Exception as e:
+        except Exception:
             pass
         return None
 
@@ -498,5 +489,5 @@ class WIABackend:
         if hasattr(self, "_wia_manager") and self._wia_manager:
             try:
                 pythoncom.CoUninitialize()
-            except Exception as e:
+            except Exception:
                 pass

@@ -43,10 +43,9 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import List, Optional
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -63,7 +62,7 @@ class TestRunner:
         self.reports_dir.mkdir(exist_ok=True)
         self.coverage_dir.mkdir(exist_ok=True)
 
-    def run_command(self, cmd: List[str], cwd: Optional[Path] = None) -> bool:
+    def run_command(self, cmd: list[str], cwd: Path | None = None) -> bool:
         """Run a command and return success status."""
         try:
             logger.info(f"Running: {' '.join(cmd)}")
@@ -72,7 +71,7 @@ class TestRunner:
                 cwd=cwd or self.project_root,
                 capture_output=True,
                 text=True,
-                timeout=300  # 5 minute timeout
+                timeout=300,  # 5 minute timeout
             )
 
             if result.returncode == 0:
@@ -106,12 +105,14 @@ class TestRunner:
             cmd.append("--fail-fast")
 
         if args.coverage:
-            cmd.extend([
-                "--cov=src",
-                "--cov-report=term-missing",
-                f"--cov-report=html:{self.coverage_dir}",
-                "--cov-report=xml"
-            ])
+            cmd.extend(
+                [
+                    "--cov=src",
+                    "--cov-report=term-missing",
+                    f"--cov-report=html:{self.coverage_dir}",
+                    "--cov-report=xml",
+                ]
+            )
 
         if args.junit:
             cmd.extend(["--junitxml", str(self.reports_dir / "unit-tests.xml")])
@@ -129,11 +130,13 @@ class TestRunner:
             cmd.append("--fail-fast")
 
         if args.coverage:
-            cmd.extend([
-                "--cov=src",
-                "--cov-report=term-missing",
-                "--cov-append"  # Append to existing coverage
-            ])
+            cmd.extend(
+                [
+                    "--cov=src",
+                    "--cov-report=term-missing",
+                    "--cov-append",  # Append to existing coverage
+                ]
+            )
 
         if args.junit:
             cmd.extend(["--junitxml", str(self.reports_dir / "integration-tests.xml")])
@@ -151,11 +154,13 @@ class TestRunner:
             cmd.append("--fail-fast")
 
         if args.coverage:
-            cmd.extend([
-                "--cov=src",
-                "--cov-report=term-missing",
-                "--cov-append"  # Append to existing coverage
-            ])
+            cmd.extend(
+                [
+                    "--cov=src",
+                    "--cov-report=term-missing",
+                    "--cov-append",  # Append to existing coverage
+                ]
+            )
 
         if args.junit:
             cmd.extend(["--junitxml", str(self.reports_dir / "e2e-tests.xml")])
@@ -186,20 +191,20 @@ class TestRunner:
 
         # Run a subset of critical tests
         cmd = [
-            "python", "-m", "pytest",
+            "python",
+            "-m",
+            "pytest",
             "tests/unit/test_config.py",
             "tests/unit/test_backend_manager.py",
             "tests/integration/test_ocr_tools.py",
             "-v",
-            "--tb=short"
+            "--tb=short",
         ]
 
         if args.coverage:
-            cmd.extend([
-                "--cov=src",
-                "--cov-report=term-missing",
-                f"--cov-report=html:{self.coverage_dir}"
-            ])
+            cmd.extend(
+                ["--cov=src", "--cov-report=term-missing", f"--cov-report=html:{self.coverage_dir}"]
+            )
 
         return self.run_command(cmd)
 
@@ -214,13 +219,13 @@ class TestRunner:
             ("unit", self.run_unit_tests),
             ("integration", self.run_integration_tests),
             ("e2e", self.run_e2e_tests),
-            ("benchmarks", self.run_benchmark_tests)
+            ("benchmarks", self.run_benchmark_tests),
         ]
 
         for suite_name, suite_func in test_suites:
-            logger.info(f"\n{'='*50}")
+            logger.info(f"\n{'=' * 50}")
             logger.info(f"Starting {suite_name} tests")
-            logger.info('='*50)
+            logger.info("=" * 50)
 
             if not suite_func(args):
                 success = False
@@ -232,9 +237,13 @@ class TestRunner:
         if args.coverage and success:
             logger.info("\nGenerating combined coverage report...")
             cmd = [
-                "python", "-m", "coverage", "html",
+                "python",
+                "-m",
+                "coverage",
+                "html",
                 f"--directory={self.coverage_dir}",
-                "--title", "OCR-MCP Combined Coverage Report"
+                "--title",
+                "OCR-MCP Combined Coverage Report",
             ]
             self.run_command(cmd)
 
@@ -249,10 +258,10 @@ class TestRunner:
                 return
 
             for item in sorted(path.iterdir()):
-                if item.is_dir() and not item.name.startswith('.'):
+                if item.is_dir() and not item.name.startswith("."):
                     logger.info(f"{prefix}[DIR] {item.name}/")
                     print_tree(item, prefix + "  ")
-                elif item.is_file() and item.suffix == '.py':
+                elif item.is_file() and item.suffix == ".py":
                     logger.info(f"{prefix}[FILE] {item.name}")
 
         print_tree(self.test_dir)
@@ -262,68 +271,42 @@ class TestRunner:
         parser = argparse.ArgumentParser(
             description="Comprehensive test runner for OCR-MCP",
             formatter_class=argparse.RawDescriptionHelpFormatter,
-            epilog=__doc__
+            epilog=__doc__,
         )
 
         parser.add_argument(
             "--suite",
             choices=["unit", "integration", "e2e", "benchmarks", "quick", "all"],
             default="all",
-            help="Test suite to run (default: all)"
+            help="Test suite to run (default: all)",
+        )
+
+        parser.add_argument("--verbose", "-v", action="store_true", help="Increase verbosity")
+
+        parser.add_argument(
+            "--coverage", "-c", action="store_true", help="Generate coverage report"
+        )
+
+        parser.add_argument("--html", action="store_true", help="Generate HTML coverage report")
+
+        parser.add_argument("--junit", action="store_true", help="Generate JUnit XML report")
+
+        parser.add_argument("--fail-fast", action="store_true", help="Stop on first failure")
+
+        parser.add_argument(
+            "--no-mock-hardware", action="store_true", help="Use real hardware where possible"
         )
 
         parser.add_argument(
-            "--verbose", "-v",
-            action="store_true",
-            help="Increase verbosity"
+            "--benchmark-only", action="store_true", help="Skip accuracy tests in benchmarks"
         )
 
         parser.add_argument(
-            "--coverage", "-c",
-            action="store_true",
-            help="Generate coverage report"
+            "--performance-only", action="store_true", help="Skip accuracy tests in performance"
         )
 
         parser.add_argument(
-            "--html",
-            action="store_true",
-            help="Generate HTML coverage report"
-        )
-
-        parser.add_argument(
-            "--junit",
-            action="store_true",
-            help="Generate JUnit XML report"
-        )
-
-        parser.add_argument(
-            "--fail-fast",
-            action="store_true",
-            help="Stop on first failure"
-        )
-
-        parser.add_argument(
-            "--no-mock-hardware",
-            action="store_true",
-            help="Use real hardware where possible"
-        )
-
-        parser.add_argument(
-            "--benchmark-only",
-            action="store_true",
-            help="Skip accuracy tests in benchmarks"
-        )
-
-        parser.add_argument(
-            "--performance-only",
-            action="store_true",
-            help="Skip accuracy tests in performance"
-        )
-
-        parser.add_argument(
-            "--show-structure",
-            action="store_true",
-            help="Show test directory structure and exit"
+            "--show-structure", action="store_true", help="Show test directory structure and exit"
         )
 
         args = parser.parse_args()
@@ -352,7 +335,7 @@ class TestRunner:
             "e2e": self.run_e2e_tests,
             "benchmarks": self.run_benchmark_tests,
             "quick": self.run_quick_tests,
-            "all": self.run_all_tests
+            "all": self.run_all_tests,
         }
 
         success = suite_map[args.suite](args)

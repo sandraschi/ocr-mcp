@@ -6,7 +6,8 @@ Integrates DOTS.OCR for document understanding and structured content extraction
 import json
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Any
+
 import torch
 from PIL import Image
 
@@ -89,8 +90,8 @@ class DOTSBackend(OCRBackend):
         self,
         image_path: str,
         ocr_mode: str = "text",
-        region: Optional[List[int]] = None,
-    ) -> Dict[str, Any]:
+        region: list[int] | None = None,
+    ) -> dict[str, Any]:
         """Process document with DOTS.OCR"""
 
         if not self.model or not self.processor:
@@ -145,7 +146,7 @@ class DOTSBackend(OCRBackend):
 
     def _parse_dots_output(
         self, raw_output: str, ocr_mode: str, image_size: tuple
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Parse DOTS.OCR structured output"""
         # DOTS.OCR provides rich structured output
         parsed = self._parse_json_output(raw_output)
@@ -174,7 +175,7 @@ class DOTSBackend(OCRBackend):
                 "structured": parsed.get("structure", {}),
             }
 
-    def _parse_json_output(self, raw_output: str) -> Dict[str, Any]:
+    def _parse_json_output(self, raw_output: str) -> dict[str, Any]:
         """Parse JSON output from DOTS.OCR"""
         try:
             # Try to parse as JSON first
@@ -183,7 +184,7 @@ class DOTSBackend(OCRBackend):
             # Fallback to structured text parsing
             return self._parse_text_output(raw_output)
 
-    def _parse_text_output(self, raw_output: str) -> Dict[str, Any]:
+    def _parse_text_output(self, raw_output: str) -> dict[str, Any]:
         """Fallback parsing for text-based output"""
         # This would implement custom parsing logic for DOTS.OCR text output
         return {
@@ -193,7 +194,7 @@ class DOTSBackend(OCRBackend):
             "regions": [],
         }
 
-    def get_capabilities(self) -> Dict[str, Any]:
+    def get_capabilities(self) -> dict[str, Any]:
         """Get backend capabilities"""
         return {
             "name": "DOTS.OCR",

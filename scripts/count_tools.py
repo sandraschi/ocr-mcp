@@ -1,4 +1,5 @@
 import logging
+
 logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 """
@@ -19,7 +20,7 @@ sys.path.insert(0, str(src_path))
 try:
     from ocr_mcp.server import app
 
-    asynasync def count_tools():
+    async def count_tools():
         """Count and display registered tools."""
         try:
             # Get tools from the MCP app
@@ -32,8 +33,8 @@ try:
             logger.info()
 
             # Group tools by category
-            ocr_tools = [t for t in tool_names if 'ocr' in t.lower() or 'process' in t.lower()]
-            scanner_tools = [t for t in tool_names if 'scan' in t.lower()]
+            ocr_tools = [t for t in tool_names if "ocr" in t.lower() or "process" in t.lower()]
+            scanner_tools = [t for t in tool_names if "scan" in t.lower()]
             other_tools = [t for t in tool_names if t not in ocr_tools + scanner_tools]
 
             if ocr_tools:
@@ -58,6 +59,7 @@ try:
         except Exception as e:
             logger.info(f"ERROR: Error counting tools: {e}")
             import traceback
+
             traceback.print_exc()
             sys.exit(1)
 
@@ -66,5 +68,7 @@ try:
 
 except ImportError as e:
     logger.info(f"ERROR: Import error: {e}")
-    logger.info("Make sure you're running from the ocr-mcp directory and dependencies are installed.")
+    logger.info(
+        "Make sure you're running from the ocr-mcp directory and dependencies are installed."
+    )
     sys.exit(1)

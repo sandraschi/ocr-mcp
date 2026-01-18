@@ -1,9 +1,5 @@
-import os
-import re
-
-
 def fix_module(filepath):
-    with open(filepath, "r") as f:
+    with open(filepath) as f:
         content = f.read()
 
     # Fix the corrupted keywords
@@ -20,9 +16,7 @@ def fix_module(filepath):
 
     content = content.replace("c def ", "async def ")
     content = content.replace("nc def ", "async def ")  # maybe?
-    content = content.replace(
-        "eration handler functions", "Operation handler functions"
-    )
+    content = content.replace("eration handler functions", "Operation handler functions")
     content = content.replace(
         "iginal individual tool functions", "Original individual tool functions"
     )

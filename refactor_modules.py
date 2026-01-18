@@ -1,9 +1,8 @@
-import os
 import re
 
 
 def refactor_module(filepath):
-    with open(filepath, "r") as f:
+    with open(filepath) as f:
         lines = f.readlines()
 
     new_lines = []

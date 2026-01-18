@@ -6,7 +6,8 @@ to enable testing without requiring physical scanner hardware.
 """
 
 import asyncio
-from typing import Dict, Any, Optional, List
+from typing import Any
+
 from PIL import Image
 
 
@@ -26,7 +27,7 @@ class MockWIABackend:
                 "device_type": "Flatbed",
                 "supports_adf": False,
                 "supports_duplex": False,
-                "max_dpi": 1200
+                "max_dpi": 1200,
             },
             {
                 "device_id": "wia:test_scanner_2",
@@ -36,19 +37,19 @@ class MockWIABackend:
                 "device_type": "Feeder",
                 "supports_adf": True,
                 "supports_duplex": True,
-                "max_dpi": 600
-            }
+                "max_dpi": 600,
+            },
         ]
 
     def is_available(self) -> bool:
         return self._available
 
-    def discover_scanners(self) -> List[Dict[str, Any]]:
+    def discover_scanners(self) -> list[dict[str, Any]]:
         """Mock scanner discovery."""
         self.call_count += 1
         return self.scanners.copy()
 
-    def get_scanner_properties(self, device_id: str) -> Optional[Dict[str, Any]]:
+    def get_scanner_properties(self, device_id: str) -> dict[str, Any] | None:
         """Mock scanner properties retrieval."""
         self.call_count += 1
         self.last_call_args = device_id
@@ -69,10 +70,10 @@ class MockWIABackend:
             "supports_preview": True,
             "manufacturer": scanner["manufacturer"],
             "model": scanner["name"],
-            "firmware_version": "1.2.3"
+            "firmware_version": "1.2.3",
         }
 
-    def configure_scan(self, device_id: str, settings: Dict[str, Any]) -> bool:
+    def configure_scan(self, device_id: str, settings: dict[str, Any]) -> bool:
         """Mock scan configuration."""
         self.call_count += 1
         self.last_call_args = (device_id, settings)
@@ -85,7 +86,7 @@ class MockWIABackend:
 
         return True
 
-    def scan_document(self, device_id: str, settings: Dict[str, Any]) -> Optional[Image.Image]:
+    def scan_document(self, device_id: str, settings: dict[str, Any]) -> Image.Image | None:
         """Mock document scanning."""
         self.call_count += 1
         self.last_call_args = (device_id, settings)
@@ -97,6 +98,7 @@ class MockWIABackend:
 
         # Simulate scanning delay
         import time
+
         time.sleep(0.1)
 
         # Create mock scanned image
@@ -124,9 +126,10 @@ class MockWIABackend:
         if color_mode != "BlackWhite":
             # Draw some lines to simulate text
             from PIL import ImageDraw
+
             draw = ImageDraw.Draw(image)
             for y in range(100, height, 50):
-                draw.line([(50, y), (width-50, y)], fill=(0, 0, 0), width=2)
+                draw.line([(50, y), (width - 50, y)], fill=(0, 0, 0), width=2)
 
         return image
 
@@ -142,39 +145,35 @@ class MockScannerManager:
     def is_available(self) -> bool:
         return self._available and self.wia_backend.is_available()
 
-    def discover_scanners(self, force_refresh: bool = False) -> List[Dict[str, Any]]:
+    def discover_scanners(self, force_refresh: bool = False) -> list[dict[str, Any]]:
         """Mock scanner discovery across all backends."""
         self.call_count += 1
         return self.wia_backend.discover_scanners()
 
-    def get_scanner_info(self, device_id: str) -> Optional[Dict[str, Any]]:
+    def get_scanner_info(self, device_id: str) -> dict[str, Any] | None:
         """Mock scanner info retrieval."""
         self.call_count += 1
         scanners = self.wia_backend.discover_scanners()
         return next((s for s in scanners if s["device_id"] == device_id), None)
 
-    def get_scanner_properties(self, device_id: str) -> Optional[Dict[str, Any]]:
+    def get_scanner_properties(self, device_id: str) -> dict[str, Any] | None:
         """Mock scanner properties retrieval."""
         self.call_count += 1
         return self.wia_backend.get_scanner_properties(device_id)
 
-    def configure_scan(self, device_id: str, settings: Dict[str, Any]) -> bool:
+    def configure_scan(self, device_id: str, settings: dict[str, Any]) -> bool:
         """Mock scan configuration."""
         self.call_count += 1
         return self.wia_backend.configure_scan(device_id, settings)
 
-    def scan_document(self, device_id: str, settings: Dict[str, Any]) -> Optional[Image.Image]:
+    def scan_document(self, device_id: str, settings: dict[str, Any]) -> Image.Image | None:
         """Mock document scanning."""
         self.call_count += 1
         return self.wia_backend.scan_document(device_id, settings)
 
     async def scan_batch(
-        self,
-        device_id: str,
-        settings: Dict[str, Any],
-        count: int = 10,
-        auto_process: bool = True
-    ) -> List[Image.Image]:
+        self, device_id: str, settings: dict[str, Any], count: int = 10, auto_process: bool = True
+    ) -> list[Image.Image]:
         """Mock batch scanning."""
         self.call_count += 1
 
@@ -191,7 +190,7 @@ class MockScannerManager:
 
         return images
 
-    def get_available_backends(self) -> List[str]:
+    def get_available_backends(self) -> list[str]:
         """Mock available backends."""
         return ["wia"] if self.is_available() else []
 
@@ -215,8 +214,8 @@ def generate_mock_scan_settings(
     brightness: int = 0,
     contrast: int = 0,
     use_adf: bool = False,
-    duplex: bool = False
-) -> Dict[str, Any]:
+    duplex: bool = False,
+) -> dict[str, Any]:
     """Generate mock scan settings for testing."""
     return {
         "dpi": dpi,
@@ -225,53 +224,47 @@ def generate_mock_scan_settings(
         "brightness": brightness,
         "contrast": contrast,
         "use_adf": use_adf,
-        "duplex": duplex
+        "duplex": duplex,
     }
 
 
-def generate_mock_scanner_list(count: int = 2) -> List[Dict[str, Any]]:
+def generate_mock_scanner_list(count: int = 2) -> list[dict[str, Any]]:
     """Generate a list of mock scanners for testing."""
     scanners = []
     for i in range(count):
-        scanners.append({
-            "device_id": f"wia:test_scanner_{i+1}",
-            "name": f"Test Scanner {i+1}",
-            "manufacturer": f"Test Corp {i+1}",
-            "description": f"Mock scanner {i+1} for testing",
-            "device_type": "Flatbed" if i % 2 == 0 else "Feeder",
-            "supports_adf": i % 2 == 1,
-            "supports_duplex": i % 2 == 1,
-            "max_dpi": 600 + (i * 300)
-        })
+        scanners.append(
+            {
+                "device_id": f"wia:test_scanner_{i + 1}",
+                "name": f"Test Scanner {i + 1}",
+                "manufacturer": f"Test Corp {i + 1}",
+                "description": f"Mock scanner {i + 1} for testing",
+                "device_type": "Flatbed" if i % 2 == 0 else "Feeder",
+                "supports_adf": i % 2 == 1,
+                "supports_duplex": i % 2 == 1,
+                "max_dpi": 600 + (i * 300),
+            }
+        )
     return scanners
 
 
 def create_mock_scanned_image(
-    width: int = 1000,
-    height: int = 1500,
-    mode: str = "RGB",
-    add_content: bool = True
+    width: int = 1000, height: int = 1500, mode: str = "RGB", add_content: bool = True
 ) -> Image.Image:
     """Create a mock scanned image for testing."""
     image = Image.new(mode, (width, height), (255, 255, 255))  # White background
 
     if add_content and mode != "1":  # Not for binary images
         from PIL import ImageDraw
+
         draw = ImageDraw.Draw(image)
 
         # Add some mock text-like lines
         for y in range(100, height, 50):
-            draw.line([(50, y), (width-50, y)], fill=(0, 0, 0), width=2)
+            draw.line([(50, y), (width - 50, y)], fill=(0, 0, 0), width=2)
 
         # Add some mock content blocks
         for x in range(100, width, 200):
             for y in range(150, height, 100):
-                draw.rectangle([x, y, x+150, y+30], fill=(200, 200, 200))
+                draw.rectangle([x, y, x + 150, y + 30], fill=(200, 200, 200))
 
     return image
-
-
-
-
-
-

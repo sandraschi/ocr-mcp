@@ -5,7 +5,8 @@ Integrates Qwen-Image-Layered for advanced image decomposition and layered OCR
 
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Any
+
 import torch
 from PIL import Image
 
@@ -33,8 +34,7 @@ class QwenLayeredBackend(OCRBackend):
         )
         self.model_name = "Qwen/Qwen-Image-Layered"
         self.cache_dir = Path(
-            getattr(config, "ocr_cache_dir", None)
-            or str(Path.home() / ".cache" / "qwen-layered")
+            getattr(config, "ocr_cache_dir", None) or str(Path.home() / ".cache" / "qwen-layered")
         )
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
@@ -82,8 +82,8 @@ class QwenLayeredBackend(OCRBackend):
         self,
         image_path: str,
         ocr_mode: str = "text",
-        region: Optional[List[int]] = None,
-    ) -> Dict[str, Any]:
+        region: list[int] | None = None,
+    ) -> dict[str, Any]:
         """Process document with Qwen-Image-Layered decomposition"""
 
         if not self.pipeline:
@@ -110,7 +110,7 @@ class QwenLayeredBackend(OCRBackend):
             logger.error(f"Qwen-Image-Layered processing failed: {e}")
             raise RuntimeError(f"OCR processing failed: {str(e)}")
 
-    async def _decompose_image(self, image: Image.Image) -> List[Image.Image]:
+    async def _decompose_image(self, image: Image.Image) -> list[Image.Image]:
         """Decompose image into layers using Qwen-Image-Layered"""
         try:
             # Generate layered decomposition
@@ -134,8 +134,8 @@ class QwenLayeredBackend(OCRBackend):
             return [image]  # Fallback to original image
 
     async def _process_layers_for_ocr(
-        self, layers: List[Image.Image], ocr_mode: str
-    ) -> Dict[str, Any]:
+        self, layers: list[Image.Image], ocr_mode: str
+    ) -> dict[str, Any]:
         """Process decomposed layers for OCR"""
         # This would use another OCR backend to process the layers
         # For now, return placeholder results
@@ -183,7 +183,7 @@ class QwenLayeredBackend(OCRBackend):
                 "structured": self._create_layered_structure(layers),
             }
 
-    def _create_layered_structure(self, layers: List[Image.Image]) -> Dict[str, Any]:
+    def _create_layered_structure(self, layers: list[Image.Image]) -> dict[str, Any]:
         """Create structured output from layers"""
         return {
             "layers": len(layers),
@@ -198,7 +198,7 @@ class QwenLayeredBackend(OCRBackend):
             "decomposition_method": "qwen-layered",
         }
 
-    def get_capabilities(self) -> Dict[str, Any]:
+    def get_capabilities(self) -> dict[str, Any]:
         """Get backend capabilities"""
         return {
             "name": "Qwen-Image-Layered",

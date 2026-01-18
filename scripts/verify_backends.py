@@ -1,8 +1,9 @@
 import logging
+
 logger = logging.getLogger(__name__)
 import asyncio
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Add src to path
@@ -12,7 +13,7 @@ from ocr_mcp.core.backend_manager import BackendManager
 from ocr_mcp.core.config import OCRConfig
 
 
-asynasync def check_backends():
+async def check_backends():
     config = OCRConfig()
     manager = BackendManager(config)
 

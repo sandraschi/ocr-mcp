@@ -2,7 +2,3 @@
 # FastAPI server for OCR-MCP web interface
 
 
-
-
-
-

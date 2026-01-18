@@ -5,8 +5,8 @@ Comprehensive mock implementations for external dependencies and hardware interf
 """
 
 from .mock_backends import *
-from .mock_scanner import *
 from .mock_document_processor import *
+from .mock_scanner import *
 
 __all__ = [
     # Backend mocks
@@ -18,22 +18,13 @@ __all__ = [
     "MockGOTBackend",
     "MockTesseractBackend",
     "MockEasyOCRBackend",
-
     # Scanner mocks
     "MockWIABackend",
     "MockScannerManager",
-
     # Document processor mocks
     "MockDocumentProcessor",
-
     # Utility mocks
     "create_mock_image",
     "create_mock_ocr_result",
-    "create_mock_scanner_info"
+    "create_mock_scanner_info",
 ]
-
-
-
-
-
-

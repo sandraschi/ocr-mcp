@@ -5,10 +5,10 @@ Orchestrates WIA, TWAIN, and other scanner control systems with a unified API.
 """
 
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Any
 
-from .wia_scanner import WIABackend, ScannerInfo, ScanSettings, ScannerProperties
 from .bridge_scanner import BridgeScannerBackend
+from .wia_scanner import ScannerInfo, ScannerProperties, ScanSettings, WIABackend
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ class ScannerManager:
         """Check if any scanner backend is available."""
         return any(backend.is_available() for backend in self.backends.values())
 
-    def discover_scanners(self, force_refresh: bool = False) -> List[ScannerInfo]:
+    def discover_scanners(self, force_refresh: bool = False) -> list[ScannerInfo]:
         """
         Discover all connected scanners across all backends.
 
@@ -63,9 +63,7 @@ class ScannerManager:
                         self._discovered_scanners[unique_id] = scanner
                         all_scanners.append(scanner)
 
-                    logger.info(
-                        f"{backend_name.upper()} backend found {len(scanners)} scanners"
-                    )
+                    logger.info(f"{backend_name.upper()} backend found {len(scanners)} scanners")
                 except Exception as e:
                     logger.error(f"Error discovering scanners with {backend_name}: {e}")
 
@@ -73,7 +71,7 @@ class ScannerManager:
         logger.info(f"Total scanners discovered: {len(all_scanners)}")
         return all_scanners
 
-    def get_scanner_info(self, device_id: str) -> Optional[ScannerInfo]:
+    def get_scanner_info(self, device_id: str) -> ScannerInfo | None:
         """
         Get information about a specific scanner.
 
@@ -89,7 +87,7 @@ class ScannerManager:
 
         return self._discovered_scanners.get(device_id)
 
-    def get_scanner_properties(self, device_id: str) -> Optional[ScannerProperties]:
+    def get_scanner_properties(self, device_id: str) -> ScannerProperties | None:
         """
         Get detailed properties for a scanner.
 
@@ -112,7 +110,7 @@ class ScannerManager:
             logger.error(f"Failed to get properties for scanner {device_id}: {e}")
             return None
 
-    def configure_scan(self, device_id: str, settings: Dict[str, Any]) -> bool:
+    def configure_scan(self, device_id: str, settings: dict[str, Any]) -> bool:
         """
         Configure scan settings for a scanner.
 
@@ -137,7 +135,7 @@ class ScannerManager:
             logger.error(f"Failed to configure scanner {device_id}: {e}")
             return False
 
-    def scan_document(self, device_id: str, settings: Dict[str, Any]) -> Optional[Any]:
+    def scan_document(self, device_id: str, settings: dict[str, Any]) -> Any | None:
         """
         Perform a document scan.
 
@@ -165,10 +163,10 @@ class ScannerManager:
     async def scan_batch(
         self,
         device_id: str,
-        settings: Dict[str, Any],
+        settings: dict[str, Any],
         count: int = 10,
         auto_process: bool = True,
-    ) -> List[Any]:
+    ) -> list[Any]:
         """
         Perform batch scanning of multiple documents.
 
@@ -227,13 +225,11 @@ class ScannerManager:
             # Assume WIA if no prefix (backward compatibility)
             return "wia", device_id
 
-    def get_available_backends(self) -> List[str]:
+    def get_available_backends(self) -> list[str]:
         """Get list of available scanner backends."""
-        return [
-            name for name, backend in self.backends.items() if backend.is_available()
-        ]
+        return [name for name, backend in self.backends.items() if backend.is_available()]
 
-    def get_backend_status(self) -> Dict[str, bool]:
+    def get_backend_status(self) -> dict[str, bool]:
         """Get status of all scanner backends."""
         return {name: backend.is_available() for name, backend in self.backends.items()}
 

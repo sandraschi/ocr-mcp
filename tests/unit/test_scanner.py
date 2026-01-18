@@ -5,7 +5,7 @@ Unit tests for OCR-MCP scanner functionality.
 import pytest
 from PIL import Image
 
-from tests.mocks.mock_scanner import MockWIABackend, MockScannerManager
+from tests.mocks.mock_scanner import MockScannerManager, MockWIABackend
 
 
 class TestMockWIABackend:
@@ -62,12 +62,7 @@ class TestMockWIABackend:
 
     def test_configure_scan_success(self, backend):
         """Test successful scan configuration."""
-        settings = {
-            "dpi": 300,
-            "color_mode": "Color",
-            "brightness": 0,
-            "contrast": 0
-        }
+        settings = {"dpi": 300, "color_mode": "Color", "brightness": 0, "contrast": 0}
 
         result = backend.configure_scan("wia:test_scanner_1", settings)
 
@@ -79,7 +74,7 @@ class TestMockWIABackend:
         """Test scan configuration with invalid DPI."""
         settings = {
             "dpi": 0,  # Invalid
-            "color_mode": "Color"
+            "color_mode": "Color",
         }
 
         result = backend.configure_scan("wia:test_scanner_1", settings)
@@ -89,10 +84,7 @@ class TestMockWIABackend:
 
     def test_configure_scan_invalid_color_mode(self, backend):
         """Test scan configuration with invalid color mode."""
-        settings = {
-            "dpi": 300,
-            "color_mode": "InvalidMode"
-        }
+        settings = {"dpi": 300, "color_mode": "InvalidMode"}
 
         result = backend.configure_scan("wia:test_scanner_1", settings)
 
@@ -101,11 +93,7 @@ class TestMockWIABackend:
 
     def test_scan_document_success(self, backend):
         """Test successful document scanning."""
-        settings = {
-            "dpi": 300,
-            "color_mode": "Color",
-            "paper_size": "A4"
-        }
+        settings = {"dpi": 300, "color_mode": "Color", "paper_size": "A4"}
 
         image = backend.scan_document("wia:test_scanner_1", settings)
 
@@ -126,11 +114,7 @@ class TestMockWIABackend:
 
     def test_scan_document_grayscale(self, backend):
         """Test scanning in grayscale mode."""
-        settings = {
-            "dpi": 300,
-            "color_mode": "Grayscale",
-            "paper_size": "A4"
-        }
+        settings = {"dpi": 300, "color_mode": "Grayscale", "paper_size": "A4"}
 
         image = backend.scan_document("wia:test_scanner_1", settings)
 
@@ -140,11 +124,7 @@ class TestMockWIABackend:
 
     def test_scan_document_black_white(self, backend):
         """Test scanning in black and white mode."""
-        settings = {
-            "dpi": 150,
-            "color_mode": "BlackWhite",
-            "paper_size": "Letter"
-        }
+        settings = {"dpi": 150, "color_mode": "BlackWhite", "paper_size": "Letter"}
 
         image = backend.scan_document("wia:test_scanner_1", settings)
 
@@ -207,12 +187,7 @@ class TestMockScannerManager:
 
     def test_configure_scan(self, manager):
         """Test scan configuration through manager."""
-        settings = {
-            "dpi": 600,
-            "color_mode": "Grayscale",
-            "brightness": 10,
-            "contrast": -5
-        }
+        settings = {"dpi": 600, "color_mode": "Grayscale", "brightness": 10, "contrast": -5}
 
         result = manager.configure_scan("wia:test_scanner_1", settings)
 
@@ -220,11 +195,7 @@ class TestMockScannerManager:
 
     def test_scan_document(self, manager):
         """Test document scanning through manager."""
-        settings = {
-            "dpi": 150,
-            "color_mode": "Color",
-            "paper_size": "A4"
-        }
+        settings = {"dpi": 150, "color_mode": "Color", "paper_size": "A4"}
 
         image = manager.scan_document("wia:test_scanner_1", settings)
 
@@ -235,11 +206,7 @@ class TestMockScannerManager:
     @pytest.mark.asyncio
     async def test_scan_batch(self, manager):
         """Test batch scanning."""
-        settings = {
-            "dpi": 150,
-            "color_mode": "Color",
-            "paper_size": "A4"
-        }
+        settings = {"dpi": 150, "color_mode": "Color", "paper_size": "A4"}
 
         images = await manager.scan_batch("wia:test_scanner_1", settings, count=3)
 
@@ -285,7 +252,7 @@ class TestScannerIntegration:
         manager = BackendManager(config)
 
         # Should have scanner manager
-        assert hasattr(manager, 'scanner_manager')
+        assert hasattr(manager, "scanner_manager")
         assert manager.scanner_manager is not None
 
     def test_scanner_manager_availability(self):
@@ -331,7 +298,7 @@ class TestScannerIntegration:
             "brightness": 0,
             "contrast": 0,
             "use_adf": False,
-            "duplex": False
+            "duplex": False,
         }
 
         result = manager.configure_scan("wia:test_scanner_1", valid_settings)
@@ -367,10 +334,17 @@ class TestScannerIntegration:
         properties = backend.get_scanner_properties("wia:test_scanner_1")
 
         required_keys = [
-            "supported_resolutions", "supported_color_modes",
-            "supported_paper_sizes", "max_paper_width", "max_paper_height",
-            "supports_adf", "supports_duplex", "supports_preview",
-            "manufacturer", "model", "firmware_version"
+            "supported_resolutions",
+            "supported_color_modes",
+            "supported_paper_sizes",
+            "max_paper_width",
+            "max_paper_height",
+            "supports_adf",
+            "supports_duplex",
+            "supports_preview",
+            "manufacturer",
+            "model",
+            "firmware_version",
         ]
 
         for key in required_keys:
@@ -381,9 +355,3 @@ class TestScannerIntegration:
         assert isinstance(properties["supported_color_modes"], list)
         assert isinstance(properties["supports_adf"], bool)
         assert isinstance(properties["manufacturer"], str)
-
-
-
-
-
-

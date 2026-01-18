@@ -6,8 +6,8 @@ accuracy validation, and performance analytics.
 """
 
 import logging
-from typing import Dict, Any, Optional, List
 import re
+from typing import Any
 
 from ..core.backend_manager import BackendManager
 from ..core.config import OCRConfig
@@ -25,12 +25,12 @@ logger = logging.getLogger(__name__)
 
 
 async def assess_ocr_quality(
-    ocr_result: Dict[str, Any],
-    ground_truth: Optional[str] = None,
+    ocr_result: dict[str, Any],
+    ground_truth: str | None = None,
     assessment_type: str = "comprehensive",
-    backend_manager: Optional[BackendManager] = None,
-    config: Optional[OCRConfig] = None,
-) -> Dict[str, Any]:
+    backend_manager: BackendManager | None = None,
+    config: OCRConfig | None = None,
+) -> dict[str, Any]:
     """
     Assess the quality and accuracy of OCR results.
 
@@ -70,9 +70,7 @@ async def assess_ocr_quality(
         confidence_analysis = {}
         if isinstance(confidence_scores, list) and confidence_scores:
             confidence_analysis = {
-                "average_confidence": round(
-                    sum(confidence_scores) / len(confidence_scores), 3
-                ),
+                "average_confidence": round(sum(confidence_scores) / len(confidence_scores), 3),
                 "min_confidence": round(min(confidence_scores), 3),
                 "max_confidence": round(max(confidence_scores), 3),
                 "confidence_std": round(
@@ -104,9 +102,7 @@ async def assess_ocr_quality(
         # Text quality indicators
         quality_indicators = {
             "has_gibberish": _detect_gibberish(ocr_text),
-            "has_repeated_chars": bool(
-                re.search(r"(.)\1{4,}", ocr_text)
-            ),  # 5+ repeated chars
+            "has_repeated_chars": bool(re.search(r"(.)\1{4,}", ocr_text)),  # 5+ repeated chars
             "has_missing_spaces": bool(
                 re.search(r"[a-z][A-Z]", ocr_text)
             ),  # Missing spaces between words
@@ -186,11 +182,11 @@ async def assess_ocr_quality(
 
 async def compare_ocr_backends(
     image_path: str,
-    backends: Optional[List[str]] = None,
-    ground_truth: Optional[str] = None,
-    backend_manager: Optional[BackendManager] = None,
-    config: Optional[OCRConfig] = None,
-) -> Dict[str, Any]:
+    backends: list[str] | None = None,
+    ground_truth: str | None = None,
+    backend_manager: BackendManager | None = None,
+    config: OCRConfig | None = None,
+) -> dict[str, Any]:
     """
     Compare OCR accuracy across different backends on the same image.
 
@@ -320,14 +316,10 @@ async def compare_ocr_backends(
             "summary_stats": {
                 "average_quality_score": round(avg_quality, 1),
                 "average_processing_time": round(avg_time, 2),
-                "success_rate": round(
-                    len(successful_results) / len(comparison_results) * 100, 1
-                ),
+                "success_rate": round(len(successful_results) / len(comparison_results) * 100, 1),
             },
             "ground_truth_provided": ground_truth is not None,
-            "recommendation": _generate_backend_recommendation(
-                successful_results, image_path
-            ),
+            "recommendation": _generate_backend_recommendation(successful_results, image_path),
         }
 
     except Exception as e:
@@ -341,7 +333,7 @@ async def compare_ocr_backends(
 
 async def validate_ocr_accuracy(
     ocr_text: str, expected_text: str, validation_type: str = "character"
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Validate OCR accuracy by comparing against expected text.
 
@@ -421,8 +413,8 @@ async def validate_ocr_accuracy(
 
 
 async def analyze_image_quality(
-    image_path: str, quality_checks: Optional[List[str]] = None
-) -> Dict[str, Any]:
+    image_path: str, quality_checks: list[str] | None = None
+) -> dict[str, Any]:
     """
     Analyze image quality factors that affect OCR accuracy.
 
@@ -449,8 +441,8 @@ async def analyze_image_quality(
         ]
 
     try:
-        from PIL import Image
         import numpy as np
+        from PIL import Image
 
         if not OPENCV_AVAILABLE:
             return {
@@ -480,9 +472,7 @@ async def analyze_image_quality(
                 "recommended_dpi": 300,
             }
             if dpi < 150:
-                recommendations.append(
-                    "Increase resolution to at least 150 DPI for better OCR"
-                )
+                recommendations.append("Increase resolution to at least 150 DPI for better OCR")
 
         # Contrast analysis
         if "contrast" in quality_checks:
@@ -508,9 +498,7 @@ async def analyze_image_quality(
                 "acceptable_noise": noise_level < 20,
             }
             if noise_level >= 20:
-                recommendations.append(
-                    "Reduce image noise using despeckling or smoothing filters"
-                )
+                recommendations.append("Reduce image noise using despeckling or smoothing filters")
 
         # Blur detection
         if "blur" in quality_checks:
@@ -519,11 +507,7 @@ async def analyze_image_quality(
                 "blur_score": round(blur_score, 2),
                 "sharp_image": blur_score > 50,
                 "blur_level": (
-                    "sharp"
-                    if blur_score > 100
-                    else "moderate"
-                    if blur_score > 50
-                    else "blurry"
+                    "sharp" if blur_score > 100 else "moderate" if blur_score > 50 else "blurry"
                 ),
             }
             if blur_score <= 50:
@@ -538,21 +522,13 @@ async def analyze_image_quality(
                 "brightness_level": round(brightness, 1),
                 "optimal_brightness": 80 <= brightness <= 180,
                 "brightness_category": (
-                    "dark"
-                    if brightness < 80
-                    else "bright"
-                    if brightness > 180
-                    else "optimal"
+                    "dark" if brightness < 80 else "bright" if brightness > 180 else "optimal"
                 ),
             }
             if brightness < 80:
-                recommendations.append(
-                    "Image is too dark - increase brightness or exposure"
-                )
+                recommendations.append("Image is too dark - increase brightness or exposure")
             elif brightness > 180:
-                recommendations.append(
-                    "Image is too bright - reduce brightness or exposure"
-                )
+                recommendations.append("Image is too bright - reduce brightness or exposure")
 
         # Skew estimation
         if "skew" in quality_checks:
@@ -590,9 +566,7 @@ async def analyze_image_quality(
             "quality_grade": quality_grade,
             "recommendations": recommendations,
             "ocr_readiness": "ready" if quality_score >= 70 else "needs_improvement",
-            "estimated_ocr_accuracy": _estimate_ocr_accuracy_from_quality(
-                quality_score
-            ),
+            "estimated_ocr_accuracy": _estimate_ocr_accuracy_from_quality(quality_score),
         }
 
     except Exception as e:
@@ -621,7 +595,7 @@ def _detect_gibberish(text: str) -> bool:
     return False
 
 
-def _calculate_accuracy_metrics(ocr_text: str, ground_truth: str) -> Dict[str, float]:
+def _calculate_accuracy_metrics(ocr_text: str, ground_truth: str) -> dict[str, float]:
     """Calculate detailed accuracy metrics."""
     # Character-level accuracy
     ocr_chars = list(ocr_text.replace(" ", ""))
@@ -667,7 +641,7 @@ def _longest_common_subsequence(text1: str, text2: str) -> int:
     return dp[m][n]
 
 
-def _analyze_semantic_similarity(text1: str, text2: str) -> Dict[str, Any]:
+def _analyze_semantic_similarity(text1: str, text2: str) -> dict[str, Any]:
     """Analyze semantic similarity (placeholder for advanced analysis)."""
     # Simple word overlap for now
     words1 = set(text1.lower().split())
@@ -686,7 +660,7 @@ def _analyze_semantic_similarity(text1: str, text2: str) -> Dict[str, Any]:
     }
 
 
-def _analyze_ocr_errors(ocr_text: str, ground_truth: str) -> Dict[str, Any]:
+def _analyze_ocr_errors(ocr_text: str, ground_truth: str) -> dict[str, Any]:
     """Analyze common OCR error patterns."""
     errors = {
         "character_substitutions": [],
@@ -714,9 +688,9 @@ def _analyze_ocr_errors(ocr_text: str, ground_truth: str) -> Dict[str, Any]:
 
 
 def _calculate_quality_score(
-    confidence_analysis: Dict,
-    quality_indicators: Dict,
-    accuracy_metrics: Optional[Dict] = None,
+    confidence_analysis: dict,
+    quality_indicators: dict,
+    accuracy_metrics: dict | None = None,
 ) -> int:
     """Calculate overall quality score (0-100)."""
     score = 50  # Base score
@@ -746,10 +720,10 @@ def _calculate_quality_score(
 
 def _generate_recommendations(
     quality_score: int,
-    confidence_analysis: Dict,
-    quality_indicators: Dict,
+    confidence_analysis: dict,
+    quality_indicators: dict,
     backend: str,
-) -> List[str]:
+) -> list[str]:
     """Generate improvement recommendations."""
     recommendations = []
 
@@ -769,9 +743,7 @@ def _generate_recommendations(
         )
 
     if quality_indicators.get("has_missing_spaces", False):
-        recommendations.append(
-            "Missing word spacing detected - try layout-aware OCR backends"
-        )
+        recommendations.append("Missing word spacing detected - try layout-aware OCR backends")
 
     # Backend-specific recommendations
     if backend == "tesseract" and quality_score < 80:
@@ -787,7 +759,7 @@ def _generate_recommendations(
     return recommendations
 
 
-def _generate_backend_recommendation(results: List[Dict], image_path: str) -> str:
+def _generate_backend_recommendation(results: list[dict], image_path: str) -> str:
     """Generate backend recommendation based on comparison results."""
     if not results:
         return "No backends produced successful results"
@@ -796,9 +768,7 @@ def _generate_backend_recommendation(results: List[Dict], image_path: str) -> st
     backend = best["backend"]
 
     if backend == "deepseek-ocr":
-        return (
-            "DeepSeek-OCR performed best - excellent for complex documents and formulas"
-        )
+        return "DeepSeek-OCR performed best - excellent for complex documents and formulas"
     elif backend == "florence-2":
         return "Florence-2 performed best - great for layout understanding and structured content"
     elif backend == "pp-ocrv5":
@@ -859,7 +829,7 @@ def _estimate_skew(image_array) -> float:
     return 0.0
 
 
-def _calculate_overall_quality_score(analysis: Dict) -> int:
+def _calculate_overall_quality_score(analysis: dict) -> int:
     """Calculate overall image quality score."""
     score = 100
 

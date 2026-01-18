@@ -46,7 +46,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
       dataRetention: 30
     },
     system: {
-      backendUrl: 'http://localhost:8000',
+      backendUrl: 'http://localhost:11400',
       enableDebug: false,
       logLevel: 'info',
       cacheSize: 100
@@ -115,7 +115,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
         dataRetention: 30
       },
       system: {
-        backendUrl: 'http://localhost:8000',
+        backendUrl: 'http://localhost:11400',
         enableDebug: false,
         logLevel: 'info',
         cacheSize: 100
@@ -441,7 +441,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
               value={settings.system.backendUrl}
               onChange={(e) => updateSetting('system', 'backendUrl', e.target.value)}
               className="w-full px-3 py-2 bg-background border border-border rounded-md"
-              placeholder="http://localhost:8000"
+              placeholder="http://localhost:11400"
             />
           </div>
 

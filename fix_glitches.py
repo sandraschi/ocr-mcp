@@ -3,7 +3,7 @@ import re
 
 
 def fix_file(filepath):
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     # 1. Fix glitches (regex for asy*async)
