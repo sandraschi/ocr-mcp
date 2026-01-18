@@ -4,9 +4,10 @@ Integrates PaddlePaddle PP-OCRv5 for industrial-grade OCR processing
 """
 
 import logging
-from typing import Dict, Any, Optional, List
-from PIL import Image
+from typing import Any
+
 import numpy as np
+from PIL import Image
 
 from ..core.backend_manager import OCRBackend
 from ..core.config import OCRConfig
@@ -52,9 +53,7 @@ class PPOCRBackend(OCRBackend):
             return False
 
         try:
-            logger.info(
-                f"Loading PP-OCRv5 model (GPU: {self.use_gpu}, Lang: {self.lang})"
-            )
+            logger.info(f"Loading PP-OCRv5 model (GPU: {self.use_gpu}, Lang: {self.lang})")
 
             # Initialize PaddleOCR
             self.ocr = paddleocr.PaddleOCR(
@@ -80,8 +79,8 @@ class PPOCRBackend(OCRBackend):
         self,
         image_path: str,
         ocr_mode: str = "text",
-        region: Optional[List[int]] = None,
-    ) -> Dict[str, Any]:
+        region: list[int] | None = None,
+    ) -> dict[str, Any]:
         """Process document with PP-OCRv5"""
 
         if not self.ocr:
@@ -103,9 +102,7 @@ class PPOCRBackend(OCRBackend):
             results = self.ocr.ocr(img_array, cls=True)
 
             # Process results
-            processed_results = self._process_ppocr_results(
-                results, ocr_mode, image.size
-            )
+            processed_results = self._process_ppocr_results(results, ocr_mode, image.size)
 
             return processed_results
 
@@ -114,8 +111,8 @@ class PPOCRBackend(OCRBackend):
             raise RuntimeError(f"OCR processing failed: {str(e)}")
 
     def _process_ppocr_results(
-        self, results: List, ocr_mode: str, image_size: tuple
-    ) -> Dict[str, Any]:
+        self, results: list, ocr_mode: str, image_size: tuple
+    ) -> dict[str, Any]:
         """Process PP-OCRv5 results into standardized format"""
         if not results or not results[0]:
             return {"text": "", "backend": "ppocr", "confidence": 0.0, "regions": []}
@@ -168,9 +165,7 @@ class PPOCRBackend(OCRBackend):
                 "structured": {},
             }
 
-    def _create_structured_output(
-        self, regions: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def _create_structured_output(self, regions: list[dict[str, Any]]) -> dict[str, Any]:
         """Create structured output from PP-OCRv5 regions"""
         # Group regions by lines and paragraphs
         if not regions:
@@ -201,7 +196,7 @@ class PPOCRBackend(OCRBackend):
             "lines": lines,
         }
 
-    def get_capabilities(self) -> Dict[str, Any]:
+    def get_capabilities(self) -> dict[str, Any]:
         """Get backend capabilities"""
         return {
             "name": "PP-OCRv5",

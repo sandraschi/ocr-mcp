@@ -3,7 +3,7 @@ Scanner Backends Package
 """
 
 from .scanner_manager import ScannerManager, scanner_manager
-from .wia_scanner import WIABackend, ScannerInfo, ScanSettings, ScannerProperties
+from .wia_scanner import ScannerInfo, ScannerProperties, ScanSettings, WIABackend
 
 __all__ = [
     "ScannerManager",
@@ -11,11 +11,5 @@ __all__ = [
     "WIABackend",
     "ScannerInfo",
     "ScanSettings",
-    "ScannerProperties"
+    "ScannerProperties",
 ]
-
-
-
-
-
-

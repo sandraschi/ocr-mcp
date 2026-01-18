@@ -5,7 +5,8 @@ Integrates DeepSeek-OCR model for high-accuracy OCR processing
 
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Any
+
 import torch
 from PIL import Image
 
@@ -89,8 +90,8 @@ class DeepSeekOCRBackend(OCRBackend):
         self,
         image_path: str,
         ocr_mode: str = "text",
-        region: Optional[List[int]] = None,
-    ) -> Dict[str, Any]:
+        region: list[int] | None = None,
+    ) -> dict[str, Any]:
         """Process document with DeepSeek-OCR"""
 
         if not self.model or not self.tokenizer:
@@ -156,7 +157,7 @@ class DeepSeekOCRBackend(OCRBackend):
             logger.error(f"DeepSeek-OCR processing failed: {e}")
             raise RuntimeError(f"OCR processing failed: {str(e)}")
 
-    def _parse_structured_output(self, text: str) -> Dict[str, Any]:
+    def _parse_structured_output(self, text: str) -> dict[str, Any]:
         """Parse structured output from DeepSeek-OCR"""
         # DeepSeek-OCR may provide structured output
         # This is a placeholder for actual parsing logic
@@ -167,16 +168,14 @@ class DeepSeekOCRBackend(OCRBackend):
             "figures": [],
         }
 
-    def _extract_regions(self, text: str, image_size: tuple) -> List[Dict[str, Any]]:
+    def _extract_regions(self, text: str, image_size: tuple) -> list[dict[str, Any]]:
         """Extract text regions from DeepSeek-OCR output"""
         # This would parse region information if available
         # For now, return a single region covering the whole image
         width, height = image_size
-        return [
-            {"bbox": [0, 0, width, height], "text": text.strip(), "confidence": 0.95}
-        ]
+        return [{"bbox": [0, 0, width, height], "text": text.strip(), "confidence": 0.95}]
 
-    def get_capabilities(self) -> Dict[str, Any]:
+    def get_capabilities(self) -> dict[str, Any]:
         """Get backend capabilities"""
         return {
             "name": "DeepSeek-OCR",

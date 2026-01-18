@@ -5,7 +5,8 @@ Integrates Microsoft's Florence-2 vision foundation model for OCR
 
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Any
+
 import torch
 from PIL import Image
 
@@ -84,8 +85,8 @@ class FlorenceBackend(OCRBackend):
         self,
         image_path: str,
         ocr_mode: str = "text",
-        region: Optional[List[int]] = None,
-    ) -> Dict[str, Any]:
+        region: list[int] | None = None,
+    ) -> dict[str, Any]:
         """Process document with Florence-2"""
 
         if not self.model or not self.processor:
@@ -125,9 +126,9 @@ class FlorenceBackend(OCRBackend):
                 )
 
             # Decode results
-            generated_text = self.processor.batch_decode(
-                generated_ids, skip_special_tokens=False
-            )[0]
+            generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=False)[
+                0
+            ]
 
             # Parse Florence-2 output format
             result = self._parse_florence_output(generated_text, ocr_mode, image.size)
@@ -140,7 +141,7 @@ class FlorenceBackend(OCRBackend):
 
     def _parse_florence_output(
         self, raw_output: str, ocr_mode: str, image_size: tuple
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Parse Florence-2 output format"""
         # Florence-2 returns structured output with regions
         # This is a simplified parser - actual implementation would handle
@@ -179,14 +180,12 @@ class FlorenceBackend(OCRBackend):
         # For now, return a cleaned version
         return raw_output.replace("<pad>", "").replace("</s>", "").strip()
 
-    def _parse_structured_florence_output(self, raw_output: str) -> Dict[str, Any]:
+    def _parse_structured_florence_output(self, raw_output: str) -> dict[str, Any]:
         """Parse structured output from Florence-2"""
         # Florence-2 can provide layout information
         return {"layout": "document", "sections": [], "reading_order": []}
 
-    def _extract_florence_regions(
-        self, raw_output: str, image_size: tuple
-    ) -> List[Dict[str, Any]]:
+    def _extract_florence_regions(self, raw_output: str, image_size: tuple) -> list[dict[str, Any]]:
         """Extract region information from Florence-2 output"""
         # Florence-2 provides bounding box information
         # This would parse actual region data
@@ -199,7 +198,7 @@ class FlorenceBackend(OCRBackend):
             }
         ]
 
-    def get_capabilities(self) -> Dict[str, Any]:
+    def get_capabilities(self) -> dict[str, Any]:
         """Get backend capabilities"""
         return {
             "name": "Florence-2",

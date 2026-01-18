@@ -11,7 +11,6 @@ OCR-MCP Configuration Management
 
 import os
 from pathlib import Path
-from typing import Optional
 
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
@@ -31,7 +30,7 @@ class OCRConfig(BaseModel):
 
     # Device configuration
     device: str = Field(default="auto")  # "auto", "cuda", "cpu"
-    max_memory_gb: Optional[float] = Field(default=None)
+    max_memory_gb: float | None = Field(default=None)
 
     # Default backend settings
     default_backend: str = Field(default="auto")  # "auto", "got-ocr", "tesseract", etc.
@@ -46,13 +45,13 @@ class OCRConfig(BaseModel):
     easyocr_languages: list = Field(default_factory=lambda: ["en"])
 
     # Mistral OCR API settings
-    mistral_api_key: Optional[str] = Field(default=None)
+    mistral_api_key: str | None = Field(default=None)
     mistral_base_url: str = Field(default="https://api.mistral.ai/v1")
 
     # Watch folder settings
     watch_folder_enabled: bool = Field(default=False)
-    watch_folder_path: Optional[Path] = Field(default=None)
-    watch_folder_output_path: Optional[Path] = Field(default=None)
+    watch_folder_path: Path | None = Field(default=None)
+    watch_folder_output_path: Path | None = Field(default=None)
     watch_folder_interval: int = Field(default=10)
 
     def __init__(self, **data):
@@ -60,15 +59,11 @@ class OCRConfig(BaseModel):
         default_cache_dir = Path.home() / ".cache" / "ocr-mcp"
 
         # Override defaults with environment variables
-        data.setdefault(
-            "cache_dir", Path(os.getenv("OCR_CACHE_DIR", str(default_cache_dir)))
-        )
+        data.setdefault("cache_dir", Path(os.getenv("OCR_CACHE_DIR", str(default_cache_dir))))
         data.setdefault("device", os.getenv("OCR_DEVICE", "auto"))
         data.setdefault(
             "max_memory_gb",
-            float(os.getenv("OCR_MAX_MEMORY", 0))
-            if os.getenv("OCR_MAX_MEMORY")
-            else None,
+            float(os.getenv("OCR_MAX_MEMORY", 0)) if os.getenv("OCR_MAX_MEMORY") else None,
         )
         data.setdefault("default_backend", os.getenv("OCR_DEFAULT_BACKEND", "auto"))
         data.setdefault("batch_size", int(os.getenv("OCR_BATCH_SIZE", 4)))
@@ -94,9 +89,7 @@ class OCRConfig(BaseModel):
             if os.getenv("OCR_WATCH_FOLDER_OUTPUT")
             else None,
         )
-        data.setdefault(
-            "watch_folder_interval", int(os.getenv("OCR_WATCH_FOLDER_INTERVAL", 10))
-        )
+        data.setdefault("watch_folder_interval", int(os.getenv("OCR_WATCH_FOLDER_INTERVAL", 10)))
 
         super().__init__(**data)
 

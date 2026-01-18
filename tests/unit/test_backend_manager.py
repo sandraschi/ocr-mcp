@@ -2,8 +2,9 @@
 Unit tests for OCR-MCP backend manager module.
 """
 
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 
 from src.ocr_mcp.core.backend_manager import BackendManager, OCRBackend
 
@@ -48,14 +49,15 @@ class TestBackendManager:
 
         assert manager.config == config
         assert isinstance(manager.backends, dict)
-        assert hasattr(manager, 'scanner_manager')
-        assert hasattr(manager, 'document_processor')
+        assert hasattr(manager, "scanner_manager")
+        assert hasattr(manager, "document_processor")
 
     def test_get_available_backends_empty(self, config):
         """Test getting available backends when none are available."""
-        with patch('src.ocr_mcp.core.backend_manager.scanner_manager') as mock_scanner, \
-             patch('src.ocr_mcp.core.backend_manager.document_processor') as mock_processor:
-
+        with (
+            patch("src.ocr_mcp.core.backend_manager.scanner_manager") as mock_scanner,
+            patch("src.ocr_mcp.core.backend_manager.document_processor") as mock_processor,
+        ):
             mock_scanner.is_available.return_value = False
             mock_processor.is_available.return_value = False
 
@@ -94,10 +96,7 @@ class TestBackendManager:
         mock_backend2.name = "backend2"
         mock_backend2.is_available.return_value = True
 
-        manager.backends = {
-            "backend1": mock_backend1,
-            "backend2": mock_backend2
-        }
+        manager.backends = {"backend1": mock_backend1, "backend2": mock_backend2}
 
         # Should select first available backend
         selected = manager.select_backend("auto")
@@ -146,18 +145,14 @@ class TestBackendManager:
         mock_backend = Mock()
         mock_backend.name = "test-backend"
         mock_backend.is_available.return_value = True
-        mock_backend.process_image = Mock(return_value={
-            "success": True,
-            "text": "Test OCR result",
-            "backend": "test-backend"
-        })
+        mock_backend.process_image = Mock(
+            return_value={"success": True, "text": "Test OCR result", "backend": "test-backend"}
+        )
 
         manager.backends = {"test-backend": mock_backend}
 
         result = await manager.process_with_backend(
-            "test-backend",
-            str(sample_image_path),
-            mode="text"
+            "test-backend", str(sample_image_path), mode="text"
         )
 
         assert result["success"] is True
@@ -177,10 +172,7 @@ class TestBackendManager:
 
         manager.backends = {"test-backend": mock_backend}
 
-        result = await manager.process_with_backend(
-            "test-backend",
-            str(sample_image_path)
-        )
+        result = await manager.process_with_backend("test-backend", str(sample_image_path))
 
         assert result["success"] is False
         assert "error" in result
@@ -191,10 +183,7 @@ class TestBackendManager:
         """Test processing with unavailable backend."""
         manager = BackendManager(config)
 
-        result = await manager.process_with_backend(
-            "nonexistent-backend",
-            str(sample_image_path)
-        )
+        result = await manager.process_with_backend("nonexistent-backend", str(sample_image_path))
 
         assert result["success"] is False
         assert "error" in result
@@ -207,8 +196,14 @@ class TestBackendManager:
         # Create mocks for all backends in preference order
         backends = {}
         preference_order = [
-            "deepseek-ocr", "florence-2", "dots-ocr", "pp-ocrv5",
-            "qwen-image-layered", "got-ocr", "tesseract", "easyocr"
+            "deepseek-ocr",
+            "florence-2",
+            "dots-ocr",
+            "pp-ocrv5",
+            "qwen-image-layered",
+            "got-ocr",
+            "tesseract",
+            "easyocr",
         ]
 
         # Make all backends available
@@ -237,10 +232,7 @@ class TestBackendManager:
         mock_available.name = "florence-2"
         mock_available.is_available.return_value = True
 
-        manager.backends = {
-            "deepseek-ocr": mock_unavailable,
-            "florence-2": mock_available
-        }
+        manager.backends = {"deepseek-ocr": mock_unavailable, "florence-2": mock_available}
 
         selected = manager.select_backend("auto")
         assert selected.name == "florence-2"
@@ -263,8 +255,14 @@ class TestBackendManager:
 
         # Should have initialized all expected backends
         expected_backends = [
-            "deepseek-ocr", "florence-2", "dots-ocr", "pp-ocrv5",
-            "qwen-image-layered", "got-ocr", "tesseract", "easyocr"
+            "deepseek-ocr",
+            "florence-2",
+            "dots-ocr",
+            "pp-ocrv5",
+            "qwen-image-layered",
+            "got-ocr",
+            "tesseract",
+            "easyocr",
         ]
 
         for backend_name in expected_backends:
@@ -303,9 +301,3 @@ class TestBackendManager:
         available = manager.get_available_backends()
         assert len(available) == available_count
         assert all(name in manager.backends for name in available)
-
-
-
-
-
-

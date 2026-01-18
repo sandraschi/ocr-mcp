@@ -4,7 +4,7 @@ EasyOCR Backend for OCR-MCP
 
 import logging
 import os
-from typing import Dict, Any, Optional, List
+from typing import Any
 
 from ..core.backend_manager import OCRBackend
 from ..core.config import OCRConfig
@@ -23,6 +23,7 @@ class EasyOCRBackend(OCRBackend):
         # Check if EasyOCR is available (don't initialize reader yet)
         try:
             import easyocr
+
             self._easyocr = easyocr
             self._available = True
             logger.info("EasyOCR backend available (deferred initialization)")
@@ -37,19 +38,21 @@ class EasyOCRBackend(OCRBackend):
 
         try:
             # Set environment variable to avoid Unicode progress bar issues on Windows
-            original_verbose = os.environ.get('EASYOCR_VERBOSE', '1')
-            os.environ['EASYOCR_VERBOSE'] = '0'  # Disable verbose output
+            original_verbose = os.environ.get("EASYOCR_VERBOSE", "1")
+            os.environ["EASYOCR_VERBOSE"] = "0"  # Disable verbose output
 
             # Initialize reader with configured languages
-            self._reader = self._easyocr.Reader(self.config.easyocr_languages, gpu=True, verbose=False)
+            self._reader = self._easyocr.Reader(
+                self.config.easyocr_languages, gpu=True, verbose=False
+            )
             self._initialized = True
             logger.info("EasyOCR reader initialized successfully")
 
             # Restore original verbose setting
-            if original_verbose != '1':
-                os.environ['EASYOCR_VERBOSE'] = original_verbose
+            if original_verbose != "1":
+                os.environ["EASYOCR_VERBOSE"] = original_verbose
             else:
-                os.environ.pop('EASYOCR_VERBOSE', None)
+                os.environ.pop("EASYOCR_VERBOSE", None)
 
         except Exception as e:
             self._available = False
@@ -60,10 +63,10 @@ class EasyOCRBackend(OCRBackend):
         image_path: str,
         mode: str = "text",
         output_format: str = "text",
-        language: Optional[str] = None,
-        region: Optional[List[int]] = None,
-        **kwargs
-    ) -> Dict[str, Any]:
+        language: str | None = None,
+        region: list[int] | None = None,
+        **kwargs,
+    ) -> dict[str, Any]:
         """
         Process image with EasyOCR.
 
@@ -78,19 +81,13 @@ class EasyOCRBackend(OCRBackend):
             OCR processing results
         """
         if not self.is_available():
-            return {
-                "success": False,
-                "error": "EasyOCR backend not available"
-            }
+            return {"success": False, "error": "EasyOCR backend not available"}
 
         # Ensure reader is initialized
         self._ensure_initialized()
 
         if not self._initialized:
-            return {
-                "success": False,
-                "error": "EasyOCR reader initialization failed"
-            }
+            return {"success": False, "error": "EasyOCR reader initialization failed"}
 
         try:
             # Perform OCR
@@ -101,13 +98,13 @@ class EasyOCRBackend(OCRBackend):
             confidence_sum = 0.0
             text_count = 0
 
-            for (bbox, text, confidence) in results:
+            for bbox, text, confidence in results:
                 extracted_text.append(text)
                 confidence_sum += confidence
                 text_count += 1
 
             # Combine all text
-            full_text = ' '.join(extracted_text)
+            full_text = " ".join(extracted_text)
             avg_confidence = confidence_sum / text_count if text_count > 0 else 0.0
 
             return {
@@ -121,15 +118,12 @@ class EasyOCRBackend(OCRBackend):
                 "metadata": {
                     "text_blocks": len(results),
                     "languages": self.config.easyocr_languages,
-                    "gpu_enabled": True
+                    "gpu_enabled": True,
                 },
                 "raw_results": [
-                    {
-                        "text": text,
-                        "confidence": round(confidence, 3),
-                        "bbox": bbox
-                    } for (bbox, text, confidence) in results
-                ]
+                    {"text": text, "confidence": round(confidence, 3), "bbox": bbox}
+                    for (bbox, text, confidence) in results
+                ],
             }
 
         except Exception as e:
@@ -137,33 +131,26 @@ class EasyOCRBackend(OCRBackend):
             return {
                 "success": False,
                 "error": f"EasyOCR processing failed: {str(e)}",
-                "backend": "easyocr"
+                "backend": "easyocr",
             }
 
-    def get_capabilities(self) -> Dict[str, Any]:
+    def get_capabilities(self) -> dict[str, Any]:
         """Get EasyOCR capabilities."""
         base_capabilities = super().get_capabilities()
-        base_capabilities.update({
-            "modes": ["text"],  # Only basic text extraction
-            "output_formats": ["text", "json"],  # JSON includes bounding boxes
-            "gpu_support": True,
-            "languages": self.config.easyocr_languages,
-            "features": [
-                "multi_language_support",
-                "handwriting_recognition",
-                "confidence_scores",
-                "bounding_boxes",
-                "rotation_detection"
-            ],
-            "limitations": [
-                "no_formatted_text_preservation",
-                "no_layout_analysis"
-            ]
-        })
+        base_capabilities.update(
+            {
+                "modes": ["text"],  # Only basic text extraction
+                "output_formats": ["text", "json"],  # JSON includes bounding boxes
+                "gpu_support": True,
+                "languages": self.config.easyocr_languages,
+                "features": [
+                    "multi_language_support",
+                    "handwriting_recognition",
+                    "confidence_scores",
+                    "bounding_boxes",
+                    "rotation_detection",
+                ],
+                "limitations": ["no_formatted_text_preservation", "no_layout_analysis"],
+            }
+        )
         return base_capabilities
-
-
-
-
-
-

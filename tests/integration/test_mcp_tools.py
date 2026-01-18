@@ -5,15 +5,16 @@ These tests verify that the MCP tools work correctly end-to-end,
 including proper parameter handling, error conditions, and result formatting.
 """
 
-import pytest
 from pathlib import Path
-from unittest.mock import MagicMock, AsyncMock
-from fastmcp import FastMCP
+from unittest.mock import AsyncMock, MagicMock
 
-from src.ocr_mcp.tools.ocr_tools import register_document_processing_tools
+import pytest
+from fastmcp import FastMCP
 from src.ocr_mcp.tools.scanner_tools import register_scanner_operations_tools
-from src.ocr_mcp.core.config import OCRConfig
+
 from src.ocr_mcp.core.backend_manager import BackendManager
+from src.ocr_mcp.core.config import OCRConfig
+from src.ocr_mcp.tools.ocr_tools import register_document_processing_tools
 from tests.mocks.mock_backends import MockDeepSeekBackend
 from tests.mocks.mock_scanner import MockScannerManager
 
@@ -45,12 +46,14 @@ class TestMCPToolsIntegration:
         # Mock OCR backend
         mock_backend = MockDeepSeekBackend(config)
         manager.select_backend.return_value = mock_backend
-        manager.process_with_backend = AsyncMock(return_value={
-            "success": True,
-            "text": "Test OCR result",
-            "backend": "deepseek-ocr",
-            "confidence": 0.95
-        })
+        manager.process_with_backend = AsyncMock(
+            return_value={
+                "success": True,
+                "text": "Test OCR result",
+                "backend": "deepseek-ocr",
+                "confidence": 0.95,
+            }
+        )
 
         return manager
 
@@ -73,7 +76,8 @@ class TestMCPToolsIntegration:
         # Create a test image
         test_image = tmp_path / "test.png"
         from PIL import Image
-        img = Image.new('RGB', (100, 100), color='white')
+
+        img = Image.new("RGB", (100, 100), color="white")
         img.save(test_image)
 
         # Get the tool
@@ -85,7 +89,7 @@ class TestMCPToolsIntegration:
             operation="process_document",
             source_path=str(test_image),
             backend="auto",
-            ocr_mode="text"
+            ocr_mode="text",
         )
 
         assert result["success"] is True
@@ -97,7 +101,8 @@ class TestMCPToolsIntegration:
         """Test document processing with various options."""
         test_image = tmp_path / "test.png"
         from PIL import Image
-        img = Image.new('RGB', (100, 100), color='white')
+
+        img = Image.new("RGB", (100, 100), color="white")
         img.save(test_image)
 
         tools = await registered_app.get_tools()
@@ -110,7 +115,7 @@ class TestMCPToolsIntegration:
             backend="deepseek-ocr",
             ocr_mode="format",
             output_format="html",
-            language="en"
+            language="en",
         )
 
         assert result["success"] is True
@@ -121,7 +126,8 @@ class TestMCPToolsIntegration:
         """Test region-specific OCR."""
         test_image = tmp_path / "test.png"
         from PIL import Image
-        img = Image.new('RGB', (200, 200), color='white')
+
+        img = Image.new("RGB", (200, 200), color="white")
         img.save(test_image)
 
         tools = await registered_app.get_tools()
@@ -132,7 +138,7 @@ class TestMCPToolsIntegration:
             operation="extract_regions",
             source_path=str(test_image),
             backend="florence-2",
-            region=region
+            region=region,
         )
 
         assert result["success"] is True
@@ -143,7 +149,8 @@ class TestMCPToolsIntegration:
         """Test comic/manga processing mode."""
         test_image = tmp_path / "comic.png"
         from PIL import Image
-        img = Image.new('RGB', (500, 700), color='white')  # Comic page proportions
+
+        img = Image.new("RGB", (500, 700), color="white")  # Comic page proportions
         img.save(test_image)
 
         tools = await registered_app.get_tools()
@@ -156,7 +163,7 @@ class TestMCPToolsIntegration:
             comic_mode=True,
             manga_layout=True,
             scaffold_separate=True,
-            panel_analysis=True
+            panel_analysis=True,
         )
 
         assert result["success"] is True
@@ -171,7 +178,8 @@ class TestMCPToolsIntegration:
         for i in range(3):
             img_path = tmp_path / f"test_{i}.png"
             from PIL import Image
-            img = Image.new('RGB', (100, 100), color='white')
+
+            img = Image.new("RGB", (100, 100), color="white")
             img.save(img_path)
             test_images.append(str(img_path))
 
@@ -183,7 +191,7 @@ class TestMCPToolsIntegration:
             document_paths=test_images,
             workflow_type="auto",
             quality_threshold=0.8,
-            max_concurrent=2
+            max_concurrent=2,
         )
 
         assert result["success"] is True
@@ -235,7 +243,9 @@ class TestMCPToolsIntegration:
         tools = await registered_app.get_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")
 
-        result = await scanner_tool.fn(operation="scanner_properties", device_id="wia:test_scanner_1")
+        result = await scanner_tool.fn(
+            operation="scanner_properties", device_id="wia:test_scanner_1"
+        )
 
         assert isinstance(result, dict)
         # Properties may be None if scanner not found
@@ -257,7 +267,7 @@ class TestMCPToolsIntegration:
             brightness=0,
             contrast=0,
             use_adf=False,
-            duplex=False
+            duplex=False,
         )
 
         assert isinstance(result, dict)
@@ -275,7 +285,7 @@ class TestMCPToolsIntegration:
             dpi=300,
             color_mode="Color",
             paper_size="A4",
-            save_path=None
+            save_path=None,
         )
 
         # Result should be scan result data
@@ -294,7 +304,7 @@ class TestMCPToolsIntegration:
             dpi=150,
             color_mode="Grayscale",
             paper_size="A4",
-            save_directory=None
+            save_directory=None,
         )
 
         assert isinstance(result, list)
@@ -306,11 +316,7 @@ class TestMCPToolsIntegration:
         tools = await registered_app.get_tools()
         preview_tool = next(t for t in tools if t.name == "preview_scan")
 
-        result = await preview_tool.fn(
-            device_id="wia:test_scanner_1",
-            dpi=75,
-            save_path=None
-        )
+        result = await preview_tool.fn(device_id="wia:test_scanner_1", dpi=75, save_path=None)
 
         # Result should be image data or file path
         assert result is not None
@@ -330,10 +336,9 @@ class TestToolErrorHandling:
         manager.scanner_manager = failing_scanner
 
         # Make OCR processing fail
-        manager.process_with_backend = AsyncMock(return_value={
-            "success": False,
-            "error": "OCR processing failed"
-        })
+        manager.process_with_backend = AsyncMock(
+            return_value={"success": False, "error": "OCR processing failed"}
+        )
 
         # Make backend selection fail
         manager.select_backend.return_value = None
@@ -341,7 +346,9 @@ class TestToolErrorHandling:
         return manager
 
     @pytest.mark.asyncio
-    async def test_document_processing_file_not_found(self, fastmcp_app, mock_backend_manager, config):
+    async def test_document_processing_file_not_found(
+        self, fastmcp_app, mock_backend_manager, config
+    ):
         """Test handling of non-existent files."""
         register_document_processing_tools(fastmcp_app, mock_backend_manager, config)
 
@@ -349,16 +356,16 @@ class TestToolErrorHandling:
         process_tool = next(t for t in tools if t.name == "document_processing")
 
         result = await process_tool.fn(
-            operation="process_document",
-            source_path="/nonexistent/file.png",
-            backend="auto"
+            operation="process_document", source_path="/nonexistent/file.png", backend="auto"
         )
 
         assert result["success"] is False
         assert "not found" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_process_document_unsupported_format(self, fastmcp_app, mock_backend_manager, config, tmp_path):
+    async def test_process_document_unsupported_format(
+        self, fastmcp_app, mock_backend_manager, config, tmp_path
+    ):
         """Test handling of unsupported file formats."""
         # Create a file with unsupported extension
         unsupported_file = tmp_path / "test.xyz"
@@ -369,16 +376,15 @@ class TestToolErrorHandling:
         tools = await fastmcp_app.get_tools()
         process_tool = next(t for t in tools if t.name == "process_document")
 
-        result = await process_tool.fn(
-            source_path=str(unsupported_file),
-            backend="auto"
-        )
+        result = await process_tool.fn(source_path=str(unsupported_file), backend="auto")
 
         assert result["success"] is False
         assert "unsupported" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_scanner_operations_with_invalid_device(self, fastmcp_app, mock_backend_manager, config):
+    async def test_scanner_operations_with_invalid_device(
+        self, fastmcp_app, mock_backend_manager, config
+    ):
         """Test scanner tools with invalid device IDs."""
         register_scanner_operations_tools(fastmcp_app, mock_backend_manager, config)
 
@@ -396,11 +402,14 @@ class TestToolParameterValidation:
     """Test parameter validation in MCP tools."""
 
     @pytest.mark.asyncio
-    async def test_document_processing_invalid_backend(self, fastmcp_app, mock_backend_manager, config, tmp_path):
+    async def test_document_processing_invalid_backend(
+        self, fastmcp_app, mock_backend_manager, config, tmp_path
+    ):
         """Test processing with invalid backend name."""
         test_image = tmp_path / "test.png"
         from PIL import Image
-        img = Image.new('RGB', (50, 50), color='white')
+
+        img = Image.new("RGB", (50, 50), color="white")
         img.save(test_image)
 
         register_document_processing_tools(fastmcp_app, mock_backend_manager, config)
@@ -409,16 +418,16 @@ class TestToolParameterValidation:
         process_tool = next(t for t in tools if t.name == "document_processing")
 
         result = await process_tool.fn(
-            operation="process_document",
-            source_path=str(test_image),
-            backend="invalid-backend"
+            operation="process_document", source_path=str(test_image), backend="invalid-backend"
         )
 
         # Should either fail gracefully or fall back to auto
         assert isinstance(result, dict)
 
     @pytest.mark.asyncio
-    async def test_scanner_operations_invalid_parameters(self, fastmcp_app, mock_backend_manager, config):
+    async def test_scanner_operations_invalid_parameters(
+        self, fastmcp_app, mock_backend_manager, config
+    ):
         """Test scan configuration with invalid parameters."""
         register_scanner_operations_tools(fastmcp_app, mock_backend_manager, config)
 
@@ -430,23 +439,28 @@ class TestToolParameterValidation:
             device_id="wia:test_scanner_1",
             dpi=-1,  # Invalid DPI
             color_mode="InvalidMode",  # Invalid color mode
-            paper_size="InvalidSize"
+            paper_size="InvalidSize",
         )
 
         # Should handle invalid parameters gracefully
         assert isinstance(result, dict)
 
-    @pytest.mark.parametrize("tool_name,operation,required_params", [
-        ("document_processing", "process_document", ["source_path"]),
-        ("scanner_operations", "list_scanners", []),
-        ("scanner_operations", "scanner_properties", ["device_id"]),
-        ("scanner_operations", "configure_scan", ["device_id"]),
-        ("scanner_operations", "scan_document", ["device_id"]),
-        ("scanner_operations", "scan_batch", ["device_id"]),
-        ("scanner_operations", "preview_scan", ["device_id"]),
-    ])
+    @pytest.mark.parametrize(
+        "tool_name,operation,required_params",
+        [
+            ("document_processing", "process_document", ["source_path"]),
+            ("scanner_operations", "list_scanners", []),
+            ("scanner_operations", "scanner_properties", ["device_id"]),
+            ("scanner_operations", "configure_scan", ["device_id"]),
+            ("scanner_operations", "scan_document", ["device_id"]),
+            ("scanner_operations", "scan_batch", ["device_id"]),
+            ("scanner_operations", "preview_scan", ["device_id"]),
+        ],
+    )
     @pytest.mark.asyncio
-    async def test_tool_parameter_requirements(self, fastmcp_app, mock_backend_manager, config, tool_name, operation, required_params):
+    async def test_tool_parameter_requirements(
+        self, fastmcp_app, mock_backend_manager, config, tool_name, operation, required_params
+    ):
         """Test that tools enforce required parameters."""
         register_document_processing_tools(fastmcp_app, mock_backend_manager, config)
         register_scanner_operations_tools(fastmcp_app, mock_backend_manager, config)
@@ -464,14 +478,17 @@ class TestToolConcurrency:
     """Test concurrent execution of MCP tools."""
 
     @pytest.mark.asyncio
-    async def test_batch_processing_concurrency(self, fastmcp_app, mock_backend_manager, config, tmp_path):
+    async def test_batch_processing_concurrency(
+        self, fastmcp_app, mock_backend_manager, config, tmp_path
+    ):
         """Test that batch processing handles concurrency correctly."""
         # Create multiple test files
         test_files = []
         for i in range(5):
             img_path = tmp_path / f"batch_test_{i}.png"
             from PIL import Image
-            img = Image.new('RGB', (50, 50), color='white')
+
+            img = Image.new("RGB", (50, 50), color="white")
             img.save(img_path)
             test_files.append(str(img_path))
 
@@ -484,7 +501,7 @@ class TestToolConcurrency:
             operation="process_batch_intelligent",
             document_paths=test_files,
             workflow_type="auto",
-            max_concurrent=3
+            max_concurrent=3,
         )
 
         assert result["success"] is True
@@ -507,7 +524,7 @@ class TestToolConcurrency:
                 operation="scan_document",
                 device_id="wia:test_scanner_1",
                 dpi=150,
-                color_mode="Grayscale"
+                color_mode="Grayscale",
             )
 
         # Run multiple scans concurrently
@@ -517,9 +534,3 @@ class TestToolConcurrency:
         # All results should be valid dictionaries
         for result in results:
             assert isinstance(result, dict)
-
-
-
-
-
-

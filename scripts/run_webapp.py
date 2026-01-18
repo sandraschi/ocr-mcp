@@ -6,8 +6,8 @@ logger = logging.getLogger(__name__)
 Run the OCR-MCP WebApp
 """
 
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Add the project root and src to Python path

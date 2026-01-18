@@ -3,7 +3,7 @@ Tesseract OCR Backend for OCR-MCP
 """
 
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Any
 
 from ..core.backend_manager import OCRBackend
 from ..core.config import OCRConfig
@@ -20,6 +20,7 @@ class TesseractBackend(OCRBackend):
         # Check if Tesseract is available
         try:
             import pytesseract
+
             # Test if tesseract executable is available
             pytesseract.get_tesseract_version()
             self._available = True
@@ -33,10 +34,10 @@ class TesseractBackend(OCRBackend):
         image_path: str,
         mode: str = "text",
         output_format: str = "text",
-        language: Optional[str] = None,
-        region: Optional[List[int]] = None,
-        **kwargs
-    ) -> Dict[str, Any]:
+        language: str | None = None,
+        region: list[int] | None = None,
+        **kwargs,
+    ) -> dict[str, Any]:
         """
         Process image with Tesseract OCR.
 
@@ -51,10 +52,7 @@ class TesseractBackend(OCRBackend):
             OCR processing results
         """
         if not self.is_available():
-            return {
-                "success": False,
-                "error": "Tesseract backend not available"
-            }
+            return {"success": False, "error": "Tesseract backend not available"}
 
         try:
             import pytesseract
@@ -67,7 +65,7 @@ class TesseractBackend(OCRBackend):
             lang = language or self.config.tesseract_languages
 
             # Configure Tesseract
-            config = '--psm 6'  # Assume a single uniform block of text
+            config = "--psm 6"  # Assume a single uniform block of text
 
             # Extract text
             text = pytesseract.image_to_string(image, lang=lang, config=config)
@@ -80,10 +78,7 @@ class TesseractBackend(OCRBackend):
                 "mode": "text",
                 "format": "text",
                 "processing_time": 0.8,
-                "metadata": {
-                    "language": lang,
-                    "config": config
-                }
+                "metadata": {"language": lang, "config": config},
             }
 
         except Exception as e:
@@ -91,32 +86,28 @@ class TesseractBackend(OCRBackend):
             return {
                 "success": False,
                 "error": f"Tesseract processing failed: {str(e)}",
-                "backend": "tesseract"
+                "backend": "tesseract",
             }
 
-    def get_capabilities(self) -> Dict[str, Any]:
+    def get_capabilities(self) -> dict[str, Any]:
         """Get Tesseract capabilities."""
         base_capabilities = super().get_capabilities()
-        base_capabilities.update({
-            "modes": ["text"],  # Only basic text extraction
-            "output_formats": ["text"],
-            "gpu_support": False,
-            "languages": self.config.tesseract_languages.split('+'),
-            "features": [
-                "multi_language_support",
-                "fast_processing",
-                "high_accuracy_printed_text"
-            ],
-            "limitations": [
-                "no_formatted_text_preservation",
-                "no_layout_analysis",
-                "limited_handwriting_recognition"
-            ]
-        })
+        base_capabilities.update(
+            {
+                "modes": ["text"],  # Only basic text extraction
+                "output_formats": ["text"],
+                "gpu_support": False,
+                "languages": self.config.tesseract_languages.split("+"),
+                "features": [
+                    "multi_language_support",
+                    "fast_processing",
+                    "high_accuracy_printed_text",
+                ],
+                "limitations": [
+                    "no_formatted_text_preservation",
+                    "no_layout_analysis",
+                    "limited_handwriting_recognition",
+                ],
+            }
+        )
         return base_capabilities
-
-
-
-
-
-

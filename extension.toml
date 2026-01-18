@@ -1,10 +1,70 @@
 id = "ocr-mcp"
-name = "OCRDocumentProcessing"
-version = "0.1.0"
+name = "OCR Document Processing"
+version = "0.2.0"
 schema_version = 1
 authors = ["Sandra <sandraschipal@hotmail.com>"]
-description = "Multi-engine OCR and document analysis"
-repository = "https://github.com/sandraschi/ocr-mcp"
+description = "Advanced multi-engine OCR and document analysis with FastMCP 2.14.3 conversational features"
+repository = "https://github.com/sandraschipal/ocr-mcp"
 
 [context_servers.ocr-mcp]
-name = "Document OCR Tools"
+name = "OCR Document Processing Server"
+command = "python"
+args = ["-m", "ocr_mcp.server"]
+env = { "PYTHONPATH" = "src" }
+
+[context_servers.ocr-mcp.models]
+path = "./models"
+description = "OCR model files and configurations"
+
+[context_servers.ocr-mcp.capabilities]
+sampling = true
+resources = true
+prompts = true
+tools = true
+logging = true
+conversational_responses = true
+agentic_workflows = true
+
+[context_servers.ocr-mcp.features]
+fastmcp_version = "2.14.3"
+conversational_returns = true
+sampling_with_tools = true
+sep_1577_compliant = true
+persistent_storage = true
+enhanced_responses = true
+
+[context_servers.ocr-mcp.tools]
+document_processing = "OCR, analysis, quality assessment operations"
+image_management = "Image preprocessing and conversion operations"
+scanner_operations = "Scanner hardware control operations"
+workflow_management = "Batch processing, pipelines, system operations"
+agentic_document_workflow = "AI-orchestrated multi-document processing (SEP-1577)"
+
+[context_servers.ocr-mcp.prompts]
+process_instructions = "Interactive OCR processing guidance"
+quality_assessment_guide = "OCR quality evaluation workflow"
+
+[context_servers.ocr-mcp.resources]
+logs = "OCR processing logs and system status"
+capabilities = "Available OCR backends and features"
+performance_metrics = "Processing statistics and performance data"
+
+[context_servers.ocr-mcp.dependencies]
+python = ">=3.11"
+fastmcp = ">=2.14.3"
+torch = ">=2.0.0"
+transformers = ">=4.35.0"
+
+[context_servers.ocr-mcp.backends]
+deepseek_ocr = "Advanced vision model for complex documents"
+florence_2 = "Microsoft vision model for layout understanding"
+pp_ocrv5 = "Industrial-grade OCR with high reliability"
+tesseract = "Classic OCR with extensive language support"
+easyocr = "Multi-language OCR for international documents"
+
+[context_servers.ocr-mcp.workflows]
+single_document = "Process individual documents with intelligent backend selection"
+batch_processing = "Parallel processing of multiple documents"
+quality_assessment = "Comprehensive OCR accuracy evaluation"
+layout_analysis = "Document structure and element detection"
+agentic_orchestration = "AI-powered workflow automation (SEP-1577)"

@@ -1,20 +1,20 @@
-import sys
-import os
-import uvicorn
+import base64
 import logging
-from typing import List, Optional
-from fastapi import FastAPI, HTTPException, Body
+import os
+import sys
+from io import BytesIO
+
+import uvicorn
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import base64
-from io import BytesIO
 
 # Add src to path to import backend logic
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 sys.path.append(os.path.join(PROJECT_ROOT, "src"))
 
-from ocr_mcp.backends.scanner.wia_scanner import WIABackend, ScanSettings, ScannerInfo
+from ocr_mcp.backends.scanner.wia_scanner import ScanSettings, WIABackend
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
@@ -35,9 +35,7 @@ app.add_middleware(
 try:
     scanner_backend = WIABackend()
     if not scanner_backend.is_available():
-        logger.warning(
-            "WIA Backend initialized but reports unavailable (Are you on Windows?)"
-        )
+        logger.warning("WIA Backend initialized but reports unavailable (Are you on Windows?)")
 except Exception as e:
     logger.error(f"Failed to initialize WIA Backend: {e}")
     scanner_backend = None
@@ -52,9 +50,7 @@ class ScanRequest(BaseModel):
 def health_check():
     return {
         "status": "running",
-        "backend_available": scanner_backend.is_available()
-        if scanner_backend
-        else False,
+        "backend_available": scanner_backend.is_available() if scanner_backend else False,
     }
 
 
@@ -74,9 +70,7 @@ def get_scanner_props(device_id: str):
 
     props = scanner_backend.get_scanner_properties(device_id)
     if not props:
-        raise HTTPException(
-            status_code=404, detail="Scanner not found or props unavailable"
-        )
+        raise HTTPException(status_code=404, detail="Scanner not found or props unavailable")
     return props
 
 

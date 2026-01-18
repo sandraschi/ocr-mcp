@@ -4,7 +4,7 @@ import re
 
 def fix_content(filepath):
     print(f"Fixing {filepath}...")
-    with open(filepath, "r") as f:
+    with open(filepath) as f:
         lines = f.readlines()
 
     new_lines = []
@@ -35,12 +35,7 @@ def fix_content(filepath):
             continue
 
         # If we are in a function and the line has no indentation and is not empty
-        if (
-            in_function
-            and stripped
-            and not line.startswith("    ")
-            and not line.startswith("\t")
-        ):
+        if in_function and stripped and not line.startswith("    ") and not line.startswith("\t"):
             # If it's another top level element (like docstring at top level or something)
             # or if it's just content that needs indentation
             final_lines.append("    " + line)

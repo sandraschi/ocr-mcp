@@ -1,4 +1,5 @@
 import logging
+
 logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 """
@@ -15,10 +16,12 @@ sys.path.insert(0, str(src_path))
 try:
     logger.info("Testing OCR-MCP import...")
     from ocr_mcp.server import app
+
     logger.info("SUCCESS: Import successful")
 
     import asyncio
-    asynasync def test():
+
+    async def test():
         tools = await app.get_tools()
         logger.info(f"SUCCESS: Got {len(tools)} tools")
         return tools
@@ -29,5 +32,6 @@ try:
 except Exception as e:
     logger.info(f"ERROR: Import failed: {e}")
     import traceback
+
     traceback.print_exc()
     sys.exit(1)

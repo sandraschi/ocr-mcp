@@ -3,7 +3,7 @@ GOT-OCR2.0 Backend for OCR-MCP
 """
 
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Any
 
 from ..core.backend_manager import OCRBackend
 from ..core.config import OCRConfig
@@ -21,6 +21,7 @@ class GOTOCRBackend(OCRBackend):
 
         # Check if dependencies are available
         import importlib.util
+
         torch_available = importlib.util.find_spec("torch") is not None
         transformers_available = importlib.util.find_spec("transformers") is not None
 
@@ -36,10 +37,10 @@ class GOTOCRBackend(OCRBackend):
         image_path: str,
         mode: str = "text",
         output_format: str = "text",
-        language: Optional[str] = None,
-        region: Optional[List[int]] = None,
-        **kwargs
-    ) -> Dict[str, Any]:
+        language: str | None = None,
+        region: list[int] | None = None,
+        **kwargs,
+    ) -> dict[str, Any]:
         """
         Process image with GOT-OCR2.0.
 
@@ -54,10 +55,7 @@ class GOTOCRBackend(OCRBackend):
             OCR processing results
         """
         if not self.is_available():
-            return {
-                "success": False,
-                "error": "GOT-OCR2.0 backend not available"
-            }
+            return {"success": False, "error": "GOT-OCR2.0 backend not available"}
 
         try:
             # For now, return a mock result
@@ -75,8 +73,8 @@ class GOTOCRBackend(OCRBackend):
                 "metadata": {
                     "model": "GOT-OCR2.0",
                     "model_size": self.config.got_ocr_model_size,
-                    "device": self.config.device
-                }
+                    "device": self.config.device,
+                },
             }
 
             # Add HTML formatting if requested
@@ -95,7 +93,7 @@ class GOTOCRBackend(OCRBackend):
             return {
                 "success": False,
                 "error": f"GOT-OCR2.0 processing failed: {str(e)}",
-                "backend": "got-ocr"
+                "backend": "got-ocr",
             }
 
     def _generate_html(self, text: str) -> str:
@@ -130,7 +128,7 @@ class GOTOCRBackend(OCRBackend):
             <div class="ocr-result">
                 <h2>GOT-OCR2.0 Formatted Result</h2>
                 <div class="text-content">
-                    {text.replace(chr(10), '<br>')}
+                    {text.replace(chr(10), "<br>")}
                 </div>
             </div>
             <div class="metadata">
@@ -143,27 +141,23 @@ class GOTOCRBackend(OCRBackend):
         """
         return html_template
 
-    def get_capabilities(self) -> Dict[str, Any]:
+    def get_capabilities(self) -> dict[str, Any]:
         """Get GOT-OCR2.0 capabilities."""
         base_capabilities = super().get_capabilities()
-        base_capabilities.update({
-            "modes": ["text", "format", "fine-grained"],
-            "output_formats": ["text", "html", "json"],
-            "gpu_support": True,
-            "model_size": self.config.got_ocr_model_size,
-            "languages": ["auto"],  # Model handles multiple languages automatically
-            "features": [
-                "formatted_text_preservation",
-                "layout_analysis",
-                "region_based_ocr",
-                "html_rendering",
-                "table_detection"
-            ]
-        })
+        base_capabilities.update(
+            {
+                "modes": ["text", "format", "fine-grained"],
+                "output_formats": ["text", "html", "json"],
+                "gpu_support": True,
+                "model_size": self.config.got_ocr_model_size,
+                "languages": ["auto"],  # Model handles multiple languages automatically
+                "features": [
+                    "formatted_text_preservation",
+                    "layout_analysis",
+                    "region_based_ocr",
+                    "html_rendering",
+                    "table_detection",
+                ],
+            }
+        )
         return base_capabilities
-
-
-
-
-
-

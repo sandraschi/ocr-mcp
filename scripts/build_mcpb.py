@@ -1,4 +1,5 @@
 import logging
+
 logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 """
@@ -18,6 +19,7 @@ def get_version() -> str:
     pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
     if pyproject_path.exists():
         import re
+
         content = pyproject_path.read_text()
         match = re.search(r'version\s*=\s*"([^"]+)"', content)
         if match:
@@ -26,10 +28,7 @@ def get_version() -> str:
 
 
 def build_mcpb_package(
-    output_dir: Path,
-    version: str,
-    include_models: bool = False,
-    compress: bool = False
+    output_dir: Path, version: str, include_models: bool = False, compress: bool = False
 ) -> Path:
     """Build the MCPB package"""
 
@@ -57,19 +56,11 @@ def build_mcpb_package(
     # Copy MCPB files
     logger.info("Copying MCPB manifest and assets...")
     shutil.copy(project_root / "mcp-server" / "manifest.json", mcpb_dir)
-    shutil.copytree(
-        project_root / "mcp-server" / "assets",
-        mcpb_dir / "assets",
-        dirs_exist_ok=True
-    )
+    shutil.copytree(project_root / "mcp-server" / "assets", mcpb_dir / "assets", dirs_exist_ok=True)
 
     # Copy source code
     logger.info("Copying source code...")
-    shutil.copytree(
-        project_root / "src",
-        mcpb_dir / "src",
-        dirs_exist_ok=True
-    )
+    shutil.copytree(project_root / "src", mcpb_dir / "src", dirs_exist_ok=True)
 
     # Copy Python files
     logger.info("Copying Python dependencies...")
@@ -77,7 +68,7 @@ def build_mcpb_package(
     shutil.copy(project_root / "requirements.txt", package_dir)
 
     # Create installation script
-    install_script = '''#!/usr/bin/env bash
+    install_script = """#!/usr/bin/env bash
 #
 # OCR-MCP Installation Script
 #
@@ -135,13 +126,13 @@ python -m pip install -e .
 
 echo "OCR-MCP installed successfully!"
 echo "Installation directory: $INSTALL_DIR"
-'''
+"""
 
     (package_dir / "install.sh").write_text(install_script)
     (package_dir / "install.sh").chmod(0o755)
 
     # Create Windows batch file
-    install_batch = '''@echo off
+    install_batch = """@echo off
 REM OCR-MCP Installation Script for Windows
 REM
 REM This script installs OCR-MCP as an MCP server.
@@ -196,12 +187,12 @@ echo OCR-MCP installed successfully!
 echo Installation directory: %INSTALL_DIR%
 
 endlocal
-'''
+"""
 
     (package_dir / "install.bat").write_text(install_batch)
 
     # Create README for package
-    package_readme = f'''# OCR-MCP v{version}
+    package_readme = f"""# OCR-MCP v{version}
 
 Professional Document Processing Suite with 7 State-of-the-Art OCR Engines.
 
@@ -249,7 +240,7 @@ Add to your `claude_desktop_config.json`:
 - Web Interface for Professional Workflows
 
 For full documentation, visit: https://github.com/sandraschi/ocr-mcp
-'''
+"""
 
     (package_dir / "README.md").write_text(package_readme)
 
@@ -267,16 +258,26 @@ For full documentation, visit: https://github.com/sandraschi/ocr-mcp
 
         try:
             # Try using tar (Linux/macOS)
-            subprocess.run([
-                "tar", "czf", str(archive_path), "-C", str(output_dir), f"{package_name}-{version}"
-            ], check=True)
+            subprocess.run(
+                [
+                    "tar",
+                    "czf",
+                    str(archive_path),
+                    "-C",
+                    str(output_dir),
+                    f"{package_name}-{version}",
+                ],
+                check=True,
+            )
             logger.info(f"Created compressed package: {archive_path}")
         except (subprocess.CalledProcessError, FileNotFoundError):
             try:
                 # Try using zip
-                subprocess.run([
-                    "zip", "-r", str(archive_path), f"{package_name}-{version}"
-                ], cwd=output_dir, check=True)
+                subprocess.run(
+                    ["zip", "-r", str(archive_path), f"{package_name}-{version}"],
+                    cwd=output_dir,
+                    check=True,
+                )
                 logger.info(f"Created compressed package: {archive_path}")
             except (subprocess.CalledProcessError, FileNotFoundError):
                 logger.info("Warning: Could not create compressed archive. tar/zip not available.")
@@ -299,24 +300,20 @@ For full documentation, visit: https://github.com/sandraschi/ocr-mcp
 def main():
     parser = argparse.ArgumentParser(description="Build OCR-MCP MCPB package")
     parser.add_argument(
-        "--output-dir", "-o",
+        "--output-dir",
+        "-o",
         type=Path,
         default=Path("dist"),
-        help="Output directory for the MCPB package"
+        help="Output directory for the MCPB package",
     )
-    parser.add_argument(
-        "--version", "-v",
-        help="Package version (default: from pyproject.toml)"
-    )
+    parser.add_argument("--version", "-v", help="Package version (default: from pyproject.toml)")
     parser.add_argument(
         "--include-models",
         action="store_true",
-        help="Include pre-downloaded models in package (increases size)"
+        help="Include pre-downloaded models in package (increases size)",
     )
     parser.add_argument(
-        "--compress", "-c",
-        action="store_true",
-        help="Create compressed .mcpb archive"
+        "--compress", "-c", action="store_true", help="Create compressed .mcpb archive"
     )
 
     args = parser.parse_args()
@@ -332,7 +329,7 @@ def main():
         output_dir=args.output_dir,
         version=version,
         include_models=args.include_models,
-        compress=args.compress
+        compress=args.compress,
     )
 
 

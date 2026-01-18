@@ -256,7 +256,7 @@ frontend-new/
 ### Environment Variables
 ```bash
 # .env.local
-VITE_API_BASE_URL=http://localhost:8000
+VITE_API_BASE_URL=http://localhost:11400
 VITE_APP_ENV=development
 ```
 

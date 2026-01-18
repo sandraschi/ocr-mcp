@@ -67,9 +67,7 @@ class OCRError(Exception):
             "details": self.details,
             "recovery_options": self.recovery_options,
             "recovery_flow": self.details.get("recovery_flow"),
-            "traceback": traceback.format_exc()
-            if logger.isEnabledFor(logging.DEBUG)
-            else None,
+            "traceback": traceback.format_exc() if logger.isEnabledFor(logging.DEBUG) else None,
         }
 
 
@@ -322,9 +320,7 @@ class ErrorHandler:
     ) -> dict[str, Any]:
         """Handle arbitrary exceptions and convert to structured error response"""
 
-        logger.error(
-            f"Exception in {context or 'unknown context'}: {exc}", exc_info=True
-        )
+        logger.error(f"Exception in {context or 'unknown context'}: {exc}", exc_info=True)
 
         # Map common exception types to error codes
         if isinstance(exc, FileNotFoundError):
@@ -375,9 +371,7 @@ class ErrorHandler:
         path = Path(file_path)
 
         if not path.exists():
-            return cls.create_error(
-                "FILE_NOT_FOUND", details={"file_path": str(file_path)}
-            )
+            return cls.create_error("FILE_NOT_FOUND", details={"file_path": str(file_path)})
 
         if not path.is_file():
             return cls.create_error(
@@ -391,9 +385,7 @@ class ErrorHandler:
             with open(path, "rb") as f:
                 f.read(1)
         except PermissionError:
-            return cls.create_error(
-                "FILE_PERMISSION_DENIED", details={"file_path": str(file_path)}
-            )
+            return cls.create_error("FILE_PERMISSION_DENIED", details={"file_path": str(file_path)})
         except Exception as e:
             return cls.create_error(
                 "FILE_CORRUPTED",
@@ -470,16 +462,12 @@ def with_error_handling(func):
             return e.to_dict()
         except Exception as e:
             logger.error(f"Unexpected error in {func.__name__}: {e}", exc_info=True)
-            return ErrorHandler.handle_exception(
-                e, context=func.__name__, details=kwargs
-            )
+            return ErrorHandler.handle_exception(e, context=func.__name__, details=kwargs)
 
     return wrapper
 
 
-def create_success_response(
-    results: Any, metadata: dict[str, Any] | None = None
-) -> dict[str, Any]:
+def create_success_response(results: Any, metadata: dict[str, Any] | None = None) -> dict[str, Any]:
     """Create a standardized success response"""
     response = {"success": True, "results": results}
 

@@ -23,7 +23,7 @@ services:
   # backend:
   #   image: your-backend-image
   #   ports:
-  #     - "8000:8000"
+  #     - "11400:11400"
   #   environment:
   #     - ENV=production
   #   restart: unless-stopped

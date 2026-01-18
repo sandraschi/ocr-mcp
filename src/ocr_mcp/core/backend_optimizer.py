@@ -5,13 +5,13 @@ Analyzes document properties and automatically selects the optimal OCR backend f
 """
 
 import logging
-from pathlib import Path
-from typing import Dict, Any, List
 from enum import Enum
+from pathlib import Path
+from typing import Any
 
-from PIL import Image
 import cv2
 import numpy as np
+from PIL import Image
 
 from .config import OCRConfig
 
@@ -20,34 +20,37 @@ logger = logging.getLogger(__name__)
 
 class DocumentType(Enum):
     """Document type classifications"""
-    PRINTED_TEXT = "printed_text"           # Clean printed documents
-    HANDWRITING = "handwriting"             # Handwritten text
-    SCANNED_DOCUMENT = "scanned_document"   # Scanned pages
-    RECEIPT = "receipt"                     # Receipts/invoices
-    FORM = "form"                           # Forms with fields
-    TABLE = "table"                         # Documents with tables
-    MIXED_CONTENT = "mixed_content"         # Text + images/graphics
-    MATHEMATICAL = "mathematical"           # Mathematical formulas
-    COMIC = "comic"                         # Comic books/manga
-    MULTILINGUAL = "multilingual"           # Multiple languages
-    HISTORICAL = "historical"               # Old/archival documents
+
+    PRINTED_TEXT = "printed_text"  # Clean printed documents
+    HANDWRITING = "handwriting"  # Handwritten text
+    SCANNED_DOCUMENT = "scanned_document"  # Scanned pages
+    RECEIPT = "receipt"  # Receipts/invoices
+    FORM = "form"  # Forms with fields
+    TABLE = "table"  # Documents with tables
+    MIXED_CONTENT = "mixed_content"  # Text + images/graphics
+    MATHEMATICAL = "mathematical"  # Mathematical formulas
+    COMIC = "comic"  # Comic books/manga
+    MULTILINGUAL = "multilingual"  # Multiple languages
+    HISTORICAL = "historical"  # Old/archival documents
 
 
 class ContentComplexity(Enum):
     """Content complexity levels"""
-    SIMPLE = "simple"       # Clean text, few characters
-    MODERATE = "moderate"   # Standard documents
-    COMPLEX = "complex"     # Dense text, mixed content
+
+    SIMPLE = "simple"  # Clean text, few characters
+    MODERATE = "moderate"  # Standard documents
+    COMPLEX = "complex"  # Dense text, mixed content
     VERY_COMPLEX = "very_complex"  # Mathematical, tables, complex layouts
 
 
 class ImageQuality(Enum):
     """Image quality assessments"""
+
     EXCELLENT = "excellent"  # High DPI, clean scan
-    GOOD = "good"           # Standard quality
-    FAIR = "fair"           # Some noise/artifacts
-    POOR = "poor"           # Low quality, heavy artifacts
-    VERY_POOR = "very_poor" # Severely degraded
+    GOOD = "good"  # Standard quality
+    FAIR = "fair"  # Some noise/artifacts
+    POOR = "poor"  # Low quality, heavy artifacts
+    VERY_POOR = "very_poor"  # Severely degraded
 
 
 class DocumentAnalyzer:
@@ -56,7 +59,7 @@ class DocumentAnalyzer:
     def __init__(self, config: OCRConfig):
         self.config = config
 
-    def analyze_document(self, image_path: Path) -> Dict[str, Any]:
+    def analyze_document(self, image_path: Path) -> dict[str, Any]:
         """
         Comprehensive document analysis for backend optimization
 
@@ -74,8 +77,8 @@ class DocumentAnalyzer:
                 width, height = img.size
                 mode = img.mode
                 # Convert to RGB if needed for analysis
-                if mode not in ['RGB', 'L']:
-                    img = img.convert('RGB')
+                if mode not in ["RGB", "L"]:
+                    img = img.convert("RGB")
 
             # Convert to numpy array for OpenCV analysis
             cv_image = cv2.imread(str(image_path))
@@ -91,13 +94,15 @@ class DocumentAnalyzer:
                 "image_quality": self._assess_image_quality(cv_image),
                 "layout_characteristics": self._analyze_layout(cv_image),
                 "estimated_language": self._detect_language(cv_image),
-                "backend_recommendations": []
+                "backend_recommendations": [],
             }
 
             # Generate backend recommendations
             analysis["backend_recommendations"] = self._generate_backend_recommendations(analysis)
 
-            logger.info(f"Document analysis complete for {image_path.name}: {analysis['document_type'].value}")
+            logger.info(
+                f"Document analysis complete for {image_path.name}: {analysis['document_type'].value}"
+            )
             return analysis
 
         except Exception as e:
@@ -108,10 +113,14 @@ class DocumentAnalyzer:
                 "document_type": DocumentType.PRINTED_TEXT,
                 "content_complexity": ContentComplexity.MODERATE,
                 "image_quality": ImageQuality.GOOD,
-                "layout_characteristics": {"has_tables": False, "has_forms": False, "text_density": 0.5},
+                "layout_characteristics": {
+                    "has_tables": False,
+                    "has_forms": False,
+                    "text_density": 0.5,
+                },
                 "estimated_language": "en",
                 "backend_recommendations": ["auto"],
-                "error": str(e)
+                "error": str(e),
             }
 
     def _classify_document_type(self, image: np.ndarray) -> DocumentType:
@@ -191,7 +200,7 @@ class DocumentAnalyzer:
         else:
             return ImageQuality.VERY_POOR
 
-    def _analyze_layout(self, image: np.ndarray) -> Dict[str, Any]:
+    def _analyze_layout(self, image: np.ndarray) -> dict[str, Any]:
         """Analyze document layout characteristics"""
 
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -203,7 +212,7 @@ class DocumentAnalyzer:
             "has_lines": self._detect_lines(gray),
             "text_density": self._calculate_text_density(gray),
             "layout_complexity": self._calculate_layout_complexity(gray),
-            "estimated_columns": self._estimate_columns(gray)
+            "estimated_columns": self._estimate_columns(gray),
         }
 
     def _detect_language(self, image: np.ndarray) -> str:
@@ -212,7 +221,7 @@ class DocumentAnalyzer:
         # For now, default to English
         return "en"
 
-    def _generate_backend_recommendations(self, analysis: Dict[str, Any]) -> List[str]:
+    def _generate_backend_recommendations(self, analysis: dict[str, Any]) -> list[str]:
         """Generate optimal backend recommendations based on analysis"""
 
         doc_type = analysis["document_type"]
@@ -271,7 +280,7 @@ class DocumentAnalyzer:
         """Detect table-like structures"""
         # Look for horizontal and vertical lines
         edges = cv2.Canny(gray, 50, 150)
-        lines = cv2.HoughLinesP(edges, 1, np.pi/180, 100, minLineLength=100, maxLineGap=10)
+        lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 100, minLineLength=100, maxLineGap=10)
 
         if lines is None:
             return False
@@ -302,7 +311,7 @@ class DocumentAnalyzer:
     def _detect_lines(self, gray: np.ndarray) -> bool:
         """Detect straight lines in the document"""
         edges = cv2.Canny(gray, 50, 150)
-        lines = cv2.HoughLinesP(edges, 1, np.pi/180, 200)
+        lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 200)
 
         return lines is not None and len(lines) > 5
 
@@ -383,9 +392,11 @@ class DocumentAnalyzer:
         threshold = np.max(vertical_projection) * 0.3
 
         for i in range(1, len(vertical_projection) - 1):
-            if (vertical_projection[i] > vertical_projection[i-1] and
-                vertical_projection[i] > vertical_projection[i+1] and
-                vertical_projection[i] > threshold):
+            if (
+                vertical_projection[i] > vertical_projection[i - 1]
+                and vertical_projection[i] > vertical_projection[i + 1]
+                and vertical_projection[i] > threshold
+            ):
                 peaks.append(i)
 
         return max(1, len(peaks) + 1)
@@ -400,7 +411,7 @@ class DocumentAnalyzer:
         # Simple noise estimation using local variance
         kernel = np.ones((5, 5), np.float32) / 25
         mean = cv2.filter2D(gray.astype(np.float32), -1, kernel)
-        sqmean = cv2.filter2D(gray.astype(np.float32)**2, -1, kernel)
+        sqmean = cv2.filter2D(gray.astype(np.float32) ** 2, -1, kernel)
         variance = sqmean - mean**2
 
         return np.mean(variance)
@@ -440,29 +451,39 @@ class BackendOptimizer:
 
             if recommendations and recommendations[0] != "auto":
                 optimal_backend = recommendations[0]
-                logger.info(f"Selected optimal backend '{optimal_backend}' for {image_path.name} "
-                          f"(type: {analysis['document_type'].value}, "
-                          f"complexity: {analysis['content_complexity'].value})")
+                logger.info(
+                    f"Selected optimal backend '{optimal_backend}' for {image_path.name} "
+                    f"(type: {analysis['document_type'].value}, "
+                    f"complexity: {analysis['content_complexity'].value})"
+                )
                 return optimal_backend
             else:
                 logger.info(f"Using auto-selection for {image_path.name}")
                 return "auto"
 
         except Exception as e:
-            logger.warning(f"Backend optimization failed for {image_path}: {e}, using auto-selection")
+            logger.warning(
+                f"Backend optimization failed for {image_path}: {e}, using auto-selection"
+            )
             return "auto"
 
-    def get_backend_performance_profile(self, backend_name: str) -> Dict[str, Any]:
+    def get_backend_performance_profile(self, backend_name: str) -> dict[str, Any]:
         """Get performance profile for a backend based on document characteristics"""
 
         profiles = {
             "mistral-ocr": {
-                "strengths": ["enterprise_docs", "forms", "scanned_docs", "tables", "mixed_content"],
+                "strengths": [
+                    "enterprise_docs",
+                    "forms",
+                    "scanned_docs",
+                    "tables",
+                    "mixed_content",
+                ],
                 "weaknesses": [],
                 "speed": "medium",
                 "accuracy": "very_high",
                 "gpu_memory": "high",
-                "offline": False
+                "offline": False,
             },
             "deepseek-ocr": {
                 "strengths": ["complex_layouts", "mathematical", "multilingual", "mixed_content"],
@@ -470,7 +491,7 @@ class BackendOptimizer:
                 "speed": "medium",
                 "accuracy": "very_high",
                 "gpu_memory": "high",
-                "offline": True
+                "offline": True,
             },
             "florence-2": {
                 "strengths": ["layout_analysis", "handwriting", "forms", "tables"],
@@ -478,7 +499,7 @@ class BackendOptimizer:
                 "speed": "medium",
                 "accuracy": "high",
                 "gpu_memory": "medium",
-                "offline": True
+                "offline": True,
             },
             "dots-ocr": {
                 "strengths": ["tables", "structured_docs", "forms"],
@@ -486,7 +507,7 @@ class BackendOptimizer:
                 "speed": "fast",
                 "accuracy": "high",
                 "gpu_memory": "medium",
-                "offline": True
+                "offline": True,
             },
             "pp-ocrv5": {
                 "strengths": ["printed_text", "speed", "industrial"],
@@ -494,7 +515,7 @@ class BackendOptimizer:
                 "speed": "very_fast",
                 "accuracy": "high",
                 "gpu_memory": "low",
-                "offline": True
+                "offline": True,
             },
             "qwen-layered": {
                 "strengths": ["comics", "mixed_content", "layered_images"],
@@ -502,7 +523,7 @@ class BackendOptimizer:
                 "speed": "medium",
                 "accuracy": "high",
                 "gpu_memory": "high",
-                "offline": True
+                "offline": True,
             },
             "tesseract": {
                 "strengths": ["printed_text", "multilingual"],
@@ -510,7 +531,7 @@ class BackendOptimizer:
                 "speed": "very_fast",
                 "accuracy": "medium",
                 "gpu_memory": "none",
-                "offline": True
+                "offline": True,
             },
             "easyocr": {
                 "strengths": ["handwriting", "multilingual"],
@@ -518,19 +539,22 @@ class BackendOptimizer:
                 "speed": "slow",
                 "accuracy": "medium",
                 "gpu_memory": "low",
-                "offline": True
-            }
+                "offline": True,
+            },
         }
 
-        return profiles.get(backend_name, {
-            "strengths": [],
-            "weaknesses": [],
-            "speed": "unknown",
-            "accuracy": "unknown",
-            "gpu_memory": "unknown",
-            "offline": False
-        })
+        return profiles.get(
+            backend_name,
+            {
+                "strengths": [],
+                "weaknesses": [],
+                "speed": "unknown",
+                "accuracy": "unknown",
+                "gpu_memory": "unknown",
+                "offline": False,
+            },
+        )
 
-    def get_document_analysis(self, image_path: Path) -> Dict[str, Any]:
+    def get_document_analysis(self, image_path: Path) -> dict[str, Any]:
         """Get full document analysis for external use"""
         return self.analyzer.analyze_document(image_path)

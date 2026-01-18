@@ -5,11 +5,12 @@ Uses Mistral AI's OCR API for high-quality document processing.
 Reference: https://mistral.ai/news/mistral-ocr-3
 """
 
-import logging
-import httpx
-from typing import Dict, Any, Optional, List
 import base64
+import logging
 from pathlib import Path
+from typing import Any
+
+import httpx
 
 from ..core.backend_manager import OCRBackend
 from ..core.config import OCRConfig
@@ -49,7 +50,7 @@ class MistralOCRBackend(OCRBackend):
                     headers={"Authorization": f"Bearer {self.api_key}"},
                 )
                 return response.status_code == 200
-        except Exception as e:
+        except Exception:
             return False
 
     async def process_image(
@@ -57,10 +58,10 @@ class MistralOCRBackend(OCRBackend):
         image_path: str,
         mode: str = "text",
         output_format: str = "text",
-        language: Optional[str] = None,
-        region: Optional[List[int]] = None,
+        language: str | None = None,
+        region: list[int] | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Process image with Mistral OCR 3 API.
 
@@ -156,7 +157,7 @@ class MistralOCRBackend(OCRBackend):
                 "backend": "mistral-ocr",
             }
 
-    def get_capabilities(self) -> Dict[str, Any]:
+    def get_capabilities(self) -> dict[str, Any]:
         """Get Mistral OCR capabilities."""
         base_capabilities = super().get_capabilities()
         base_capabilities.update(

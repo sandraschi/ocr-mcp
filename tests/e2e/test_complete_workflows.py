@@ -5,16 +5,17 @@ These tests verify full user workflows from document acquisition
 through OCR processing to final results.
 """
 
-import pytest
 import asyncio
 from pathlib import Path
-from PIL import Image
 
-from src.ocr_mcp.core.config import OCRConfig
-from src.ocr_mcp.core.backend_manager import BackendManager
-from src.ocr_mcp.tools.ocr_tools import register_ocr_tools
-from src.ocr_mcp.tools.scanner_tools import register_scanner_tools
+import pytest
 from fastmcp import FastMCP
+from PIL import Image
+from src.ocr_mcp.tools.scanner_tools import register_scanner_tools
+
+from src.ocr_mcp.core.backend_manager import BackendManager
+from src.ocr_mcp.core.config import OCRConfig
+from src.ocr_mcp.tools.ocr_tools import register_ocr_tools
 
 
 class TestCompleteWorkflows:
@@ -39,7 +40,7 @@ class TestCompleteWorkflows:
                 "confidence": 0.92,
                 "backend": backend_name,
                 "processing_time": 0.1,
-                "mode": kwargs.get("mode", "text")
+                "mode": kwargs.get("mode", "text"),
             }
 
         manager.process_with_backend = mock_process_success
@@ -61,20 +62,14 @@ class TestCompleteWorkflows:
         config_tool = next(t for t in tools if t.name == "configure_scan")
 
         config_result = await config_tool.fn(
-            device_id="wia:test_scanner_1",
-            dpi=300,
-            color_mode="Color",
-            paper_size="A4"
+            device_id="wia:test_scanner_1", dpi=300, color_mode="Color", paper_size="A4"
         )
         assert config_result is True
 
         # Step 2: Scan document
         scan_tool = next(t for t in tools if t.name == "scan_document")
         scanned_image = await scan_tool.fn(
-            device_id="wia:test_scanner_1",
-            dpi=300,
-            color_mode="Color",
-            paper_size="A4"
+            device_id="wia:test_scanner_1", dpi=300, color_mode="Color", paper_size="A4"
         )
         assert scanned_image is not None
 
@@ -87,9 +82,7 @@ class TestCompleteWorkflows:
         test_image_path.write_bytes(b"mock image data")
 
         ocr_result = await process_tool.fn(
-            source_path=str(test_image_path),
-            backend="auto",
-            mode="text"
+            source_path=str(test_image_path), backend="auto", mode="text"
         )
 
         assert ocr_result["success"] is True
@@ -108,7 +101,7 @@ class TestCompleteWorkflows:
             count=3,
             dpi=150,
             color_mode="Grayscale",
-            paper_size="A4"
+            paper_size="A4",
         )
 
         assert isinstance(images, list)
@@ -125,18 +118,14 @@ class TestCompleteWorkflows:
 
         # Create test image
         img_path = temp_dir / "test.png"
-        img = Image.new('RGB', (100, 100), color='white')
+        img = Image.new("RGB", (100, 100), color="white")
         img.save(img_path)
         test_files.append(("image", str(img_path)))
 
         results = []
 
         for file_type, file_path in test_files:
-            result = await process_tool.fn(
-                source_path=file_path,
-                backend="auto",
-                mode="text"
-            )
+            result = await process_tool.fn(source_path=file_path, backend="auto", mode="text")
 
             assert result["success"] is True
             assert result["file_type"] == file_type
@@ -152,7 +141,7 @@ class TestCompleteWorkflows:
 
         # Create a mock comic page (taller than wide, like comic pages)
         comic_path = temp_dir / "comic_page.png"
-        comic_img = Image.new('RGB', (800, 1200), color='white')
+        comic_img = Image.new("RGB", (800, 1200), color="white")
         comic_img.save(comic_path)
 
         # Process with comic-specific options
@@ -162,7 +151,7 @@ class TestCompleteWorkflows:
             mode="formatted",
             comic_mode=True,
             manga_layout=True,
-            panel_analysis=True
+            panel_analysis=True,
         )
 
         assert result["success"] is True
@@ -177,18 +166,14 @@ class TestCompleteWorkflows:
 
         # Create test image
         img_path = temp_dir / "test.png"
-        img = Image.new('RGB', (100, 100), color='white')
+        img = Image.new("RGB", (100, 100), color="white")
         img.save(img_path)
 
         # Test different backend selections
         backends_to_test = ["auto", "deepseek-ocr", "florence-2"]
 
         for backend in backends_to_test:
-            result = await process_tool.fn(
-                source_path=str(img_path),
-                backend=backend,
-                mode="text"
-            )
+            result = await process_tool.fn(source_path=str(img_path), backend=backend, mode="text")
 
             assert result["success"] is True
             # Backend should be resolved (not necessarily the requested one if auto)
@@ -200,23 +185,17 @@ class TestCompleteWorkflows:
         process_tool = next(t for t in tools if t.name == "process_document")
 
         # Test with non-existent file
-        result = await process_tool.fn(
-            source_path="/nonexistent/file.png",
-            backend="auto"
-        )
+        result = await process_tool.fn(source_path="/nonexistent/file.png", backend="auto")
 
         assert result["success"] is False
         assert "error" in result
 
         # Test recovery with valid file
         img_path = temp_dir / "recovery_test.png"
-        img = Image.new('RGB', (50, 50), color='white')
+        img = Image.new("RGB", (50, 50), color="white")
         img.save(img_path)
 
-        result = await process_tool.fn(
-            source_path=str(img_path),
-            backend="auto"
-        )
+        result = await process_tool.fn(source_path=str(img_path), backend="auto")
 
         assert result["success"] is True
 
@@ -228,16 +207,12 @@ class TestCompleteWorkflows:
 
         # Create test image
         img_path = temp_dir / "perf_test.png"
-        img = Image.new('RGB', (200, 200), color='white')
+        img = Image.new("RGB", (200, 200), color="white")
         img.save(img_path)
 
         # Benchmark OCR processing
         async def run_ocr():
-            return await process_tool.fn(
-                source_path=str(img_path),
-                backend="auto",
-                mode="text"
-            )
+            return await process_tool.fn(source_path=str(img_path), backend="auto", mode="text")
 
         result = await run_ocr()
 
@@ -281,7 +256,7 @@ class TestCompleteWorkflows:
 
         # Create larger test image
         img_path = temp_dir / "region_test.png"
-        img = Image.new('RGB', (400, 400), color='white')
+        img = Image.new("RGB", (400, 400), color="white")
         img.save(img_path)
 
         # Process specific region
@@ -291,7 +266,7 @@ class TestCompleteWorkflows:
             source_path=str(img_path),
             backend="florence-2",  # Backend that supports regions
             mode="fine-grained",
-            region=region
+            region=region,
         )
 
         assert result["success"] is True
@@ -305,17 +280,14 @@ class TestCompleteWorkflows:
         process_tool = next(t for t in tools if t.name == "process_document")
 
         img_path = temp_dir / "format_test.png"
-        img = Image.new('RGB', (100, 100), color='white')
+        img = Image.new("RGB", (100, 100), color="white")
         img.save(img_path)
 
         output_formats = ["text", "json", "html"]
 
         for output_format in output_formats:
             result = await process_tool.fn(
-                source_path=str(img_path),
-                backend="auto",
-                mode="text",
-                output_format=output_format
+                source_path=str(img_path), backend="auto", mode="text", output_format=output_format
             )
 
             assert result["success"] is True
@@ -331,16 +303,13 @@ class TestCompleteWorkflows:
         test_files = []
         for i in range(4):
             img_path = temp_dir / f"concurrent_test_{i}.png"
-            img = Image.new('RGB', (50, 50), color='white')
+            img = Image.new("RGB", (50, 50), color="white")
             img.save(img_path)
             test_files.append(str(img_path))
 
         # Process concurrently
         result = await batch_tool.fn(
-            source_paths=test_files,
-            backend="auto",
-            mode="text",
-            max_concurrent=2
+            source_paths=test_files, backend="auto", mode="text", max_concurrent=2
         )
 
         assert result["success"] is True
@@ -362,6 +331,7 @@ class TestWorkflowErrorScenarios:
 
         # Mock OCR processing that sometimes fails
         call_count = 0
+
         async def mock_process_with_failures(backend_name, image_path, **kwargs):
             nonlocal call_count
             call_count += 1
@@ -371,21 +341,23 @@ class TestWorkflowErrorScenarios:
                 return {
                     "success": False,
                     "error": f"Simulated failure on call {call_count}",
-                    "backend": backend_name
+                    "backend": backend_name,
                 }
 
             return {
                 "success": True,
                 "text": f"Success on call {call_count}",
                 "backend": backend_name,
-                "processing_time": 0.05
+                "processing_time": 0.05,
             }
 
         manager.process_with_backend = mock_process_with_failures
         return manager
 
     @pytest.mark.asyncio
-    async def test_partial_batch_failure_workflow(self, fastmcp_app, failing_backend_manager, config, temp_dir):
+    async def test_partial_batch_failure_workflow(
+        self, fastmcp_app, failing_backend_manager, config, temp_dir
+    ):
         """Test batch processing with some failures."""
         # Re-register tools with failing backend manager
         app = FastMCP("test-failing-ocr-mcp")
@@ -398,15 +370,11 @@ class TestWorkflowErrorScenarios:
         test_files = []
         for i in range(6):  # Should have 2 failures
             img_path = temp_dir / f"fail_test_{i}.png"
-            img = Image.new('RGB', (30, 30), color='white')
+            img = Image.new("RGB", (30, 30), color="white")
             img.save(img_path)
             test_files.append(str(img_path))
 
-        result = await batch_tool.fn(
-            source_paths=test_files,
-            backend="auto",
-            mode="text"
-        )
+        result = await batch_tool.fn(source_paths=test_files, backend="auto", mode="text")
 
         assert result["total_documents"] == 6
         assert len(result["results"]) == 6
@@ -427,21 +395,13 @@ class TestWorkflowErrorScenarios:
         scan_tool = next(t for t in tools if t.name == "scan_document")
 
         # Try scanning with invalid device
-        result = await scan_tool.fn(
-            device_id="invalid:device",
-            dpi=150,
-            color_mode="Color"
-        )
+        result = await scan_tool.fn(device_id="invalid:device", dpi=150, color_mode="Color")
 
         # Should handle gracefully without crashing
         assert result is not None  # May be None or error dict
 
         # Try with valid device
-        result = await scan_tool.fn(
-            device_id="wia:test_scanner_1",
-            dpi=150,
-            color_mode="Color"
-        )
+        result = await scan_tool.fn(device_id="wia:test_scanner_1", dpi=150, color_mode="Color")
 
         assert result is not None
 
@@ -453,15 +413,11 @@ class TestWorkflowErrorScenarios:
 
         # Create test file
         img_path = temp_dir / "timeout_test.png"
-        img = Image.new('RGB', (1000, 1000), color='white')  # Large file
+        img = Image.new("RGB", (1000, 1000), color="white")  # Large file
         img.save(img_path)
 
         # Process should still complete (mock doesn't actually timeout)
-        result = await process_tool.fn(
-            source_path=str(img_path),
-            backend="auto",
-            mode="text"
-        )
+        result = await process_tool.fn(source_path=str(img_path), backend="auto", mode="text")
 
         assert result["success"] is True
         assert "processing_time" in result
@@ -477,20 +433,14 @@ class TestAdvancedWorkflows:
 
         # Step 1: Preview scan
         preview_tool = next(t for t in tools if t.name == "preview_scan")
-        preview_result = await preview_tool.fn(
-            device_id="wia:test_scanner_1",
-            dpi=75
-        )
+        preview_result = await preview_tool.fn(device_id="wia:test_scanner_1", dpi=75)
 
         assert preview_result is not None
 
         # Step 2: Configure for full scan
         config_tool = next(t for t in tools if t.name == "configure_scan")
         config_result = await config_tool.fn(
-            device_id="wia:test_scanner_1",
-            dpi=300,
-            color_mode="Color",
-            paper_size="A4"
+            device_id="wia:test_scanner_1", dpi=300, color_mode="Color", paper_size="A4"
         )
 
         assert config_result is True
@@ -498,10 +448,7 @@ class TestAdvancedWorkflows:
         # Step 3: Full scan
         scan_tool = next(t for t in tools if t.name == "scan_document")
         full_scan_result = await scan_tool.fn(
-            device_id="wia:test_scanner_1",
-            dpi=300,
-            color_mode="Color",
-            paper_size="A4"
+            device_id="wia:test_scanner_1", dpi=300, color_mode="Color", paper_size="A4"
         )
 
         assert full_scan_result is not None
@@ -514,7 +461,7 @@ class TestAdvancedWorkflows:
 
         # Create test image
         img_path = temp_dir / "comparison_test.png"
-        img = Image.new('RGB', (200, 200), color='white')
+        img = Image.new("RGB", (200, 200), color="white")
         img.save(img_path)
 
         backends = ["deepseek-ocr", "florence-2", "got-ocr"]
@@ -522,11 +469,7 @@ class TestAdvancedWorkflows:
 
         # Process with different backends
         for backend in backends:
-            result = await process_tool.fn(
-                source_path=str(img_path),
-                backend=backend,
-                mode="text"
-            )
+            result = await process_tool.fn(source_path=str(img_path), backend=backend, mode="text")
 
             assert result["success"] is True
             results[backend] = result
@@ -546,9 +489,9 @@ class TestAdvancedWorkflows:
 
         # Test different image characteristics
         test_cases = [
-            ("simple", Image.new('RGB', (100, 100), color='white')),
-            ("complex", Image.new('RGB', (500, 500), color='gray')),
-            ("high_contrast", Image.new('L', (200, 200), color=255)),
+            ("simple", Image.new("RGB", (100, 100), color="white")),
+            ("complex", Image.new("RGB", (500, 500), color="gray")),
+            ("high_contrast", Image.new("L", (200, 200), color=255)),
         ]
 
         results = {}
@@ -557,11 +500,7 @@ class TestAdvancedWorkflows:
             img_path = temp_dir / f"quality_test_{case_name}.png"
             image.save(img_path)
 
-            result = await process_tool.fn(
-                source_path=str(img_path),
-                backend="auto",
-                mode="text"
-            )
+            result = await process_tool.fn(source_path=str(img_path), backend="auto", mode="text")
 
             assert result["success"] is True
             results[case_name] = result
@@ -571,9 +510,3 @@ class TestAdvancedWorkflows:
         for case_name, result in results.items():
             assert "confidence" in result
             assert result["confidence"] > 0
-
-
-
-
-
-

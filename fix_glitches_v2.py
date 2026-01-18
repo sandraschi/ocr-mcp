@@ -3,7 +3,7 @@ import re
 
 
 def fix_file(filepath):
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     # 1. Fix glitches (regex for asy*async)
@@ -18,9 +18,7 @@ def fix_file(filepath):
     # 3. Fix bare excepts and make them more informative
     # Replace 'except:' or 'except Exception:' with 'except Exception as e:'
     # and add a logger.error(f"Error: {e}") if it's one-liner pass or dummy
-    content = re.sub(
-        r"except\s*:|except\s+Exception\s*:", "except Exception as e:", content
-    )
+    content = re.sub(r"except\s*:|except\s+Exception\s*:", "except Exception as e:", content)
 
     # Identify the indentation of the line after 'except Exception as e:'
     # and add a logger.error if missing.

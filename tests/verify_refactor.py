@@ -1,7 +1,7 @@
 import asyncio
 import sys
-from unittest.mock import MagicMock, AsyncMock
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock
 
 # Add src to path
 sys.path.append(str(Path(__file__).parent.parent / "src"))
@@ -54,9 +54,7 @@ async def verify_tools():
     backend_manager.process_with_backend = AsyncMock(
         return_value={"success": True, "text": "Mock OCR"}
     )
-    backend_manager.get_backend_status = AsyncMock(
-        return_value={"tesseract": "available"}
-    )
+    backend_manager.get_backend_status = AsyncMock(return_value={"tesseract": "available"})
 
     config = MagicMock(spec=OCRConfig)
 
@@ -96,9 +94,6 @@ async def verify_tools():
         # Ideally we'd invoke it, but FastMCP tools are decorated.
         # We'll check the signature or existence of the implementation module functions.
         from ocr_mcp.tools import _processor
-        from ocr_mcp.tools import _image
-        from ocr_mcp.tools import _scanner
-        from ocr_mcp.tools import _workflow
 
         print("Sub-modules imported successfully.")
 

@@ -16,17 +16,21 @@ DOCUMENT PROCESSING WORKFLOWS:
 - "Extract data from forms" → multi-document analysis and data extraction
 """
 
-from typing import Any, Dict, List, Optional, Union
+import logging
+
 from fastmcp import Context
 
-import logging
 logger = logging.getLogger(__name__)
 
 # Conditional imports for advanced_memory integration
 try:
-    from advanced_memory.mcp.inter_server import sample_with_tools, create_tool_spec, SamplingResult
-    from advanced_memory.mcp.tools.content_manager import build_success_response, build_error_response
+    from advanced_memory.mcp.inter_server import SamplingResult, create_tool_spec, sample_with_tools
     from advanced_memory.mcp.mcp_instance import mcp
+    from advanced_memory.mcp.tools.content_manager import (
+        build_error_response,
+        build_success_response,
+    )
+
     _advanced_memory_available = True
 except ImportError:
     _advanced_memory_available = False
@@ -63,9 +67,9 @@ def register_agentic_document_workflow(app):
     @app.tool()
     async def agentic_document_workflow(
         workflow_prompt: str,
-        available_tools: List[str],
+        available_tools: list[str],
         max_iterations: int = 5,
-        context: Optional[Context] = None
+        context: Context | None = None,
     ) -> dict:
         """
         Execute agentic document workflows using FastMCP 2.14.1+ sampling with tools.
@@ -108,9 +112,9 @@ def register_agentic_document_workflow(app):
                     message="workflow_prompt is required to guide the document workflow",
                     recovery_options=[
                         "Provide a clear description of the document workflow to execute",
-                        "Include specific goals and available tools"
+                        "Include specific goals and available tools",
                     ],
-                    urgency="medium"
+                    urgency="medium",
                 )
 
             if not available_tools:
@@ -120,13 +124,13 @@ def register_agentic_document_workflow(app):
                     message="available_tools list cannot be empty",
                     recovery_options=[
                         "Specify which document tools the LLM can use",
-                        "Include at least one document tool for the workflow"
+                        "Include at least one document tool for the workflow",
                     ],
-                    urgency="medium"
+                    urgency="medium",
                 )
 
             # Check if context has sampling capability
-            if not hasattr(context, 'sample_step'):
+            if not hasattr(context, "sample_step"):
                 return build_error_response(
                     error="Sampling not available",
                     error_code="SAMPLING_UNAVAILABLE",
@@ -134,9 +138,9 @@ def register_agentic_document_workflow(app):
                     recovery_options=[
                         "Ensure FastMCP 2.14.1+ is installed",
                         "Check that sampling handlers are configured",
-                        "Verify LLM provider supports tool calling"
+                        "Verify LLM provider supports tool calling",
                     ],
-                    urgency="high"
+                    urgency="high",
                 )
 
             logger.info(f"Starting agentic document workflow: {workflow_prompt[:50]}...")
@@ -150,37 +154,45 @@ def register_agentic_document_workflow(app):
             # In a real scenario, this would come from context.sample_step
             simulated_tool_call = {
                 "tool_name": available_tools[0],
-                "parameters": {"source_path": "/path/to/document.pdf", "backend": "auto", "output_format": "text"}
+                "parameters": {
+                    "source_path": "/path/to/document.pdf",
+                    "backend": "auto",
+                    "output_format": "text",
+                },
             }
 
             # Simulate tool execution
             # In a real scenario, you would dynamically call the tool function
             # tool_result = await getattr(app.tools, simulated_tool_call["tool_name"]).fn(**simulated_tool_call["parameters"])
-            tool_result = {"status": "processed", "document_path": "/path/to/document.pdf", "confidence": 0.95}
+            tool_result = {
+                "status": "processed",
+                "document_path": "/path/to/document.pdf",
+                "confidence": 0.95,
+            }
 
-            final_content = f"Document workflow completed. Executed {simulated_tool_call['tool_name']} with result: Document processed with {tool_result['confidence']*100:.1f}% confidence"
+            final_content = f"Document workflow completed. Executed {simulated_tool_call['tool_name']} with result: Document processed with {tool_result['confidence'] * 100:.1f}% confidence"
 
             return build_success_response(
                 operation="agentic_document_workflow",
                 summary=f"Document workflow '{workflow_prompt[:50]}...' completed successfully.",
                 result={
                     "final_output": final_content,
-                    "iterations": 1, # Placeholder
+                    "iterations": 1,  # Placeholder
                     "executed_tools": [simulated_tool_call["tool_name"]],
                     "documents_processed": 1,
-                    "average_confidence": tool_result["confidence"]
+                    "average_confidence": tool_result["confidence"],
                 },
                 next_steps=[
                     "Verify all documents were processed correctly",
                     "Review OCR quality and confidence scores",
                     "Check output format and file organization",
-                    "Set up automated document monitoring"
+                    "Set up automated document monitoring",
                 ],
                 suggestions=[
-                    "Try 'agentic_document_workflow(workflow_prompt=\"Process all receipts\", available_tools=[\"process_document\", \"extract_tables\"])'",
+                    'Try \'agentic_document_workflow(workflow_prompt="Process all receipts", available_tools=["process_document", "extract_tables"])\'',
                     "Explore batch processing with quality assessment workflows",
-                    "Combine with document analysis for intelligent data extraction"
-                ]
+                    "Combine with document analysis for intelligent data extraction",
+                ],
             )
         except Exception as e:
             logger.error(f"Agentic document workflow failed: {e}", exc_info=True)
@@ -192,8 +204,8 @@ def register_agentic_document_workflow(app):
                     "Check the workflow_prompt for clarity and valid document instructions",
                     "Ensure all document tools in available_tools are correctly implemented and registered",
                     "Review document file paths and accessibility",
-                    "Check OCR backend availability and configuration"
+                    "Check OCR backend availability and configuration",
                 ],
                 diagnostic_info={"exception": str(e), "workflow_type": "document_processing"},
-                urgency="high"
+                urgency="high",
             )

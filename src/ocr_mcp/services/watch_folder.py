@@ -1,9 +1,7 @@
 import asyncio
 import logging
 import shutil
-import time
 from pathlib import Path
-from typing import List, Set
 
 from ocr_mcp.core.backend_manager import BackendManager
 from ocr_mcp.core.config import config
@@ -20,7 +18,7 @@ class WatchFolderService:
     def __init__(self, backend_manager: BackendManager):
         self.backend_manager = backend_manager
         self.is_running = False
-        self._processed_files: Set[str] = set()
+        self._processed_files: set[str] = set()
 
     async def start(self):
         """Start the watch folder service loop."""
@@ -35,9 +33,7 @@ class WatchFolderService:
         # Ensure output directories exist
         processed_dir = config.watch_folder_path / "processed"
         failed_dir = config.watch_folder_path / "failed"
-        output_dir = config.watch_folder_output_path or (
-            config.watch_folder_path / "output"
-        )
+        output_dir = config.watch_folder_output_path or (config.watch_folder_path / "output")
 
         processed_dir.mkdir(exist_ok=True)
         failed_dir.mkdir(exist_ok=True)
@@ -60,17 +56,13 @@ class WatchFolderService:
         logger.info("Stopping watch folder service...")
         self.is_running = False
 
-    async def _scan_and_process(
-        self, processed_dir: Path, failed_dir: Path, output_dir: Path
-    ):
+    async def _scan_and_process(self, processed_dir: Path, failed_dir: Path, output_dir: Path):
         """Scan for new files and process them."""
         # Find new files (excluding subdirectories)
         files_to_process = [
             f
             for f in config.watch_folder_path.iterdir()
-            if f.is_file()
-            and f.name not in self._processed_files
-            and not f.name.startswith(".")
+            if f.is_file() and f.name not in self._processed_files and not f.name.startswith(".")
         ]
 
         if not files_to_process:
@@ -94,8 +86,7 @@ class WatchFolderService:
 
         # Handle file movements based on results
         results_map = {
-            r["document_path"]: r.get("success", False)
-            for r in result.get("results", [])
+            r["document_path"]: r.get("success", False) for r in result.get("results", [])
         }
 
         for file_path in files_to_process:

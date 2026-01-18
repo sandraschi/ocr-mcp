@@ -2,9 +2,10 @@
 Unit tests for OCR-MCP configuration module.
 """
 
-import pytest
 from pathlib import Path
 from unittest.mock import patch
+
+import pytest
 
 from src.ocr_mcp.core.config import OCRConfig
 
@@ -30,7 +31,7 @@ class TestOCRConfig:
             device="cuda",
             default_backend="deepseek-ocr",
             max_concurrent=5,
-            model_cache_size=4
+            model_cache_size=4,
         )
 
         assert config.cache_dir == custom_cache_dir
@@ -70,9 +71,15 @@ class TestOCRConfig:
     def test_backend_validation(self):
         """Test default backend validation."""
         valid_backends = [
-            "deepseek-ocr", "florence-2", "dots-ocr",
-            "pp-ocrv5", "qwen-image-layered", "got-ocr",
-            "tesseract", "easyocr", "auto"
+            "deepseek-ocr",
+            "florence-2",
+            "dots-ocr",
+            "pp-ocrv5",
+            "qwen-image-layered",
+            "got-ocr",
+            "tesseract",
+            "easyocr",
+            "auto",
         ]
 
         for backend in valid_backends:
@@ -158,11 +165,11 @@ class TestOCRConfig:
         config = OCRConfig()
 
         # All properties should be accessible
-        assert hasattr(config, 'cache_dir')
-        assert hasattr(config, 'device')
-        assert hasattr(config, 'default_backend')
-        assert hasattr(config, 'max_concurrent')
-        assert hasattr(config, 'model_cache_size')
+        assert hasattr(config, "cache_dir")
+        assert hasattr(config, "device")
+        assert hasattr(config, "default_backend")
+        assert hasattr(config, "max_concurrent")
+        assert hasattr(config, "model_cache_size")
 
         # All should have reasonable values
         assert isinstance(config.cache_dir, Path)
@@ -187,11 +194,7 @@ class TestOCRConfig:
 
     def test_config_serialization(self):
         """Test that config can be serialized/deserialized."""
-        config = OCRConfig(
-            device="cuda",
-            default_backend="florence-2",
-            max_concurrent=5
-        )
+        config = OCRConfig(device="cuda", default_backend="florence-2", max_concurrent=5)
 
         # Convert to dict (manual serialization)
         config_dict = {
@@ -199,7 +202,7 @@ class TestOCRConfig:
             "device": config.device,
             "default_backend": config.default_backend,
             "max_concurrent": config.max_concurrent,
-            "model_cache_size": config.model_cache_size
+            "model_cache_size": config.model_cache_size,
         }
 
         # Create new config from dict
@@ -209,7 +212,7 @@ class TestOCRConfig:
             device=config_dict["device"],
             default_backend=config_dict["default_backend"],
             max_concurrent=config_dict["max_concurrent"],
-            model_cache_size=config_dict["model_cache_size"]
+            model_cache_size=config_dict["model_cache_size"],
         )
 
         # Should be equivalent
@@ -217,9 +220,3 @@ class TestOCRConfig:
         assert new_config.default_backend == config.default_backend
         assert new_config.max_concurrent == config.max_concurrent
         assert new_config.model_cache_size == config.model_cache_size
-
-
-
-
-
-

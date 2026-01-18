@@ -8,16 +8,18 @@ batch processing, and multi-document workflows.
 import logging
 import time
 import uuid
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Callable
-from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class ProgressStatus(Enum):
     """Progress operation status"""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -27,6 +29,7 @@ class ProgressStatus(Enum):
 
 class OperationType(Enum):
     """Types of operations being tracked"""
+
     SINGLE_DOCUMENT = "single_document"
     BATCH_PROCESSING = "batch_processing"
     MULTI_PAGE_DOCUMENT = "multi_page_document"
@@ -38,6 +41,7 @@ class OperationType(Enum):
 @dataclass
 class ProgressUpdate:
     """Individual progress update"""
+
     operation_id: str
     timestamp: float
     status: ProgressStatus
@@ -46,34 +50,35 @@ class ProgressUpdate:
     total_steps: int
     current_step_index: int
     message: str
-    details: Dict[str, Any] = field(default_factory=dict)
-    estimated_time_remaining: Optional[float] = None  # seconds
+    details: dict[str, Any] = field(default_factory=dict)
+    estimated_time_remaining: float | None = None  # seconds
 
 
 @dataclass
 class OperationProgress:
     """Complete operation progress tracking"""
+
     operation_id: str
     operation_type: OperationType
     status: ProgressStatus
     start_time: float
-    end_time: Optional[float] = None
+    end_time: float | None = None
     total_items: int = 0
     completed_items: int = 0
     failed_items: int = 0
-    current_item: Optional[str] = None
+    current_item: str | None = None
     progress: float = 0.0
     current_step: str = ""
-    steps: List[str] = field(default_factory=list)
-    updates: List[ProgressUpdate] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    steps: list[str] = field(default_factory=list)
+    updates: list[ProgressUpdate] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def duration(self) -> float:
         """Get operation duration in seconds"""
         end_time = self.end_time or time.time()
         return end_time - self.start_time
 
-    def estimated_completion_time(self) -> Optional[float]:
+    def estimated_completion_time(self) -> float | None:
         """Estimate completion time based on current progress"""
         if self.progress <= 0:
             return None
@@ -90,8 +95,8 @@ class ProgressTracker:
     """Central progress tracking system"""
 
     def __init__(self, max_history: int = 1000):
-        self.operations: Dict[str, OperationProgress] = {}
-        self.callbacks: Dict[str, List[Callable]] = {}
+        self.operations: dict[str, OperationProgress] = {}
+        self.callbacks: dict[str, list[Callable]] = {}
         self.max_history = max_history
         self._executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="progress")
 
@@ -99,8 +104,8 @@ class ProgressTracker:
         self,
         operation_type: OperationType,
         total_items: int = 1,
-        steps: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        steps: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> str:
         """Start tracking a new operation"""
 
@@ -112,7 +117,7 @@ class ProgressTracker:
             start_time=time.time(),
             total_items=total_items,
             steps=steps or [],
-            metadata=metadata or {}
+            metadata=metadata or {},
         )
 
         self.operations[operation_id] = operation
@@ -121,10 +126,12 @@ class ProgressTracker:
         if len(self.operations) > self.max_history:
             # Remove oldest completed operations
             completed_ops = [
-                op_id for op_id, op in self.operations.items()
-                if op.status in [ProgressStatus.COMPLETED, ProgressStatus.FAILED, ProgressStatus.CANCELLED]
+                op_id
+                for op_id, op in self.operations.items()
+                if op.status
+                in [ProgressStatus.COMPLETED, ProgressStatus.FAILED, ProgressStatus.CANCELLED]
             ]
-            for op_id in completed_ops[:len(self.operations) - self.max_history + 100]:
+            for op_id in completed_ops[: len(self.operations) - self.max_history + 100]:
                 del self.operations[op_id]
 
         logger.info(f"Started operation {operation_id} ({operation_type.value})")
@@ -135,8 +142,8 @@ class ProgressTracker:
         operation_id: str,
         progress: float,
         message: str,
-        current_step: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None
+        current_step: str | None = None,
+        details: dict[str, Any] | None = None,
     ):
         """Update operation progress"""
 
@@ -158,10 +165,12 @@ class ProgressTracker:
             progress=operation.progress,
             current_step=operation.current_step,
             total_steps=len(operation.steps),
-            current_step_index=operation.steps.index(operation.current_step) if operation.current_step in operation.steps else -1,
+            current_step_index=operation.steps.index(operation.current_step)
+            if operation.current_step in operation.steps
+            else -1,
             message=message,
             details=details or {},
-            estimated_time_remaining=self._estimate_time_remaining(operation)
+            estimated_time_remaining=self._estimate_time_remaining(operation),
         )
 
         operation.updates.append(update)
@@ -175,8 +184,8 @@ class ProgressTracker:
         self,
         operation_id: str,
         completed_items: int,
-        current_item: Optional[str] = None,
-        failed_items: int = 0
+        current_item: str | None = None,
+        failed_items: int = 0,
     ):
         """Update progress for multi-item operations"""
 
@@ -201,7 +210,9 @@ class ProgressTracker:
 
             self.update_progress(operation_id, operation.progress, message)
 
-    def complete_operation(self, operation_id: str, success: bool = True, error_message: Optional[str] = None):
+    def complete_operation(
+        self, operation_id: str, success: bool = True, error_message: str | None = None
+    ):
         """Mark operation as completed"""
 
         if operation_id not in self.operations:
@@ -216,7 +227,9 @@ class ProgressTracker:
         else:
             self.update_progress(operation_id, 1.0, "Operation completed successfully")
 
-        logger.info(f"Completed operation {operation_id} in {operation.duration():.2f}s (success: {success})")
+        logger.info(
+            f"Completed operation {operation_id} in {operation.duration():.2f}s (success: {success})"
+        )
 
     def cancel_operation(self, operation_id: str, reason: str = "Cancelled by user"):
         """Cancel an operation"""
@@ -231,7 +244,7 @@ class ProgressTracker:
         self.update_progress(operation_id, operation.progress, f"Cancelled: {reason}")
         logger.info(f"Cancelled operation {operation_id}: {reason}")
 
-    def get_operation_status(self, operation_id: str) -> Optional[Dict[str, Any]]:
+    def get_operation_status(self, operation_id: str) -> dict[str, Any] | None:
         """Get current status of an operation"""
 
         if operation_id not in self.operations:
@@ -252,10 +265,12 @@ class ProgressTracker:
             "completed_items": operation.completed_items,
             "failed_items": operation.failed_items,
             "current_item": operation.current_item,
-            "metadata": operation.metadata
+            "metadata": operation.metadata,
         }
 
-    def list_operations(self, status_filter: Optional[List[ProgressStatus]] = None) -> List[Dict[str, Any]]:
+    def list_operations(
+        self, status_filter: list[ProgressStatus] | None = None
+    ) -> list[dict[str, Any]]:
         """List all operations with optional status filter"""
 
         operations = []
@@ -295,7 +310,7 @@ class ProgressTracker:
             except Exception as e:
                 logger.error(f"Error in progress callback: {e}")
 
-    def _estimate_time_remaining(self, operation: OperationProgress) -> Optional[float]:
+    def _estimate_time_remaining(self, operation: OperationProgress) -> float | None:
         """Estimate time remaining for operation completion"""
 
         if operation.progress <= 0 or operation.progress >= 1.0:
@@ -318,8 +333,11 @@ class ProgressTracker:
         to_remove = []
 
         for operation_id, operation in self.operations.items():
-            if (operation.status in [ProgressStatus.COMPLETED, ProgressStatus.FAILED, ProgressStatus.CANCELLED]
-                and current_time - operation.end_time > max_age_seconds):
+            if (
+                operation.status
+                in [ProgressStatus.COMPLETED, ProgressStatus.FAILED, ProgressStatus.CANCELLED]
+                and current_time - operation.end_time > max_age_seconds
+            ):
                 to_remove.append(operation_id)
 
         for operation_id in to_remove:
@@ -337,8 +355,8 @@ progress_tracker = ProgressTracker()
 def create_progress_context(
     operation_type: OperationType,
     total_items: int = 1,
-    steps: Optional[List[str]] = None,
-    metadata: Optional[Dict[str, Any]] = None
+    steps: list[str] | None = None,
+    metadata: dict[str, Any] | None = None,
 ):
     """Context manager for progress tracking"""
 
@@ -358,15 +376,21 @@ def create_progress_context(
 
         def __exit__(self, exc_type, exc_val, exc_tb):
             if exc_type:
-                progress_tracker.complete_operation(self.operation_id, success=False, error_message=str(exc_val))
+                progress_tracker.complete_operation(
+                    self.operation_id, success=False, error_message=str(exc_val)
+                )
             else:
                 progress_tracker.complete_operation(self.operation_id, success=True)
 
         def update_progress(self, progress: float, message: str, **kwargs):
             progress_tracker.update_progress(self.operation_id, progress, message, **kwargs)
 
-        def update_item_progress(self, completed: int, current_item: Optional[str] = None, failed: int = 0):
-            progress_tracker.update_item_progress(self.operation_id, completed, current_item, failed)
+        def update_item_progress(
+            self, completed: int, current_item: str | None = None, failed: int = 0
+        ):
+            progress_tracker.update_item_progress(
+                self.operation_id, completed, current_item, failed
+            )
 
     return ProgressContext(operation_type, total_items, steps, metadata)
 
@@ -376,9 +400,9 @@ async def track_async_operation(
     operation_func: Callable,
     *args,
     total_items: int = 1,
-    steps: Optional[List[str]] = None,
-    metadata: Optional[Dict[str, Any]] = None,
-    **kwargs
+    steps: list[str] | None = None,
+    metadata: dict[str, Any] | None = None,
+    **kwargs,
 ):
     """Track progress for an async operation"""
 

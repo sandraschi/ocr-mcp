@@ -6,13 +6,13 @@ import pytest
 
 from tests.mocks.mock_backends import (
     MockDeepSeekBackend,
-    MockFlorenceBackend,
     MockDOTSBackend,
+    MockEasyOCRBackend,
+    MockFlorenceBackend,
+    MockGOTBackend,
     MockPPOCRBackend,
     MockQwenBackend,
-    MockGOTBackend,
     MockTesseractBackend,
-    MockEasyOCRBackend
 )
 
 
@@ -70,13 +70,15 @@ class TestMockDeepSeekBackend:
         """Test OCR processing with region specification."""
         region = [10, 10, 200, 200]
         result = await backend.process_image(
-            str(sample_image_path),
-            mode="fine-grained",
-            region=region
+            str(sample_image_path), mode="fine-grained", region=region
         )
 
         assert result["success"] is True
-        assert backend.last_call_args == (str(sample_image_path), "fine-grained", {"region": region})
+        assert backend.last_call_args == (
+            str(sample_image_path),
+            "fine-grained",
+            {"region": region},
+        )
 
     def test_get_capabilities(self, backend):
         """Test backend capabilities."""
@@ -123,10 +125,7 @@ class TestMockFlorenceBackend:
     async def test_process_image_with_region(self, backend, sample_image_path):
         """Test OCR with region specification."""
         region = [50, 50, 300, 300]
-        result = await backend.process_image(
-            str(sample_image_path),
-            region=region
-        )
+        result = await backend.process_image(str(sample_image_path), region=region)
 
         assert result["success"] is True
         assert result["region_ocr"] is True
@@ -250,11 +249,7 @@ class TestMockGOTBackend:
     @pytest.mark.asyncio
     async def test_process_image_comic_mode(self, backend, sample_image_path):
         """Test OCR with comic mode."""
-        result = await backend.process_image(
-            str(sample_image_path),
-            mode="text",
-            comic_mode=True
-        )
+        result = await backend.process_image(str(sample_image_path), mode="text", comic_mode=True)
 
         assert result["success"] is True
         assert "GOT-OCR2.0 advanced OCR result" in result["text"]
@@ -338,16 +333,19 @@ class TestMockEasyOCRBackend:
 class TestBackendCommonBehavior:
     """Test common behavior across all backends."""
 
-    @pytest.mark.parametrize("backend_class,backend_name", [
-        (MockDeepSeekBackend, "deepseek-ocr"),
-        (MockFlorenceBackend, "florence-2"),
-        (MockDOTSBackend, "dots-ocr"),
-        (MockPPOCRBackend, "pp-ocrv5"),
-        (MockQwenBackend, "qwen-image-layered"),
-        (MockGOTBackend, "got-ocr"),
-        (MockTesseractBackend, "tesseract"),
-        (MockEasyOCRBackend, "easyocr"),
-    ])
+    @pytest.mark.parametrize(
+        "backend_class,backend_name",
+        [
+            (MockDeepSeekBackend, "deepseek-ocr"),
+            (MockFlorenceBackend, "florence-2"),
+            (MockDOTSBackend, "dots-ocr"),
+            (MockPPOCRBackend, "pp-ocrv5"),
+            (MockQwenBackend, "qwen-image-layered"),
+            (MockGOTBackend, "got-ocr"),
+            (MockTesseractBackend, "tesseract"),
+            (MockEasyOCRBackend, "easyocr"),
+        ],
+    )
     def test_all_backends_initialization(self, config, backend_class, backend_name):
         """Test that all backends initialize correctly."""
         backend = backend_class(config)
@@ -356,16 +354,19 @@ class TestBackendCommonBehavior:
         assert backend.config == config
         assert backend.is_available()
 
-    @pytest.mark.parametrize("backend_class", [
-        MockDeepSeekBackend,
-        MockFlorenceBackend,
-        MockDOTSBackend,
-        MockPPOCRBackend,
-        MockQwenBackend,
-        MockGOTBackend,
-        MockTesseractBackend,
-        MockEasyOCRBackend,
-    ])
+    @pytest.mark.parametrize(
+        "backend_class",
+        [
+            MockDeepSeekBackend,
+            MockFlorenceBackend,
+            MockDOTSBackend,
+            MockPPOCRBackend,
+            MockQwenBackend,
+            MockGOTBackend,
+            MockTesseractBackend,
+            MockEasyOCRBackend,
+        ],
+    )
     @pytest.mark.asyncio
     async def test_all_backends_process_image(self, config, sample_image_path, backend_class):
         """Test that all backends can process images."""
@@ -379,16 +380,19 @@ class TestBackendCommonBehavior:
         assert "backend" in result
         assert result["backend"] == backend.name
 
-    @pytest.mark.parametrize("backend_class", [
-        MockDeepSeekBackend,
-        MockFlorenceBackend,
-        MockDOTSBackend,
-        MockPPOCRBackend,
-        MockQwenBackend,
-        MockGOTBackend,
-        MockTesseractBackend,
-        MockEasyOCRBackend,
-    ])
+    @pytest.mark.parametrize(
+        "backend_class",
+        [
+            MockDeepSeekBackend,
+            MockFlorenceBackend,
+            MockDOTSBackend,
+            MockPPOCRBackend,
+            MockQwenBackend,
+            MockGOTBackend,
+            MockTesseractBackend,
+            MockEasyOCRBackend,
+        ],
+    )
     def test_all_backends_capabilities(self, config, backend_class):
         """Test that all backends provide capabilities."""
         backend = backend_class(config)
@@ -404,11 +408,14 @@ class TestBackendCommonBehavior:
         assert "description" in capabilities
 
     @pytest.mark.parametrize("mode", ["text", "formatted", "fine-grained"])
-    @pytest.mark.parametrize("backend_class", [
-        MockDeepSeekBackend,
-        MockFlorenceBackend,
-        MockGOTBackend,
-    ])
+    @pytest.mark.parametrize(
+        "backend_class",
+        [
+            MockDeepSeekBackend,
+            MockFlorenceBackend,
+            MockGOTBackend,
+        ],
+    )
     @pytest.mark.asyncio
     async def test_mode_support(self, config, sample_image_path, backend_class, mode):
         """Test mode support across backends."""
@@ -418,9 +425,3 @@ class TestBackendCommonBehavior:
 
         assert result["success"] is True
         assert result["mode"] == mode
-
-
-
-
-
-

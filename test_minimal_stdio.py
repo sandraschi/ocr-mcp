@@ -4,8 +4,9 @@ Minimal test to check if FastMCP can handle stdio protocol
 """
 
 import asyncio
-import sys
 import os
+import sys
+
 
 async def test_fastmcp_stdio():
     """Test FastMCP stdio handling"""
@@ -28,11 +29,8 @@ async def test_fastmcp_stdio():
             "params": {
                 "protocolVersion": "2024-11-05",
                 "capabilities": {},
-                "clientInfo": {
-                    "name": "TestClient",
-                    "version": "1.0.0"
-                }
-            }
+                "clientInfo": {"name": "TestClient", "version": "1.0.0"},
+            },
         }
 
         # This would normally be handled by FastMCP's stdio runner
@@ -42,7 +40,9 @@ async def test_fastmcp_stdio():
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         import traceback
+
         traceback.print_exc(file=sys.stderr)
+
 
 if __name__ == "__main__":
     # Change to the script directory

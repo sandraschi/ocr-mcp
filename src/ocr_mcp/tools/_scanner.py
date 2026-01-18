@@ -5,8 +5,7 @@ Consolidates all scanner hardware control operations into a single tool.
 """
 
 import logging
-from typing import Dict, Any, Optional
-
+from typing import Any
 
 from ..core.error_handler import ErrorHandler, create_success_response
 
@@ -15,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 async def handle_scanner_op(
     operation: str,
-    device_id: Optional[str] = None,
+    device_id: str | None = None,
     scan_source: str = "flatbed",
     resolution: int = 300,
     color_mode: str = "Color",
@@ -24,7 +23,7 @@ async def handle_scanner_op(
     backend_manager: Any = None,
     config: Any = None,
     **kwargs,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     PORTMANTEAU TOOL: Scanner Hardware Operations
 
@@ -173,9 +172,7 @@ async def handle_scanner_op(
 
     except Exception as e:
         logger.error(f"Scanner operation failed: {operation}, error: {e}")
-        return ErrorHandler.handle_exception(
-            e, context=f"scanner_operations_{operation}"
-        )
+        return ErrorHandler.handle_exception(e, context=f"scanner_operations_{operation}")
 
 
 # Operation handler functions
@@ -299,9 +296,7 @@ async def _handle_scan_document(
         }
 
         # Perform scan
-        result = backend_manager.scanner_manager.scan_document(
-            device_id, settings, save_path
-        )
+        result = backend_manager.scanner_manager.scan_document(device_id, settings, save_path)
 
         if result is None:
             return ErrorHandler.create_error(
@@ -372,9 +367,7 @@ async def _handle_preview_scan(device_id, save_path, backend_manager):
                 message_override=f"Preview scan failed for device {device_id}",
             ).to_dict()
 
-        return create_success_response(
-            {"device_id": device_id, "preview_result": str(result)}
-        )
+        return create_success_response({"device_id": device_id, "preview_result": str(result)})
 
     except Exception as e:
         logger.error(f"Failed to preview scan with {device_id}: {e}")

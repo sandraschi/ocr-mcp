@@ -6,8 +6,8 @@ and document structure understanding.
 """
 
 import logging
-from typing import Dict, Any, Optional, List
 import re
+from typing import Any
 
 from ..core.backend_manager import BackendManager
 from ..core.config import OCRConfig
@@ -30,9 +30,9 @@ async def analyze_document_layout(
     detect_tables: bool = True,
     detect_forms: bool = True,
     detect_headers: bool = True,
-    backend_manager: Optional[BackendManager] = None,
-    config: Optional[OCRConfig] = None,
-) -> Dict[str, Any]:
+    backend_manager: BackendManager | None = None,
+    config: OCRConfig | None = None,
+) -> dict[str, Any]:
     """
     Analyze document layout and structure.
 
@@ -52,9 +52,9 @@ async def analyze_document_layout(
     logger.info(f"Analyzing document layout: {image_path}")
 
     try:
-        from PIL import Image
-        import numpy as np
         import cv2
+        import numpy as np
+        from PIL import Image
 
         # Load image
         image = Image.open(image_path)
@@ -117,14 +117,11 @@ async def analyze_document_layout(
             "document_structure": {
                 "has_tables": any(e["type"] == "table" for e in layout_elements),
                 "has_forms": any(
-                    e["type"] in ["form_field", "checkbox", "signature"]
-                    for e in layout_elements
+                    e["type"] in ["form_field", "checkbox", "signature"] for e in layout_elements
                 ),
                 "has_headers": any(e["type"] == "header" for e in layout_elements),
                 "has_footers": any(e["type"] == "footer" for e in layout_elements),
-                "text_blocks": len(
-                    [e for e in layout_elements if e["type"] == "text_block"]
-                ),
+                "text_blocks": len([e for e in layout_elements if e["type"] == "text_block"]),
                 "estimated_pages": 1,
             },
             "image_info": {
@@ -146,11 +143,11 @@ async def analyze_document_layout(
 
 async def extract_table_data(
     image_path: str,
-    table_region: Optional[List[int]] = None,
+    table_region: list[int] | None = None,
     ocr_backend: str = "auto",
-    backend_manager: Optional[BackendManager] = None,
-    config: Optional[OCRConfig] = None,
-) -> Dict[str, Any]:
+    backend_manager: BackendManager | None = None,
+    config: OCRConfig | None = None,
+) -> dict[str, Any]:
     """
     Extract tabular data from document images.
 
@@ -168,9 +165,9 @@ async def extract_table_data(
     logger.info(f"Extracting table data from: {image_path}")
 
     try:
-        from PIL import Image
-        import numpy as np
         import cv2
+        import numpy as np
+        from PIL import Image
 
         # Load image
         image = Image.open(image_path)
@@ -212,10 +209,10 @@ async def extract_table_data(
 
 async def detect_form_fields(
     image_path: str,
-    field_types: Optional[List[str]] = None,
-    backend_manager: Optional[BackendManager] = None,
-    config: Optional[OCRConfig] = None,
-) -> Dict[str, Any]:
+    field_types: list[str] | None = None,
+    backend_manager: BackendManager | None = None,
+    config: OCRConfig | None = None,
+) -> dict[str, Any]:
     """
     Detect and classify form fields in documents.
 
@@ -241,9 +238,9 @@ async def detect_form_fields(
         ]
 
     try:
-        from PIL import Image
-        import numpy as np
         import cv2
+        import numpy as np
+        from PIL import Image
 
         # Load image
         image = Image.open(image_path)
@@ -317,9 +314,7 @@ async def detect_form_fields(
         # Group fields by type
         field_summary = {}
         for field_type in field_types:
-            field_summary[field_type] = len(
-                [f for f in form_fields if f["type"] == field_type]
-            )
+            field_summary[field_type] = len([f for f in form_fields if f["type"] == field_type])
 
         return {
             "success": True,
@@ -343,10 +338,10 @@ async def detect_form_fields(
 
 async def analyze_document_reading_order(
     image_path: str,
-    ocr_result: Optional[Dict[str, Any]] = None,
-    backend_manager: Optional[BackendManager] = None,
-    config: Optional[OCRConfig] = None,
-) -> Dict[str, Any]:
+    ocr_result: dict[str, Any] | None = None,
+    backend_manager: BackendManager | None = None,
+    config: OCRConfig | None = None,
+) -> dict[str, Any]:
     """
     Analyze the logical reading order of document content.
 
@@ -375,9 +370,7 @@ async def analyze_document_reading_order(
                     "success": False,
                     "error": "Backend manager not provided - cannot perform OCR for analysis",
                 }
-            ocr_result = await backend_manager.process_with_backend(
-                "auto", image_path, mode="text"
-            )
+            ocr_result = await backend_manager.process_with_backend("auto", image_path, mode="text")
 
         if not ocr_result.get("success"):
             return {
@@ -419,10 +412,10 @@ async def analyze_document_reading_order(
 
 async def classify_document_type(
     image_path: str,
-    ocr_result: Optional[Dict[str, Any]] = None,
-    backend_manager: Optional[BackendManager] = None,
-    config: Optional[OCRConfig] = None,
-) -> Dict[str, Any]:
+    ocr_result: dict[str, Any] | None = None,
+    backend_manager: BackendManager | None = None,
+    config: OCRConfig | None = None,
+) -> dict[str, Any]:
     """
     Classify the type of document based on layout and content analysis.
 
@@ -449,9 +442,7 @@ async def classify_document_type(
                     "success": False,
                     "error": "Backend manager not provided - cannot perform OCR for classification",
                 }
-            ocr_result = await backend_manager.process_with_backend(
-                "auto", image_path, mode="text"
-            )
+            ocr_result = await backend_manager.process_with_backend("auto", image_path, mode="text")
 
         ocr_text = ocr_result.get("text", "") if ocr_result.get("success") else ""
 
@@ -485,13 +476,13 @@ async def classify_document_type(
 
 async def extract_document_metadata(
     image_path: str,
-    ocr_result: Optional[Dict[str, Any]] = None,
+    ocr_result: dict[str, Any] | None = None,
     extract_dates: bool = True,
     extract_names: bool = True,
     extract_numbers: bool = True,
-    backend_manager: Optional[BackendManager] = None,
-    config: Optional[OCRConfig] = None,
-) -> Dict[str, Any]:
+    backend_manager: BackendManager | None = None,
+    config: OCRConfig | None = None,
+) -> dict[str, Any]:
     """
     Extract structured metadata from documents.
 
@@ -518,9 +509,7 @@ async def extract_document_metadata(
                     "success": False,
                     "error": "Backend manager not provided - cannot perform OCR for metadata extraction",
                 }
-            ocr_result = await backend_manager.process_with_backend(
-                "auto", image_path, mode="text"
-            )
+            ocr_result = await backend_manager.process_with_backend("auto", image_path, mode="text")
 
         ocr_text = ocr_result.get("text", "") if ocr_result.get("success") else ""
 
@@ -566,9 +555,7 @@ async def extract_document_metadata(
             "extraction_summary": {
                 "total_items_extracted": sum(len(items) for items in metadata.values()),
                 "categories_with_data": len([k for k, v in metadata.items() if v]),
-                "highest_confidence": max(confidence_scores.values())
-                if confidence_scores
-                else 0,
+                "highest_confidence": max(confidence_scores.values()) if confidence_scores else 0,
             },
             "message": f"Extracted {sum(len(items) for items in metadata.values())} metadata items",
         }
@@ -597,9 +584,7 @@ def _detect_text_regions(image):
     for contour in contours:
         x, y, w, h = cv2.boundingRect(contour)
         if w > 50 and h > 10:  # Filter small regions
-            text_regions.append(
-                {"bbox": [x, y, x + w, y + h], "area": w * h, "confidence": 0.8}
-            )
+            text_regions.append({"bbox": [x, y, x + w, y + h], "area": w * h, "confidence": 0.8})
 
     return sorted(text_regions, key=lambda x: (x["bbox"][1], x["bbox"][0]))
 
@@ -637,9 +622,7 @@ def _detect_tables(image):
     table_mask = cv2.add(horizontal_lines, vertical_lines)
 
     # Find table regions
-    contours, _ = cv2.findContours(
-        table_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-    )
+    contours, _ = cv2.findContours(table_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     for contour in contours:
         x, y, w, h = cv2.boundingRect(contour)
@@ -684,13 +667,9 @@ def _detect_headers_footers(image, text_regions):
     for region in text_regions:
         y1 = region["bbox"][1]
         if y1 < img_h * 0.15:
-            elements.append(
-                {"type": "header", "bbox": region["bbox"], "confidence": 0.8}
-            )
+            elements.append({"type": "header", "bbox": region["bbox"], "confidence": 0.8})
         elif y1 > img_h * 0.85:
-            elements.append(
-                {"type": "footer", "bbox": region["bbox"], "confidence": 0.8}
-            )
+            elements.append({"type": "footer", "bbox": region["bbox"], "confidence": 0.8})
 
     return elements
 
@@ -772,9 +751,7 @@ def _detect_radio_buttons(image):
     for contour in contours:
         area = cv2.contourArea(contour)
         perimeter = cv2.arcLength(contour, True)
-        circularity = (
-            4 * 3.14159 * area / (perimeter * perimeter) if perimeter > 0 else 0
-        )
+        circularity = 4 * 3.14159 * area / (perimeter * perimeter) if perimeter > 0 else 0
 
         if 0.7 <= circularity <= 1.2 and 50 <= area <= 500:
             x, y, w, h = cv2.boundingRect(contour)
@@ -885,10 +862,7 @@ def _classify_document_type(text, layout_analysis):
     text_lower = text.lower()
 
     # Invoice indicators
-    if any(
-        keyword in text_lower
-        for keyword in ["invoice", "bill", "amount due", "total:", "$"]
-    ):
+    if any(keyword in text_lower for keyword in ["invoice", "bill", "amount due", "total:", "$"]):
         return {
             "primary_type": "invoice",
             "confidence": 85,
@@ -898,9 +872,7 @@ def _classify_document_type(text, layout_analysis):
         }
 
     # Receipt indicators
-    elif any(
-        keyword in text_lower for keyword in ["receipt", "paid", "change", "subtotal"]
-    ):
+    elif any(keyword in text_lower for keyword in ["receipt", "paid", "change", "subtotal"]):
         return {
             "primary_type": "receipt",
             "confidence": 80,
@@ -920,10 +892,7 @@ def _classify_document_type(text, layout_analysis):
         }
 
     # Letter/contract indicators
-    elif any(
-        keyword in text_lower
-        for keyword in ["dear", "sincerely", "agreement", "contract"]
-    ):
+    elif any(keyword in text_lower for keyword in ["dear", "sincerely", "agreement", "contract"]):
         return {
             "primary_type": "letter",
             "confidence": 70,
@@ -999,7 +968,6 @@ def _extract_names(text):
         "Who",
         "Boy",
         "Did",
-        "Has",
         "Let",
         "Put",
         "Say",
@@ -1014,9 +982,7 @@ def _extract_names(text):
 def _extract_numbers_and_amounts(text):
     """Extract numbers and monetary amounts."""
     # Document numbers (patterns like "INV-123", "PO#456")
-    doc_numbers = re.findall(
-        r"\b(?:INV|PO|ORD|REF|DOC)[\s#-]*\d+\b", text, re.IGNORECASE
-    )
+    doc_numbers = re.findall(r"\b(?:INV|PO|ORD|REF|DOC)[\s#-]*\d+\b", text, re.IGNORECASE)
 
     # Monetary amounts ($123.45, €99.99, 123.45 USD)
     amounts = re.findall(

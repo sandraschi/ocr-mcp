@@ -7,7 +7,8 @@ to enable testing without requiring actual file I/O operations.
 
 import tempfile
 from pathlib import Path
-from typing import List, Dict, Any, Union
+from typing import Any
+
 from PIL import Image
 
 
@@ -24,7 +25,7 @@ class MockDocumentProcessor:
     def is_available(self) -> bool:
         return self._available
 
-    def detect_file_type(self, file_path: Union[str, Path]) -> str:
+    def detect_file_type(self, file_path: str | Path) -> str:
         """Mock file type detection."""
         self.call_count += 1
         file_path = Path(file_path)
@@ -42,7 +43,7 @@ class MockDocumentProcessor:
         else:
             return "unknown"
 
-    def extract_images(self, file_path: Union[str, Path], **kwargs) -> List[Dict[str, Any]]:
+    def extract_images(self, file_path: str | Path, **kwargs) -> list[dict[str, Any]]:
         """Mock image extraction from documents."""
         self.call_count += 1
         self.last_call_args = (file_path, kwargs)
@@ -61,7 +62,9 @@ class MockDocumentProcessor:
         else:
             raise ValueError(f"Unsupported file type: {file_type}")
 
-    def _mock_extract_pdf_images(self, pdf_path: Path, dpi: int = 300, **kwargs) -> List[Dict[str, Any]]:
+    def _mock_extract_pdf_images(
+        self, pdf_path: Path, dpi: int = 300, **kwargs
+    ) -> list[dict[str, Any]]:
         """Mock PDF image extraction."""
         # Create mock images
         temp_dir = Path(tempfile.mkdtemp())
@@ -70,7 +73,7 @@ class MockDocumentProcessor:
         # Simulate 3 pages
         for page_num in range(3):
             # Create mock image
-            mock_image = Image.new('RGB', (1000, 1500), color='white')
+            mock_image = Image.new("RGB", (1000, 1500), color="white")
 
             # Save to temp file
             image_filename = "04d"
@@ -85,26 +88,24 @@ class MockDocumentProcessor:
                 "format": "PNG",
                 "mode": "RGB",
                 "source_type": "pdf",
-                "total_pages": 3
+                "total_pages": 3,
             }
 
-            images_info.append({
-                "image_path": str(image_path),
-                "page_number": page_num,
-                "metadata": metadata
-            })
+            images_info.append(
+                {"image_path": str(image_path), "page_number": page_num, "metadata": metadata}
+            )
 
         self.extracted_images.extend(images_info)
         return images_info
 
-    def _mock_extract_cbz_images(self, cbz_path: Path, **kwargs) -> List[Dict[str, Any]]:
+    def _mock_extract_cbz_images(self, cbz_path: Path, **kwargs) -> list[dict[str, Any]]:
         """Mock CBZ image extraction."""
         temp_dir = Path(tempfile.mkdtemp())
         images_info = []
 
         # Simulate comic pages
         for page_num in range(5):
-            mock_image = Image.new('RGB', (800, 1200), color='white')
+            mock_image = Image.new("RGB", (800, 1200), color="white")
             image_filename = f"comic_page_{page_num:03d}.png"
             image_path = temp_dir / image_filename
             mock_image.save(image_path)
@@ -117,26 +118,24 @@ class MockDocumentProcessor:
                 "mode": "RGB",
                 "source_type": "cbz",
                 "archive_path": f"page_{page_num:03d}.jpg",
-                "total_pages": 5
+                "total_pages": 5,
             }
 
-            images_info.append({
-                "image_path": str(image_path),
-                "page_number": page_num,
-                "metadata": metadata
-            })
+            images_info.append(
+                {"image_path": str(image_path), "page_number": page_num, "metadata": metadata}
+            )
 
         self.extracted_images.extend(images_info)
         return images_info
 
-    def _mock_extract_cbr_images(self, cbr_path: Path, **kwargs) -> List[Dict[str, Any]]:
+    def _mock_extract_cbr_images(self, cbr_path: Path, **kwargs) -> list[dict[str, Any]]:
         """Mock CBR image extraction."""
         temp_dir = Path(tempfile.mkdtemp())
         images_info = []
 
         # Simulate RAR comic pages
         for page_num in range(4):
-            mock_image = Image.new('RGB', (900, 1300), color='white')
+            mock_image = Image.new("RGB", (900, 1300), color="white")
             image_filename = f"rar_page_{page_num:03d}.png"
             image_path = temp_dir / image_filename
             mock_image.save(image_path)
@@ -149,19 +148,17 @@ class MockDocumentProcessor:
                 "mode": "RGB",
                 "source_type": "cbr",
                 "archive_path": f"page_{page_num:03d}.jpg",
-                "total_pages": 4
+                "total_pages": 4,
             }
 
-            images_info.append({
-                "image_path": str(image_path),
-                "page_number": page_num,
-                "metadata": metadata
-            })
+            images_info.append(
+                {"image_path": str(image_path), "page_number": page_num, "metadata": metadata}
+            )
 
         self.extracted_images.extend(images_info)
         return images_info
 
-    def _mock_extract_single_image(self, image_path: Path, **kwargs) -> List[Dict[str, Any]]:
+    def _mock_extract_single_image(self, image_path: Path, **kwargs) -> list[dict[str, Any]]:
         """Mock single image handling."""
         # For single images, just return the image info
         try:
@@ -172,7 +169,7 @@ class MockDocumentProcessor:
                     "format": img.format or "PNG",
                     "mode": img.mode,
                     "source_type": "image",
-                    "total_pages": 1
+                    "total_pages": 1,
                 }
         except Exception:
             # If we can't open the image, create mock metadata
@@ -182,14 +179,10 @@ class MockDocumentProcessor:
                 "format": "PNG",
                 "mode": "RGB",
                 "source_type": "image",
-                "total_pages": 1
+                "total_pages": 1,
             }
 
-        return [{
-            "image_path": str(image_path),
-            "page_number": 0,
-            "metadata": metadata
-        }]
+        return [{"image_path": str(image_path), "page_number": 0, "metadata": metadata}]
 
     def cleanup_temp_files(self):
         """Mock cleanup of temporary files."""
@@ -209,11 +202,8 @@ def create_mock_document_processor() -> MockDocumentProcessor:
 
 # Test data generators
 def generate_mock_pdf_metadata(
-    pages: int = 3,
-    dpi: int = 300,
-    width: int = 1000,
-    height: int = 1500
-) -> List[Dict[str, Any]]:
+    pages: int = 3, dpi: int = 300, width: int = 1000, height: int = 1500
+) -> list[dict[str, Any]]:
     """Generate mock PDF extraction metadata."""
     images_info = []
     for page_num in range(pages):
@@ -224,23 +214,23 @@ def generate_mock_pdf_metadata(
             "format": "PNG",
             "mode": "RGB",
             "source_type": "pdf",
-            "total_pages": pages
+            "total_pages": pages,
         }
 
-        images_info.append({
-            "image_path": f"/tmp/pdf_page_{page_num:04d}.png",
-            "page_number": page_num,
-            "metadata": metadata
-        })
+        images_info.append(
+            {
+                "image_path": f"/tmp/pdf_page_{page_num:04d}.png",
+                "page_number": page_num,
+                "metadata": metadata,
+            }
+        )
 
     return images_info
 
 
 def generate_mock_cbz_metadata(
-    pages: int = 5,
-    width: int = 800,
-    height: int = 1200
-) -> List[Dict[str, Any]]:
+    pages: int = 5, width: int = 800, height: int = 1200
+) -> list[dict[str, Any]]:
     """Generate mock CBZ extraction metadata."""
     images_info = []
     for page_num in range(pages):
@@ -251,14 +241,16 @@ def generate_mock_cbz_metadata(
             "mode": "RGB",
             "source_type": "cbz",
             "archive_path": f"page_{page_num:03d}.jpg",
-            "total_pages": pages
+            "total_pages": pages,
         }
 
-        images_info.append({
-            "image_path": f"/tmp/comic_page_{page_num:03d}.png",
-            "page_number": page_num,
-            "metadata": metadata
-        })
+        images_info.append(
+            {
+                "image_path": f"/tmp/comic_page_{page_num:03d}.png",
+                "page_number": page_num,
+                "metadata": metadata,
+            }
+        )
 
     return images_info
 
@@ -268,11 +260,11 @@ def create_mock_image_file(
     filename: str = "test.png",
     width: int = 100,
     height: int = 100,
-    color: str = 'white'
+    color: str = "white",
 ) -> Path:
     """Create a mock image file for testing."""
     image_path = temp_dir / filename
-    image = Image.new('RGB', (width, height), color=color)
+    image = Image.new("RGB", (width, height), color=color)
     image.save(image_path)
     return image_path
 
@@ -293,9 +285,3 @@ def create_mock_cbz_file(temp_dir: Path, filename: str = "test.cbz", pages: int 
     # For testing, we just create a file with CBZ-like content
     cbz_path.write_text(f"Mock CBZ archive with {pages} pages")
     return cbz_path
-
-
-
-
-
-

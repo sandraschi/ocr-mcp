@@ -1,6 +1,6 @@
-import sys
-import os
 import logging
+import os
+import sys
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -23,9 +23,7 @@ try:
             logger.info("ScannerManager is available")
 
             logger.info("Discovering scanners via BackendManager...")
-            scanners = backend_manager.scanner_manager.discover_scanners(
-                force_refresh=True
-            )
+            scanners = backend_manager.scanner_manager.discover_scanners(force_refresh=True)
             logger.info(f"Found {len(scanners)} scanners")
             for scanner in scanners:
                 logger.info(f" - {scanner.name} ({scanner.device_id})")

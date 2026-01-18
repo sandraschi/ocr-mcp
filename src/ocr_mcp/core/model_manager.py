@@ -5,13 +5,14 @@ Provides intelligent model loading/unloading, GPU memory management,
 and performance optimization for OCR backends.
 """
 
-import logging
-import time
-import threading
-from collections import defaultdict, OrderedDict
-from dataclasses import dataclass
-from typing import Dict, Any, Optional
 import gc
+import logging
+import threading
+import time
+from collections import OrderedDict, defaultdict
+from dataclasses import dataclass
+from typing import Any
+
 import psutil
 
 from .config import OCRConfig
@@ -21,6 +22,7 @@ logger = logging.getLogger(__name__)
 # Optional imports
 try:
     import torch
+
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
@@ -28,6 +30,7 @@ except ImportError:
 
 try:
     import GPUtil
+
     GPU_UTIL_AVAILABLE = True
 except ImportError:
     GPU_UTIL_AVAILABLE = False
@@ -36,6 +39,7 @@ except ImportError:
 @dataclass
 class ModelInfo:
     """Information about a loaded model"""
+
     backend_name: str
     model_name: str
     memory_usage: int  # MB
@@ -50,12 +54,13 @@ class ModelInfo:
 @dataclass
 class GPUInfo:
     """GPU memory and utilization information"""
+
     device_id: int
     total_memory: int  # MB
     used_memory: int  # MB
     free_memory: int  # MB
     utilization: float  # percentage
-    temperature: Optional[float] = None
+    temperature: float | None = None
 
     @property
     def available_memory(self) -> int:
@@ -77,7 +82,7 @@ class ModelManager:
 
     def __init__(self, config: OCRConfig):
         self.config = config
-        self.loaded_models: Dict[str, ModelInfo] = {}
+        self.loaded_models: dict[str, ModelInfo] = {}
         self.model_cache: OrderedDict[str, ModelInfo] = OrderedDict()
         self.lock = threading.RLock()
         self.max_gpu_memory_mb = self._detect_max_gpu_memory()
@@ -85,15 +90,15 @@ class ModelManager:
 
         # Model priorities (higher = more important to keep loaded)
         self.model_priorities = {
-            "mistral-ocr": 3,      # State-of-the-art, keep loaded
-            "deepseek-ocr": 3,     # Very popular, keep loaded
-            "florence-2": 2,       # Good general purpose
-            "dots-ocr": 2,         # Specialized for tables
-            "pp-ocrv5": 1,         # Fast but less accurate
-            "qwen-layered": 2,     # Specialized for comics
-            "got-ocr": 1,          # Legacy
-            "tesseract": 0,        # CPU-only, low priority
-            "easyocr": 0           # CPU-only, low priority
+            "mistral-ocr": 3,  # State-of-the-art, keep loaded
+            "deepseek-ocr": 3,  # Very popular, keep loaded
+            "florence-2": 2,  # Good general purpose
+            "dots-ocr": 2,  # Specialized for tables
+            "pp-ocrv5": 1,  # Fast but less accurate
+            "qwen-layered": 2,  # Specialized for comics
+            "got-ocr": 1,  # Legacy
+            "tesseract": 0,  # CPU-only, low priority
+            "easyocr": 0,  # CPU-only, low priority
         }
 
         logger.info(f"ModelManager initialized. Max GPU memory: {self.max_gpu_memory_mb}MB")
@@ -115,7 +120,7 @@ class ModelManager:
 
         return 0
 
-    def get_gpu_info(self) -> Optional[GPUInfo]:
+    def get_gpu_info(self) -> GPUInfo | None:
         """Get current GPU memory and utilization information"""
         if not TORCH_AVAILABLE or not torch.cuda.is_available():
             return None
@@ -134,7 +139,7 @@ class ModelManager:
                     gpu = GPUtil.getGPUs()[device_id]
                     utilization = gpu.load * 100
                     temperature = gpu.temperature
-                except Exception as e:
+                except Exception:
                     pass
 
             total_mb = total_memory // (1024 * 1024)
@@ -147,7 +152,7 @@ class ModelManager:
                 used_memory=used_mb,
                 free_memory=free_mb,
                 utilization=utilization,
-                temperature=temperature
+                temperature=temperature,
             )
 
         except Exception as e:
@@ -160,7 +165,7 @@ class ModelManager:
         model_name: str,
         model_object: Any,
         device: str = "auto",
-        priority: Optional[int] = None
+        priority: int | None = None,
     ) -> str:
         """
         Register a loaded model with the manager.
@@ -185,7 +190,7 @@ class ModelManager:
                 last_used=time.time(),
                 device=actual_device,
                 priority=priority or self.model_priorities.get(backend_name, 1),
-                model_object=model_object
+                model_object=model_object,
             )
 
             self.loaded_models[model_key] = model_info
@@ -198,7 +203,7 @@ class ModelManager:
 
             return model_key
 
-    def get_model(self, backend_name: str, model_name: str) -> Optional[Any]:
+    def get_model(self, backend_name: str, model_name: str) -> Any | None:
         """Get a registered model, updating its last-used time"""
         with self.lock:
             model_key = f"{backend_name}:{model_name}"
@@ -274,8 +279,7 @@ class ModelManager:
 
             # Sort models by priority (low first) then by last used time
             models_to_unload = sorted(
-                self.loaded_models.values(),
-                key=lambda m: (m.priority, m.last_used)
+                self.loaded_models.values(), key=lambda m: (m.priority, m.last_used)
             )
 
             for model_info in models_to_unload:
@@ -292,7 +296,7 @@ class ModelManager:
             logger.info(f"Memory optimization freed {memory_freed}MB")
             return memory_freed
 
-    def get_memory_stats(self) -> Dict[str, Any]:
+    def get_memory_stats(self) -> dict[str, Any]:
         """Get comprehensive memory usage statistics"""
         with self.lock:
             gpu_info = self.get_gpu_info()
@@ -303,7 +307,7 @@ class ModelManager:
                 "models_by_backend": defaultdict(int),
                 "models_by_priority": defaultdict(int),
                 "system_memory": self._get_system_memory_info(),
-                "gpu_available": gpu_info is not None
+                "gpu_available": gpu_info is not None,
             }
 
             if gpu_info:
@@ -312,7 +316,7 @@ class ModelManager:
                     "used_memory": gpu_info.used_memory,
                     "free_memory": gpu_info.free_memory,
                     "utilization": gpu_info.utilization,
-                    "temperature": gpu_info.temperature
+                    "temperature": gpu_info.temperature,
                 }
 
             # Count models by backend and priority
@@ -337,7 +341,7 @@ class ModelManager:
             return 128  # Default estimate
 
         try:
-            if hasattr(model_object, 'parameters'):
+            if hasattr(model_object, "parameters"):
                 # PyTorch model
                 param_size = sum(p.numel() * p.element_size() for p in model_object.parameters())
                 buffer_size = sum(b.numel() * b.element_size() for b in model_object.buffers())
@@ -349,9 +353,9 @@ class ModelManager:
                 overhead_factor = 2.5 if device == "cuda" else 1.2
                 return int(memory_mb * overhead_factor)
 
-            elif hasattr(model_object, 'model_size'):
+            elif hasattr(model_object, "model_size"):
                 # Some models report their size
-                return getattr(model_object, 'model_size', 128)
+                return getattr(model_object, "model_size", 128)
 
         except Exception as e:
             logger.debug(f"Could not estimate model memory: {e}")
@@ -371,7 +375,7 @@ class ModelManager:
             logger.warning(".2f")
             self.optimize_memory(target_free_mb=int(gpu_info.total_memory * 0.15))
 
-    def _get_system_memory_info(self) -> Dict[str, Any]:
+    def _get_system_memory_info(self) -> dict[str, Any]:
         """Get system memory information"""
         try:
             memory = psutil.virtual_memory()
@@ -379,7 +383,7 @@ class ModelManager:
                 "total": memory.total // (1024 * 1024),  # MB
                 "available": memory.available // (1024 * 1024),
                 "used": memory.used // (1024 * 1024),
-                "percentage": memory.percent
+                "percentage": memory.percent,
             }
         except Exception as e:
             logger.debug(f"Could not get system memory info: {e}")
@@ -434,7 +438,9 @@ class ModelManager:
 
                 idle_time = current_time - model_info.last_used
                 if idle_time > max_idle_seconds:
-                    if self.unload_model(model_info.backend_name, model_info.model_name, force=False):
+                    if self.unload_model(
+                        model_info.backend_name, model_info.model_name, force=False
+                    ):
                         unloaded += 1
 
             if unloaded > 0:

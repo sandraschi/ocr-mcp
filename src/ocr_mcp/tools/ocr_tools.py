@@ -21,12 +21,12 @@ from ..core.config import OCRConfig
 from ..core.error_handler import ErrorHandler
 from . import (
     _analysis,
-    _quality,
-    _image,
     _conversion,
+    _image,
+    _processor,
+    _quality,
     _scanner,
     _workflow,
-    _processor,
 )
 
 logger = logging.getLogger(__name__)
@@ -73,14 +73,39 @@ def register_sota_tools(app, backend_manager: BackendManager, config: OCRConfig)
         extract_numbers: bool = True,
     ) -> dict[str, Any]:
         """
-        PORTMANTEAU TOOL: Comprehensive Document Processing Operations.
+        PORTMANTEAU TOOL: Comprehensive Document Processing Operations with FastMCP 2.14.3 Conversational Returns.
 
         OPERATIONS:
-        - "process_document": Main OCR tool for single images/PDFs.
-        - "process_batch": Parallel multi-document processing.
-        - "analyze_layout": Structural detection (tables, forms).
-        - "assess_quality": OCR output scoring.
-        - "validate_accuracy": CER/WER measurement.
+        - "process_document": Main OCR tool for single images/PDFs with intelligent backend selection
+        - "process_batch": Parallel multi-document processing with progress tracking
+        - "analyze_layout": Structural detection (tables, forms, reading order) with visual feedback
+        - "assess_quality": OCR output scoring and backend comparison with actionable recommendations
+        - "validate_accuracy": CER/WER measurement with ground truth comparison
+        - "compare_backends": Multi-backend comparison with performance metrics
+        - "analyze_image_quality": Image preprocessing assessment with enhancement suggestions
+
+        BACKEND SELECTION GUIDANCE:
+        - "auto": Intelligent selection based on document characteristics (recommended)
+        - "deepseek-ocr": Best for complex documents, mathematical formulas, mixed languages
+        - "florence-2": Microsoft vision model, excellent for layout understanding and tables
+        - "pp-ocrv5": Industrial-grade OCR, fastest and most reliable for standard text
+        - "tesseract": Classic OCR, good fallback and customization options
+        - "easyocr": Multi-language support, good for international documents
+
+        QUALITY ASSESSMENT:
+        - CER (Character Error Rate): Measures character-level accuracy
+        - WER (Word Error Rate): Measures word-level accuracy
+        - Confidence scores: Backend confidence in OCR results
+        - Layout analysis: Table/form detection, reading order analysis
+
+        RESPONSE FORMAT (FastMCP 2.14.3):
+        Returns conversational responses with:
+        - Success/error status with detailed context
+        - Execution timing and performance metrics
+        - Quality indicators and confidence scores
+        - Actionable recommendations and next steps
+        - Recovery options for errors
+        - Related operations and refinements
         """
         try:
             if operation == "process_document":
@@ -183,9 +208,7 @@ def register_sota_tools(app, backend_manager: BackendManager, config: OCRConfig)
                 message_override=f"Unsupported operation: {operation}",
             ).to_dict()
         except Exception as e:
-            return ErrorHandler.handle_exception(
-                e, context=f"document_processing_{operation}"
-            )
+            return ErrorHandler.handle_exception(e, context=f"document_processing_{operation}")
 
     @app.tool()
     async def image_management(
@@ -245,9 +268,7 @@ def register_sota_tools(app, backend_manager: BackendManager, config: OCRConfig)
                 message_override=f"Unsupported operation: {operation}",
             ).to_dict()
         except Exception as e:
-            return ErrorHandler.handle_exception(
-                e, context=f"image_management_{operation}"
-            )
+            return ErrorHandler.handle_exception(e, context=f"image_management_{operation}")
 
     @app.tool()
     async def scanner_operations(
@@ -275,9 +296,7 @@ def register_sota_tools(app, backend_manager: BackendManager, config: OCRConfig)
                 config=config,
             )
         except Exception as e:
-            return ErrorHandler.handle_exception(
-                e, context=f"scanner_operations_{operation}"
-            )
+            return ErrorHandler.handle_exception(e, context=f"scanner_operations_{operation}")
 
     @app.tool()
     async def workflow_management(
@@ -301,9 +320,7 @@ def register_sota_tools(app, backend_manager: BackendManager, config: OCRConfig)
                 config=config,
             )
         except Exception as e:
-            return ErrorHandler.handle_exception(
-                e, context=f"workflow_management_{operation}"
-            )
+            return ErrorHandler.handle_exception(e, context=f"workflow_management_{operation}")
 
     @app.tool()
     async def help(level: str = "basic", topic: str | None = None) -> str:

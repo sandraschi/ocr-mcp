@@ -4,8 +4,8 @@ Document Format Conversion Helpers for OCR-MCP
 
 import logging
 import os
-from typing import Dict, Any, Optional
 from pathlib import Path
+from typing import Any
 
 from ..core.backend_manager import BackendManager
 from ..core.config import OCRConfig
@@ -16,14 +16,14 @@ logger = logging.getLogger(__name__)
 
 async def convert_image(
     source_path: str,
-    target_path: Optional[str] = None,
+    target_path: str | None = None,
     format: str = "png",
-    dpi: Optional[int] = None,
+    dpi: int | None = None,
     quality: int = 95,
     optimize: bool = False,
-    backend_manager: Optional[BackendManager] = None,
-    config: Optional[OCRConfig] = None,
-) -> Dict[str, Any]:
+    backend_manager: BackendManager | None = None,
+    config: OCRConfig | None = None,
+) -> dict[str, Any]:
     """
     Convert image between different formats.
     """
@@ -78,11 +78,11 @@ async def convert_pdf_to_images(
     output_directory: str,
     dpi: int = 300,
     format: str = "PNG",
-    first_page: Optional[int] = None,
-    last_page: Optional[int] = None,
-    backend_manager: Optional[BackendManager] = None,
-    config: Optional[OCRConfig] = None,
-) -> Dict[str, Any]:
+    first_page: int | None = None,
+    last_page: int | None = None,
+    backend_manager: BackendManager | None = None,
+    config: OCRConfig | None = None,
+) -> dict[str, Any]:
     """
     Convert PDF pages to individual images.
     """
@@ -109,9 +109,7 @@ async def convert_pdf_to_images(
         saved_files = []
         for i, img in enumerate(images):
             page_num = (first_page or 1) + i
-            out_file = os.path.join(
-                output_directory, f"page_{page_num:03d}.{format.lower()}"
-            )
+            out_file = os.path.join(output_directory, f"page_{page_num:03d}.{format.lower()}")
             img.save(out_file, format.upper())
             saved_files.append(out_file)
 
@@ -130,20 +128,18 @@ async def embed_ocr_text(
     image_path: str,
     output_path: str,
     ocr_backend: str = "auto",
-    title: Optional[str] = None,
+    title: str | None = None,
     include_original_image: bool = True,
-    backend_manager: Optional[BackendManager] = None,
-    config: Optional[OCRConfig] = None,
-) -> Dict[str, Any]:
+    backend_manager: BackendManager | None = None,
+    config: OCRConfig | None = None,
+) -> dict[str, Any]:
     """
     Create a searchable PDF by embedding OCR text.
     """
     # This would involve calling an OCR backend and then using something like reportlab or pikepdf
     # For now, let's keep it as a placeholder that calls the backend manager
     if not backend_manager:
-        return ErrorHandler.create_error(
-            "INTERNAL_ERROR", "Backend manager missing"
-        ).to_dict()
+        return ErrorHandler.create_error("INTERNAL_ERROR", "Backend manager missing").to_dict()
 
     return {
         "success": True,
