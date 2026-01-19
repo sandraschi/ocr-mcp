@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ocr-mcp"
-version = "0.2.0"
+version = "0.2.0-alpha.0"
 description = "FastMCP server providing comprehensive OCR capabilities to the MCP ecosystem"
 authors = ["Your Name <your.email@example.com>"]
 readme = "README.md"
