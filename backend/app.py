@@ -995,8 +995,7 @@ if dist_dir.exists():
         if index_file.exists():
             return FileResponse(index_file, media_type="text/html")
         return HTMLResponse(
-            "React app not built. Run 'npm run build' in frontend directory.",
-            status_code=503
+            "React app not built. Run 'npm run build' in frontend directory.", status_code=503
         )
 
     @app.get("/{path:path}")

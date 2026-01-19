@@ -15,11 +15,7 @@ def run_command(command: list[str], cwd: Path = None) -> bool:
     """Run a command and return success status."""
     try:
         result = subprocess.run(
-            command,
-            cwd=cwd or Path.cwd(),
-            capture_output=True,
-            text=True,
-            check=True
+            command, cwd=cwd or Path.cwd(), capture_output=True, text=True, check=True
         )
         print(f"✓ {' '.join(command)}")
         return True
@@ -59,7 +55,7 @@ def main():
         ["poetry", "run", "pre-commit", "run", "--all-files"],
         cwd=project_root,
         capture_output=True,
-        text=True
+        text=True,
     )
 
     if result.returncode == 0:
@@ -75,6 +71,7 @@ def main():
     # Test imports
     try:
         import ocr_mcp
+
         print("✅ Core imports work")
     except ImportError as e:
         print(f"⚠️  Import test failed: {e}")
@@ -91,6 +88,7 @@ def main():
     print("  • poetry run pre-commit run --all-files    # Run all checks")
     print("  • poetry run pytest                        # Run tests")
     print("  • poetry run ruff check . --fix           # Fix code issues")
+    print("  • poetry run ruff format .                # Format code")
     print("  • poetry run python scripts/run_webapp.py # Start webapp")
     print("  • poetry run python scripts/run_tests.py all # Run full test suite")
     print("\n📖 See README.md and tests/README.md for more information.")

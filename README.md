@@ -860,9 +860,7 @@ result = await calibre_ocr(
 
 This project uses pre-commit hooks to maintain code quality. The following tools are automatically run on each commit:
 
-- **Ruff**: Fast Python linter and formatter
-- **Black**: Python code formatter
-- **isort**: Import sorter
+- **Ruff**: Fast Python linter, formatter, and import sorter
 - **MyPy**: Type checker
 - **Bandit**: Security linter
 - **Detect-secrets**: Secret detection
