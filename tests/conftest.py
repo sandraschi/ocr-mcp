@@ -7,6 +7,7 @@ for the OCR-MCP test suite.
 
 import asyncio
 import os
+import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import Mock
@@ -14,10 +15,13 @@ from unittest.mock import Mock
 import pytest
 from PIL import Image
 
-from src.ocr_mcp.core.backend_manager import BackendManager
+# Add src to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from ocr_mcp.core.backend_manager import BackendManager
 
 # Import OCR-MCP modules
-from src.ocr_mcp.core.config import OCRConfig
+from ocr_mcp.core.config import OCRConfig
 
 
 # Test Configuration

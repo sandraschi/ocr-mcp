@@ -13,10 +13,14 @@ from typing import Any
 
 import uvicorn
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.requests import Request
-from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+
+# Module-level singleton variables for FastAPI dependencies
+FILE_DEPENDENCY = File()
+FILE_LIST_DEPENDENCY = File()
+FORM_DEPENDENCY = Form()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -30,12 +34,10 @@ app = FastAPI(
 )
 
 # Configure CORS
-from fastapi.middleware.cors import CORSMiddleware
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:11400",
+        "http://localhost:15550",
         "http://localhost:13334",
         "http://localhost:15001",
         "http://localhost:3002",
@@ -46,24 +48,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files and templates
+# Mount static files and React app
 # Get the correct path relative to this script's location
 script_dir = Path(__file__).parent
 project_root = script_dir.parent
-static_dir = project_root / "frontend" / "static"
-templates_dir = project_root / "frontend" / "templates"
+dist_dir = project_root / "frontend" / "dist"
 
-if static_dir.exists():
-    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
-else:
-    logger.warning(f"Static directory not found at {static_dir}")
+# React app will be mounted at the end of the file after all API routes
 
-if templates_dir.exists():
-    templates = Jinja2Templates(directory=str(templates_dir))
-else:
-    logger.warning(f"Templates directory not found at {templates_dir}")
-    # Fallback to avoid crashing calls that might use templates (though likely none should in API mode)
-    templates = None
+# Keep templates as None since we're serving the React app directly
+templates = None
 
 # Initialize MCP client
 
@@ -110,10 +104,8 @@ async def shutdown_event():
     pass
 
 
-@app.get("/", response_class=HTMLResponse)
-async def home(request: Request):
-    """Serve the main web interface"""
-    return templates.TemplateResponse("index.html", {"request": request})
+# Remove the home route since the React app is now served statically
+# The frontend will handle all non-API routes
 
 
 @app.get("/api/health")
@@ -125,7 +117,10 @@ async def health_check():
             "mcp_connected": True,
             "mcp_status": "demo_mode",
             "demo_mode": True,
-            "instructions": "Running in demo mode - start OCR-MCP server for full functionality: python -m src.ocr_mcp.server",
+            "instructions": (
+                "Running in demo mode - start OCR-MCP server for full functionality: "
+                "python -m src.ocr_mcp.server"
+            ),
             "version": "0.1.0",
         }
 
@@ -141,7 +136,7 @@ async def health_check():
 @app.post("/api/upload")
 async def upload_file(
     background_tasks: BackgroundTasks,
-    file: UploadFile = File(...),
+    file: UploadFile = FILE_DEPENDENCY,
     ocr_mode: str = Form("text"),
     backend: str = Form("auto"),
 ):
@@ -176,7 +171,7 @@ async def upload_file(
 
     except Exception as e:
         logger.error(f"Failed to upload file: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.get("/api/job/{job_id}")
@@ -198,7 +193,7 @@ async def get_job_status(job_id: str):
 @app.post("/api/process_batch")
 async def process_batch(
     background_tasks: BackgroundTasks,
-    files: list[UploadFile] = File(...),
+    files: list[UploadFile] = FILE_LIST_DEPENDENCY,
     ocr_mode: str = Form("text"),
     backend: str = Form("auto"),
 ):
@@ -237,7 +232,7 @@ async def process_batch(
 
     except Exception as e:
         logger.error(f"Failed to process batch: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.get("/api/backends")
@@ -289,13 +284,13 @@ async def get_backends():
         return {"backends": backend_info}
     except Exception as e:
         logger.error(f"Failed to get backends: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.post("/api/optimize")
 async def optimize_processing(
     background_tasks: BackgroundTasks,
-    file: UploadFile = File(...),
+    file: UploadFile = FILE_DEPENDENCY,
     target_quality: float = Form(0.8),
     max_attempts: int = Form(3),
 ):
@@ -332,14 +327,14 @@ async def optimize_processing(
 
     except Exception as e:
         logger.error(f"Failed to start optimization: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.post("/api/convert")
 async def convert_format(
     background_tasks: BackgroundTasks,
-    file: UploadFile = File(...),
-    target_format: str = Form(...),
+    file: UploadFile = FILE_DEPENDENCY,
+    target_format: str = FORM_DEPENDENCY,
     ocr_mode: str = Form("auto"),
     backend: str = Form("auto"),
 ):
@@ -377,7 +372,7 @@ async def convert_format(
 
     except Exception as e:
         logger.error(f"Failed to start conversion: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.post("/api/export")
@@ -415,7 +410,7 @@ async def export_results(data: dict[str, Any]):
 
     except Exception as e:
         logger.error(f"Failed to export results: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.get("/api/pipelines")
@@ -460,7 +455,7 @@ async def get_pipelines():
 async def execute_pipeline(
     background_tasks: BackgroundTasks,
     pipeline_id: str = Form(...),
-    file: UploadFile = File(...),
+    file: UploadFile = FILE_DEPENDENCY,
 ):
     """Execute a processing pipeline"""
     try:
@@ -492,7 +487,7 @@ async def execute_pipeline(
 
     except Exception as e:
         logger.error(f"Failed to execute pipeline: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 async def process_file_background(job_id: str, file_path: str, ocr_mode: str, backend: str):
@@ -513,7 +508,7 @@ async def process_file_background(job_id: str, file_path: str, ocr_mode: str, ba
         # Clean up temp file
         try:
             os.unlink(file_path)
-        except:
+        except OSError:
             pass
 
     except Exception as e:
@@ -553,7 +548,7 @@ async def process_batch_background(job_id: str, file_paths: list[str], ocr_mode:
         for file_path in file_paths:
             try:
                 os.unlink(file_path)
-            except:
+            except OSError:
                 pass
 
     except Exception as e:
@@ -572,9 +567,26 @@ async def process_file_demo(job_id: str, filename: str, ocr_mode: str, backend: 
 
         # Generate mock OCR results based on filename
         if "pdf" in filename.lower():
-            mock_text = f"This is extracted text from {filename}.\n\nDocument processed using {backend} backend in {ocr_mode} mode.\n\nThis is a demo result showing how the OCR-MCP webapp works.\n\nFeatures demonstrated:\n- Multi-backend OCR support\n- Quality assessment\n- Format conversion\n- Batch processing\n\nThank you for trying OCR-MCP!"
+            mock_text = (
+                f"This is extracted text from {filename}.\n\n"
+                f"Document processed using {backend} backend in {ocr_mode} mode.\n\n"
+                "This is a demo result showing how the OCR-MCP webapp works.\n\n"
+                "Features demonstrated:\n"
+                "- Multi-backend OCR support\n"
+                "- Quality assessment\n"
+                "- Format conversion\n"
+                "- Batch processing\n\n"
+                "Thank you for trying OCR-MCP!"
+            )
         else:
-            mock_text = f"Image {filename} processed successfully.\n\nOCR Results:\nSample text extracted from the image.\nConfidence: 95%\nBackend: {backend}\nMode: {ocr_mode}"
+            mock_text = (
+                f"Image {filename} processed successfully.\n\n"
+                f"OCR Results:\n"
+                f"Sample text extracted from the image.\n"
+                f"Confidence: 95%\n"
+                f"Backend: {backend}\n"
+                f"Mode: {ocr_mode}"
+            )
 
         mock_result = {
             "text": mock_text,
@@ -608,7 +620,11 @@ async def process_batch_demo(job_id: str, filenames: list[str], ocr_mode: str, b
             # Generate mock results
             mock_result = {
                 "filename": filename,
-                "text": f"Extracted text from {filename} (file {i + 1} of {len(filenames)}).\n\nProcessed with {backend} in {ocr_mode} mode.\nDemo batch processing result.",
+                "text": (
+                    f"Extracted text from {filename} (file {i + 1} of {len(filenames)}).\n\n"
+                    f"Processed with {backend} in {ocr_mode} mode.\n"
+                    "Demo batch processing result."
+                ),
                 "quality_score": 0.85 + (i * 0.02),  # Vary quality slightly
                 "processing_time": 1.0 + (i * 0.1),
                 "status": "completed",
@@ -689,7 +705,7 @@ async def optimize_background(
         # Clean up temp file
         try:
             os.unlink(file_path)
-        except:
+        except OSError:
             pass
 
     except Exception as e:
@@ -731,7 +747,7 @@ async def convert_background(
         # Clean up temp file
         try:
             os.unlink(file_path)
-        except:
+        except OSError:
             pass
 
     except Exception as e:
@@ -802,7 +818,7 @@ async def execute_pipeline_background(job_id: str, pipeline_id: str, file_path: 
         # Clean up temp file
         try:
             os.unlink(file_path)
-        except:
+        except OSError:
             pass
 
     except Exception as e:
@@ -931,8 +947,8 @@ async def scan_document(
                 "device_id": device_id,
             }
 
-        # Save image to static folder
-        scans_dir = static_dir / "scans"
+        # Save image to scans folder in project root
+        scans_dir = project_root / "scans"
         scans_dir.mkdir(exist_ok=True)
 
         import uuid
@@ -967,9 +983,47 @@ async def scan_document(
         return {"success": False, "message": str(e), "device_id": device_id}
 
 
+# Mount React app static files (defined after all API routes for proper precedence)
+if dist_dir.exists():
+    # Mount static assets (JS, CSS, images, etc.)
+    app.mount("/assets", StaticFiles(directory=str(dist_dir / "assets")), name="assets")
+
+    @app.get("/")
+    async def serve_react_app():
+        """Serve the main React app"""
+        index_file = dist_dir / "index.html"
+        if index_file.exists():
+            return FileResponse(index_file, media_type="text/html")
+        return HTMLResponse(
+            "React app not built. Run 'npm run build' in frontend directory.",
+            status_code=503
+        )
+
+    @app.get("/{path:path}")
+    async def serve_react_assets(path: str):
+        """Serve React app assets and handle SPA routing"""
+        # This catch-all route is defined LAST so API routes take precedence
+        # Check if the requested file exists in the React app
+        requested_file = dist_dir / path
+        if requested_file.exists() and requested_file.is_file():
+            return FileResponse(requested_file)
+
+        # For SPA routing, serve index.html for all other routes
+        index_file = dist_dir / "index.html"
+        if index_file.exists():
+            return FileResponse(index_file, media_type="text/html")
+
+        return HTMLResponse("React app not available.", status_code=503)
+else:
+    logger.warning(
+        f"Frontend dist directory not found at {dist_dir}. "
+        "Run 'npm run build' in frontend directory."
+    )
+
+
 def main():
     """Entry point for running the webapp"""
-    port = int(os.getenv("WEBAPP_PORT", "11400"))
+    port = int(os.getenv("WEBAPP_PORT", "15550"))
     reload = os.getenv("RELOAD", "false").lower() == "true"
     uvicorn.run("backend.app:app", host="0.0.0.0", port=port, reload=reload)
 
