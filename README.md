@@ -822,6 +822,57 @@ result = await calibre_ocr(
 
 ## 🤝 Contributing
 
+### Development Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-username/ocr-mcp.git
+   cd ocr-mcp
+   ```
+
+2. **Install Poetry** (if not already installed)
+   ```bash
+   pip install poetry
+   ```
+
+3. **Install dependencies**
+   ```bash
+   poetry install
+   ```
+
+4. **Set up development environment** (recommended)
+   ```bash
+   poetry run ocr-mcp-setup-dev
+   # This installs pre-commit hooks and sets up the development environment
+   ```
+
+5. **Run tests**
+   ```bash
+   poetry run pytest
+   ```
+
+6. **Start developing!**
+   - Pre-commit hooks will automatically format and lint your code
+   - Run `poetry run pre-commit run --all-files` to check everything
+   - Use `poetry run python scripts/run_webapp.py` to start the webapp
+
+### Pre-commit Hooks
+
+This project uses pre-commit hooks to maintain code quality. The following tools are automatically run on each commit:
+
+- **Ruff**: Fast Python linter and formatter
+- **Black**: Python code formatter
+- **isort**: Import sorter
+- **MyPy**: Type checker
+- **Bandit**: Security linter
+- **Detect-secrets**: Secret detection
+- **Markdownlint**: Markdown linter
+
+To manually run all checks:
+```bash
+poetry run pre-commit run --all-files
+```
+
 OCR-MCP welcomes contributions! Areas of particular interest:
 
 - **New OCR Backends**: Integration of additional OCR engines

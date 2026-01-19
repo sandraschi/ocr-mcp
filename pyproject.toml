@@ -70,6 +70,22 @@ black = "^23.0.0"
 isort = "^5.12.0"
 ruff = "^0.1.0"
 
+# Type Checking
+mypy = "^1.8.0"
+
+# Security Scanning
+pip-audit = "^2.7.0"
+bandit = {extras = ["toml"], version = "^1.7.0"}
+
+# Code Analysis
+radon = "^6.0.1"
+
+# Documentation
+pdoc = "^14.0.0"
+
+# Pre-commit Hooks
+pre-commit = "^3.6.0"
+
 # Optional Testing
 testcontainers = {version = "^3.7.1", optional = true}
 playwright = {version = "^1.40.0", optional = true}
@@ -79,6 +95,7 @@ ocr-mcp = "ocr_mcp.server:main"
 ocr-mcp-webapp = "webapp.backend.app:main"
 ocr-mcp-test = "scripts.run_tests:main"
 ocr-mcp-install-models = "scripts.install_models:main"
+ocr-mcp-setup-dev = "scripts.setup_dev_env:main"
 
 [build-system]
 requires = ["poetry-core"]
