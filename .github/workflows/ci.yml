@@ -55,10 +55,8 @@ jobs:
     - name: Run pre-commit hooks
       run: poetry run pre-commit run --all-files
 
-    - name: Run linting
-      run: |
-        poetry run ruff check src/ tests/
-        poetry run black --check --diff src/ tests/
+    - name: Run linting and formatting
+      run: poetry run ruff check src/ tests/
 
     - name: Run type checking
       run: poetry run mypy src/ --ignore-missing-imports

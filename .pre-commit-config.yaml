@@ -21,19 +21,7 @@ repos:
         args: [--fix]
       - id: ruff-format
 
-  # Black - Python code formatter
-  - repo: https://github.com/psf/black
-    rev: 23.12.1
-    hooks:
-      - id: black
-        language_version: python3
-
-  # Isort - Import sorter
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        args: ["--profile", "black"]
+  # Ruff handles both linting and formatting, including import sorting
 
   # MyPy - Type checker
   - repo: https://github.com/pre-commit/mirrors-mypy
