@@ -71,6 +71,52 @@ class ScannerManager:
         logger.info(f"Total scanners discovered: {len(all_scanners)}")
         return all_scanners
 
+    def get_backend_status(self) -> dict[str, Any]:
+        """
+        Get status information for all scanner backends.
+
+        Returns:
+            Dictionary with backend status information
+        """
+        status = {}
+        for backend_name, backend in self.backends.items():
+            backend_status = {
+                "available": backend.is_available(),
+                "name": backend_name,
+            }
+
+            # Get backend-specific diagnostics if available
+            if hasattr(backend, 'get_diagnostics'):
+                try:
+                    backend_status["diagnostics"] = backend.get_diagnostics()
+                except Exception as e:
+                    backend_status["diagnostics_error"] = str(e)
+
+            status[backend_name] = backend_status
+
+        return status
+
+    def get_scanner_diagnostics(self, device_id: str) -> dict[str, Any] | None:
+        """
+        Get diagnostic information for a specific scanner.
+
+        Args:
+            device_id: Scanner device ID
+
+        Returns:
+            Diagnostic information or None if scanner not found
+        """
+        backend_name, actual_device_id = self._parse_device_id(device_id)
+        backend = self.backends.get(backend_name)
+
+        if backend and hasattr(backend, 'get_diagnostics'):
+            try:
+                return backend.get_diagnostics(actual_device_id)
+            except Exception as e:
+                logger.error(f"Failed to get diagnostics for {device_id}: {e}")
+
+        return None
+
     def get_scanner_info(self, device_id: str) -> ScannerInfo | None:
         """
         Get information about a specific scanner.

@@ -36,6 +36,7 @@ async def handle_scanner_op(
     - "scan_document": Perform single document scan
     - "scan_batch": Batch scan multiple documents with ADF support
     - "preview_scan": Low-resolution preview scan for positioning
+    - "diagnostics": Get diagnostic information for troubleshooting scanner issues
 
     Args:
         operation: The specific operation to perform
@@ -73,6 +74,7 @@ async def handle_scanner_op(
             "scan_document",
             "scan_batch",
             "preview_scan",
+            "diagnostics",
         ]
 
         if operation not in valid_operations:
@@ -169,6 +171,9 @@ async def handle_scanner_op(
                     message_override="device_id required for preview_scan operation",
                 ).to_dict()
             return await _handle_preview_scan(device_id, save_path, backend_manager)
+
+        elif operation == "diagnostics":
+            return await _handle_diagnostics(device_id, backend_manager)
 
     except Exception as e:
         logger.error(f"Scanner operation failed: {operation}, error: {e}")
@@ -372,3 +377,63 @@ async def _handle_preview_scan(device_id, save_path, backend_manager):
     except Exception as e:
         logger.error(f"Failed to preview scan with {device_id}: {e}")
         return ErrorHandler.handle_exception(e, context="preview_scan")
+
+
+async def _handle_diagnostics(device_id, backend_manager):
+    """Handle scanner diagnostics."""
+    try:
+        diagnostics = {}
+
+        # Get backend status
+        if hasattr(backend_manager.scanner_manager, 'get_backend_status'):
+            diagnostics["backend_status"] = backend_manager.scanner_manager.get_backend_status()
+        else:
+            diagnostics["backend_status"] = "Backend status not available"
+
+        # Get device-specific diagnostics if device_id provided
+        if device_id:
+            if hasattr(backend_manager.scanner_manager, 'get_scanner_diagnostics'):
+                device_diagnostics = backend_manager.scanner_manager.get_scanner_diagnostics(device_id)
+                if device_diagnostics:
+                    diagnostics["device_diagnostics"] = device_diagnostics
+                else:
+                    diagnostics["device_diagnostics"] = f"No diagnostics available for {device_id}"
+            else:
+                diagnostics["device_diagnostics"] = "Device diagnostics not supported"
+        else:
+            diagnostics["device_diagnostics"] = "No device_id specified - run diagnostics on specific scanner for detailed info"
+
+        # Add general system information
+        import platform
+        diagnostics["system_info"] = {
+            "platform": platform.platform(),
+            "python_version": platform.python_version(),
+            "architecture": platform.architecture(),
+        }
+
+        # Add troubleshooting hints
+        diagnostics["troubleshooting"] = {
+            "common_issues": [
+                "Scanner not powered on or connected",
+                "WIA service not running (Windows)",
+                "COM initialization issues",
+                "Device busy - wait and retry",
+                "Driver conflicts or outdated drivers",
+                "USB power management issues",
+                "Antivirus blocking scanner access"
+            ],
+            "canon_lide_specific": [
+                "Power cycle the scanner",
+                "Check USB cable connection",
+                "Update Canon drivers from official website",
+                "Disable USB selective suspend in Power Options",
+                "Try different USB port",
+                "Close other scanning applications"
+            ]
+        }
+
+        return create_success_response(diagnostics)
+
+    except Exception as e:
+        logger.error(f"Failed to get diagnostics: {e}")
+        return ErrorHandler.handle_exception(e, context="diagnostics")

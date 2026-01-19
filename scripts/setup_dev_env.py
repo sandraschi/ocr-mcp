@@ -68,13 +68,23 @@ def main():
     # Test basic functionality
     print("\n🧪 Testing basic functionality...")
 
-    # Test imports
+    # Test imports - temporarily add src to path for testing
+    import sys
+    src_path = project_root / "src"
+    if str(src_path) not in sys.path:
+        sys.path.insert(0, str(src_path))
+
     try:
         import ocr_mcp
-
         print("✅ Core imports work")
     except ImportError as e:
         print(f"⚠️  Import test failed: {e}")
+        print("   This is normal if the package hasn't been installed yet.")
+        print("   Run 'poetry install' to install the package.")
+    finally:
+        # Clean up path
+        if str(src_path) in sys.path:
+            sys.path.remove(str(src_path))
 
     # Test Poetry environment
     if run_command(["poetry", "check"], project_root):
