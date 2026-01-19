@@ -18,7 +18,7 @@
 - [🌐 Professional Web Interface](#-professional-web-interface)
 - [📖 Usage Examples](#-usage-examples)
 - [🔧 Configuration](#-configuration)
-- [🧠 OCR Engines (7 Backends)](#-ocr-engines-7-backends)
+- [🧠 AI Models & OCR Engines](#-ai-models--ocr-engines)
 - [🖼️ Image Preprocessing](#️-image-preprocessing)
 - [🔍 Document Analysis](#-document-analysis)
 - [📊 Quality Assessment](#-quality-assessment)
@@ -27,6 +27,7 @@
 - [📷 Scanner Integration](#-scanner-integration)
 - [📈 Performance & Benchmarks](#-performance--benchmarks)
 - [🔍 API Reference](#-api-reference)
+- [📚 Documentation](#-documentation)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
 
@@ -192,19 +193,36 @@ The OCR-MCP web interface is accessible at:
 
 ## 🏗️ Architecture
 
-### OCR Engine Support Matrix
+### AI Models & OCR Engines
 
-| Engine | Text OCR | Formatted | Multi-lang | GPU | Offline | Downloads | Best For |
-|--------|----------|-----------|------------|-----|---------|-----------|----------|
-| **Mistral OCR 3** | ✅ | ✅ | ✅ | ✅ | ❌ | API | Enterprise docs, forms |
-| **DeepSeek-OCR** | ✅ | ✅ | ✅ | ✅ | ✅ | 4.7M+ | Complex layouts, math |
-| **Florence-2** | ✅ | ✅ | ✅ | ✅ | ✅ | 2M+ | Layout understanding |
-| **DOTS.OCR** | ✅ | ✅ | ✅ | ✅ | ✅ | 500K+ | Tables, structured docs |
-| **PP-OCRv5** | ✅ | ✅ | ✅ | ✅ | ✅ | 1M+ | Industrial, fast |
-| **Qwen-Image-Layered** | ✅ | ✅ | ✅ | ✅ | ✅ | 200K+ | Mixed content, comics |
-| **EasyOCR** | ✅ | ❌ | ✅ | ✅ | ✅ | - | Handwriting, general |
-| **GOT-OCR2.0** | ✅ | ✅ | ✅ | ✅ | ✅ | - | Legacy, comprehensive |
-| **Tesseract** | ✅ | ❌ | ✅ | ❌ | ✅ | - | Legacy, lightweight |
+OCR-MCP integrates **8 state-of-the-art AI models** for comprehensive document processing:
+
+#### Primary AI Models (7 Advanced Backends)
+🚀 **[DeepSeek-OCR](https://huggingface.co/deepseek-ai/DeepSeek-OCR)** - Vision-language model for complex documents
+🎨 **[Florence-2](https://huggingface.co/microsoft/Florence-2)** - Microsoft's unified vision foundation model
+📊 **[DOTS.OCR](https://huggingface.co/rednote-hilab/dots.ocr)** - Document table and structure specialist
+🏭 **[PP-OCRv5](https://huggingface.co/PaddlePaddle/PP-OCRv5)** - Industrial-grade PaddlePaddle OCR
+🖼️ **[Qwen-Image-Layered](https://huggingface.co/Qwen/Qwen-Image-Layered)** - Advanced image decomposition
+🎯 **[GOT-OCR 2.0](https://github.com/Ucas-HaoranWei/GOT-OCR2.0)** - General OCR theory implementation
+
+#### Legacy/Compatibility Models
+📖 **[Tesseract OCR](https://github.com/tesseract-ocr/tesseract)** - Classic open-source OCR engine
+🔤 **[EasyOCR](https://github.com/JaidedAI/EasyOCR)** - Ready-to-use OCR with GPU support
+
+#### Model Capabilities Matrix
+
+| Model | Text OCR | Tables | Forms | Handwriting | Multi-lang | GPU Support | Speed |
+|-------|----------|--------|-------|-------------|------------|-------------|-------|
+| DeepSeek-OCR | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Medium |
+| Florence-2 | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | Fast |
+| DOTS.OCR | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | Fast |
+| PP-OCRv5 | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ | Very Fast |
+| Qwen-Layered | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Slow |
+| GOT-OCR 2.0 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Medium |
+| EasyOCR | ✅ | ⚠️ | ⚠️ | ✅ | ✅ | ✅ | Medium |
+| Tesseract | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ❌ | Very Fast |
+
+📖 **[Complete AI Models Documentation](AI_MODELS.md)** - Detailed information about all integrated AI models, performance benchmarks, and technical specifications.
 
 ### Portmanteau Tool Ecosystem (6 Tools)
 
@@ -368,7 +386,7 @@ The web interface provides:
 - **🎨 OCR backend selection** - Choose from 5 different OCR engines
 - **📋 Results visualization** - Text, JSON, and HTML output formats
 
-**Access the webapp at:** http://localhost:11400
+**Access the webapp at:** http://localhost:15550
 
 ## 🌐 Professional Web Interface
 
@@ -704,18 +722,58 @@ backends:
 
 ### ✅ **Completed Features**
 - **FastMCP 2.14.3 Integration**: State-of-the-art MCP server with conversational features
-- **7 State-of-the-Art OCR Backends**: Mistral OCR 3, DeepSeek-OCR, Florence-2, DOTS.OCR, PP-OCRv5, Qwen-Image-Layered, EasyOCR
-- **Professional Web Interface**: Complete React/TypeScript webapp with modern UI
-- **Document Processing Pipeline**: Intelligent backend selection and quality assessment
-- **Image Preprocessing**: Deskew, enhance, crop, rotate with real-time preview
+- **8 AI Models**: DeepSeek-OCR, Florence-2, DOTS.OCR, PP-OCRv5, Qwen-Image-Layered, GOT-OCR 2.0, EasyOCR, Tesseract
+- **Professional React Webapp**: Complete TypeScript frontend with modern UI/UX
+- **Intelligent Backend Selection**: Automatic model routing based on document analysis
+- **Document Processing Pipeline**: Multi-stage OCR with quality assessment
+- **Advanced Image Preprocessing**: Real-time enhancement with visual feedback
 - **Scanner Integration**: Direct WIA hardware control for Windows scanners
-- **Batch Processing**: Concurrent document processing with progress tracking
-- **Quality Assessment**: Comprehensive OCR validation and backend comparison
-- **Format Conversion**: Export to PDF, Word, JSON, HTML, and more
-- **Error Handling**: Structured error responses with recovery suggestions
-- **Cross-Platform**: Windows and Linux support with appropriate abstractions
+- **Batch Processing**: Concurrent document processing with progress monitoring
+- **Quality Assessment**: OCR validation with accuracy metrics and recommendations
+- **Format Conversion**: Export to PDF, Word, JSON, HTML, and searchable PDFs
+- **Comprehensive Error Handling**: Structured errors with recovery suggestions
+- **Cross-Platform Support**: Windows and Linux with appropriate abstractions
+- **Complete Documentation**: AI models guide, technical specifications, testing framework
 
 See [OCR-MCP_MASTER_PLAN.md](OCR-MCP_MASTER_PLAN.md) for detailed roadmap.
+
+## 📚 Documentation
+
+### 📖 Complete Documentation Suite
+
+- **[AI_MODELS.md](AI_MODELS.md)** - Comprehensive documentation of all 8 AI models used in OCR-MCP
+  - Detailed model specifications and capabilities
+  - Performance benchmarks and accuracy comparisons
+  - Technical implementation details and integration guides
+  - Model selection algorithms and optimization strategies
+
+- **[OCR-MCP_MASTER_PLAN.md](OCR-MCP_MASTER_PLAN.md)** - Technical master plan and architecture
+  - System design and component architecture
+  - Implementation roadmap and milestones
+  - Technical specifications and requirements
+  - Future development plans
+
+- **[tests/README.md](tests/README.md)** - Testing framework documentation
+  - Test organization and execution
+  - Performance benchmarking procedures
+  - Security testing methodologies
+  - CI/CD integration guides
+
+### 🛠️ Development Resources
+
+- **API Documentation**: http://localhost:15550/docs (when server is running)
+- **Health Monitoring**: http://localhost:15550/api/health
+- **Interactive API Explorer**: Full Swagger UI with live testing
+
+### 📋 Quick Reference
+
+| Resource | Purpose | Location |
+|----------|---------|----------|
+| AI Models Guide | Model specifications & benchmarks | [AI_MODELS.md](AI_MODELS.md) |
+| Technical Architecture | System design & roadmap | [OCR-MCP_MASTER_PLAN.md](OCR-MCP_MASTER_PLAN.md) |
+| Testing Framework | Test execution & validation | [tests/README.md](tests/README.md) |
+| API Documentation | Interactive API explorer | http://localhost:15550/docs |
+| Health Monitoring | System status & diagnostics | http://localhost:15550/api/health |
 
 ## 🤝 Integration with Existing MCP Servers
 
