@@ -1,15 +1,11 @@
 """
-OCR-MCP: Config
-"""
-
-import logging
-
-logger = logging.getLogger(__name__)
-"""
 OCR-MCP Configuration Management
 """
 
+import logging
 import os
+
+logger = logging.getLogger(__name__)
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -22,11 +18,10 @@ load_dotenv()
 class OCRConfig(BaseModel):
     """Configuration for OCR-MCP server."""
 
-    # Cache and model directories
+    # Cache and model directories (platform-aware: use home cache unless OCR_MODEL_DIR set)
     cache_dir: Path = Field(default_factory=lambda: Path.home() / ".cache" / "ocr-mcp")
-    model_cache_dir: Path = Field(
-        default_factory=lambda: Path.home() / ".cache" / "ocr-mcp" / "models"
-    )
+    model_dir: Path = Field(default_factory=lambda: Path.home() / ".cache" / "ocr-mcp" / "models")
+    model_cache_dir: Path = Field(default_factory=lambda: Path.home() / ".cache" / "ocr-mcp" / "models")
 
     # Device configuration
     device: str = Field(default="auto")  # "auto", "cuda", "cpu"
@@ -59,7 +54,11 @@ class OCRConfig(BaseModel):
         default_cache_dir = Path.home() / ".cache" / "ocr-mcp"
 
         # Override defaults with environment variables
+        default_model_dir = str(default_cache_dir / "models")
+        model_dir_env = os.getenv("OCR_MODEL_DIR")
         data.setdefault("cache_dir", Path(os.getenv("OCR_CACHE_DIR", str(default_cache_dir))))
+        data.setdefault("model_dir", Path(model_dir_env) if model_dir_env else Path(default_model_dir))
+        data.setdefault("model_cache_dir", Path(model_dir_env) if model_dir_env else Path(default_model_dir))
         data.setdefault("device", os.getenv("OCR_DEVICE", "auto"))
         data.setdefault(
             "max_memory_gb",

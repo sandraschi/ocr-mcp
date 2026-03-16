@@ -221,6 +221,11 @@ class ErrorHandler:
             ErrorCategory.SYSTEM,
             ErrorSeverity.CRITICAL,
         ),
+        "INTERNAL_ERROR": (
+            "Internal server error",
+            ErrorCategory.SYSTEM,
+            ErrorSeverity.HIGH,
+        ),
     }
 
     @classmethod
@@ -413,6 +418,7 @@ class ErrorHandler:
                 "got-ocr",
                 "tesseract",
                 "easyocr",
+                "mistral-ocr",
                 "mistral",
             ]
             if kwargs["backend"] not in valid_backends:

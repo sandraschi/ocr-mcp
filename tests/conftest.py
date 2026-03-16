@@ -15,13 +15,17 @@ from unittest.mock import Mock
 import pytest
 from PIL import Image
 
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+# Add project root and src to path for imports
+_project_root = Path(__file__).parent.parent
+if str(_project_root) not in sys.path:
+    sys.path.insert(0, str(_project_root))
+sys.path.insert(0, str(_project_root / "src"))
 
 from ocr_mcp.core.backend_manager import BackendManager
 
 # Import OCR-MCP modules
 from ocr_mcp.core.config import OCRConfig
+from tests.utils.test_helpers import TestFileManager
 
 
 # Test Configuration
@@ -341,7 +345,12 @@ def mock_scanner_manager(mock_wia_backend):
     mock_manager.get_scanner_properties.return_value = mock_wia_backend.get_scanner_properties()
     mock_manager.configure_scan.return_value = True
     mock_manager.scan_document.return_value = mock_wia_backend.scan_document()
+    mock_manager.scan_batch.return_value = [
+        mock_wia_backend.scan_document(),
+        mock_wia_backend.scan_document(),
+    ]
     mock_manager.get_available_backends.return_value = ["wia"]
+    mock_manager.get_backend_status.return_value = {"wia": "available"}
     return mock_manager
 
 
@@ -552,6 +561,15 @@ def integration_config():
         "cleanup_temp_files": True,
         "validate_results": True,
     }
+
+
+# Fuzzing fixtures
+@pytest.fixture
+def file_manager():
+    """Fixture for test file management (alias for fuzzing tests)."""
+    manager = TestFileManager()
+    yield manager
+    manager.cleanup()
 
 
 # E2E Test Fixtures

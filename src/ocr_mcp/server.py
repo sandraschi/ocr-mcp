@@ -4,7 +4,6 @@ OCR-MCP Server: Revolutionary Document Understanding Server
 
 import asyncio
 import logging
-import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -22,76 +21,42 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def server_lifespan(mcp_instance: FastMCP):
-    """Server lifespan for startup and cleanup with FastMCP 2.14.3 features."""
+    """Server lifespan for startup and cleanup with FastMCP 2.14.4 2026 SOTA features."""
     # ========== STARTUP ==========
     logger.info("OCR-MCP server starting up...")
 
-    # Initialize persistent storage
-    await mcp_instance.storage.set("server_started_at", time.time())
-    await mcp_instance.storage.set("server_version", "2.14.3")
-
-    # Load previous state if available
-    last_backend_state = await mcp_instance.storage.get("backend_state")
-    if last_backend_state:
-        logger.info("Restored backend state from previous session", state=last_backend_state)
-
-    # Initialize OCR backends and cache
-    await mcp_instance.storage.set("backends_initialized", False)
-    await mcp_instance.storage.set("processing_stats", {"total_processed": 0, "total_errors": 0})
-
-    # Set initial server status
-    await mcp_instance.storage.set("server_status", "initializing")
-
     try:
         # Initialize backend manager (this may take time for model downloads)
-        global backend_manager
-        backend_manager = BackendManager(config)
+        _runtime["backend_manager"] = BackendManager(config)
+        bm = _runtime["backend_manager"]
 
         # Update sampling handler with backend manager
         global sampling_handler
-        sampling_handler.backend_manager = backend_manager
+        sampling_handler.backend_manager = bm
         sampling_handler.config = config
 
         # Cache backend information
-        available_backends = backend_manager.get_available_backends()
-        await mcp_instance.storage.set("available_backends", available_backends)
-        await mcp_instance.storage.set("backends_initialized", True)
-        await mcp_instance.storage.set("server_status", "ready")
-
-        logger.info(f"OCR-MCP initialized with backends: {available_backends}")
+        available_backends = bm.get_available_backends()
+        logger.info("OCR-MCP initialized with backends: %s", available_backends)
 
         yield  # Server runs here
 
     except Exception as e:
-        logger.error(f"Failed to initialize OCR backends: {e}")
-        await mcp_instance.storage.set("server_status", "error")
-        await mcp_instance.storage.set("initialization_error", str(e))
+        logger.error("Failed to initialize OCR backends: %s", e)
         raise
 
     # ========== SHUTDOWN ==========
     logger.info("OCR-MCP server shutting down...")
-
-    # Save final state
-    await mcp_instance.storage.set("last_shutdown", time.time())
-    final_stats = await mcp_instance.storage.get("processing_stats")
-    await mcp_instance.storage.set("final_processing_stats", final_stats)
-    await mcp_instance.storage.set("server_status", "shutdown")
-
-    # Clean up resources
-    if "backend_manager" in globals():
-        # Add cleanup logic for backend manager if needed
-        pass
-
     logger.info("OCR-MCP shutdown complete")
 
 
 # Initialize OCR Sampling Handler (will be updated in lifespan)
 sampling_handler = OCRSamplingHandler()
 
-# Initialize FastMCP server with 2.14.3 features
+# Initialize FastMCP server with 2.14.4 2026 SOTA features
 app = FastMCP(
     name="ocr-mcp",
-    instructions="""You are OCR-MCP, a revolutionary document understanding server providing state-of-the-art OCR capabilities with FastMCP 2.14.3 conversational features and AI-powered sampling integration.
+    instructions="""You are OCR-MCP, a revolutionary document understanding server providing state-of-the-art OCR capabilities with FastMCP 2.14.4 2026 SOTA conversational features and AI-powered sampling integration.
 
 CORE CAPABILITIES:
 - Multiple OCR backends: DeepSeek-OCR, Florence-2, PP-OCRv5, DOTS.OCR, GOT-OCR, Tesseract, EasyOCR
@@ -181,13 +146,12 @@ The user wants to process a document. Ask them for:
 Then, help them call the `document_processing` tool with the appropriate `operation="process_document"`."""
 
 
-# Global instances
+# Global instances - mutable runtime for lifespan injection
 config = OCRConfig()
-backend_manager = None  # Will be initialized in lifespan
+_runtime = {"backend_manager": None, "config": config}
 
-# Register all tools using SOTA registration
-# Note: backend_manager will be None during registration, tools will access it dynamically
-register_sota_tools(app, backend_manager, config)
+# Register all tools - runtime dict is mutated in lifespan
+register_sota_tools(app, _runtime, config)
 
 # Register SEP-1577 agentic document workflow tool
 try:
@@ -215,19 +179,11 @@ async def run_server():
 
 
 def main():
-    """Main entry point for OCR-MCP server with FastMCP 2.14.3."""
-    logger.info("Starting OCR-MCP server (FastMCP 2.14.3)...")
+    """Main entry point with unified transport handling (FastMCP 2.14.4+)."""
+    from .transport import run_server
 
-    # Server initialization is handled by the lifespan manager
-    # The backend_manager will be available after lifespan startup
-
-    try:
-        asyncio.run(run_server())
-    except KeyboardInterrupt:
-        logger.info("OCR-MCP server stopped by user")
-    except Exception as e:
-        logger.error(f"OCR-MCP server failed: {e}")
-        raise
+    logger.info("Starting OCR-MCP server (FastMCP 2.14.4+)...")
+    run_server(app, server_name="ocr-mcp")
 
 
 if __name__ == "__main__":

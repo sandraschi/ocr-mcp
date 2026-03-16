@@ -1,8 +1,6 @@
-"""
-GOT-OCR2.0 Backend for OCR-MCP
-"""
-
 import logging
+import time
+from pathlib import Path
 from typing import Any
 
 from ..core.backend_manager import OCRBackend
@@ -18,19 +16,65 @@ class GOTOCRBackend(OCRBackend):
         super().__init__("got-ocr", config)
         self._model = None
         self._tokenizer = None
+        self.model_name = "stepfun-ai/GOT-OCR2_0"
+        self.cache_dir = config.model_dir / "got_ocr"
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
 
         # Check if dependencies are available
         import importlib.util
 
-        torch_available = importlib.util.find_spec("torch") is not None
-        transformers_available = importlib.util.find_spec("transformers") is not None
+        self.torch_available = importlib.util.find_spec("torch") is not None
+        self.transformers_available = importlib.util.find_spec("transformers") is not None
 
-        if torch_available and transformers_available:
+        if self.torch_available and self.transformers_available:
             self._available = True
             logger.info("GOT-OCR2.0 dependencies available")
         else:
             self._available = False
             logger.warning("GOT-OCR2.0 dependencies not available")
+
+    def _load_model(self):
+        """Load model and tokenizer lazily."""
+        if self._model is not None:
+            return
+
+        if not self.is_available():
+            raise RuntimeError("GOT-OCR dependencies not available")
+
+        try:
+            from transformers import AutoModelForCausalLM, AutoTokenizer
+            import torch
+
+            logger.info(f"Loading GOT-OCR2.0 model from {self.model_name}...")
+            start_time = time.time()
+
+            self._tokenizer = AutoTokenizer.from_pretrained(
+                self.model_name, trust_remote_code=True, cache_dir=str(self.cache_dir)
+            )
+
+            # Determine device and dtype
+            device = self.config.device
+            if device == "auto":
+                device = "cuda" if torch.cuda.is_available() else "cpu"
+
+            dtype = torch.bfloat16 if device == "cuda" else torch.float32
+
+            self._model = AutoModelForCausalLM.from_pretrained(
+                self.model_name,
+                trust_remote_code=True,
+                low_cpu_mem_usage=True,
+                device_map=device,
+                use_safetensors=True,
+                torch_dtype=dtype,
+                cache_dir=str(self.cache_dir),
+            )
+
+            self._model.eval()
+            logger.info(f"GOT-OCR2.0 model loaded in {time.time() - start_time:.2f}s on {device}")
+
+        except Exception as e:
+            logger.error(f"Failed to load GOT-OCR2.0 model: {e}")
+            raise RuntimeError(f"Failed to load GOT-OCR2.0 model: {e}")
 
     async def process_image(
         self,
@@ -43,48 +87,50 @@ class GOTOCRBackend(OCRBackend):
     ) -> dict[str, Any]:
         """
         Process image with GOT-OCR2.0.
-
-        Args:
-            image_path: Path to image file
-            mode: Processing mode ("text", "format", "fine-grained")
-            output_format: Output format ("text", "html", "json")
-            language: Language (currently handled automatically by model)
-            region: Region coordinates for fine-grained OCR
-
-        Returns:
-            OCR processing results
         """
         if not self.is_available():
             return {"success": False, "error": "GOT-OCR2.0 backend not available"}
 
         try:
-            # For now, return a mock result
-            # In production, this would load and run the actual GOT-OCR2.0 model
-            mock_text = f"Extracted text from {image_path} using GOT-OCR2.0 (mode: {mode})"
+            self._load_model()
+
+            start_time = time.time()
+
+            # Map mode to ocr_type
+            ocr_type = "ocr"
+            if mode == "format":
+                ocr_type = "format"
+
+            # Add box info for fine-grained if region provided
+            # GOT-OCR API typically handles box as specific argument or via ocr_type='ocr' + box
+            # For simplicity in this v1, we focus on full image 'ocr' and 'format'
+            # If region is provided, we might interpret it handling logic (crop or prompt)
+
+            # Run inference
+            # model.chat(tokenizer, image_file, ocr_type='ocr', ocr_box=None, ocr_color=None)
+            res = self._model.chat(self._tokenizer, image_path, ocr_type=ocr_type)
+
+            processing_time = time.time() - start_time
 
             result = {
                 "success": True,
-                "text": mock_text,
-                "confidence": 0.95,
+                "text": res,
+                "confidence": 1.0,  # GOT-OCR doesn't always return confidence in simple chat mode
                 "backend": "got-ocr",
                 "mode": mode,
                 "format": output_format,
-                "processing_time": 2.3,  # seconds
+                "processing_time": processing_time,
                 "metadata": {
-                    "model": "GOT-OCR2.0",
+                    "model": self.model_name,
                     "model_size": self.config.got_ocr_model_size,
-                    "device": self.config.device,
+                    "device": str(self._model.device if self._model else "unknown"),
                 },
             }
 
             # Add HTML formatting if requested
-            if output_format == "html" and mode == "format":
-                result["html"] = self._generate_html(mock_text)
-
-            # Add region info if fine-grained
-            if region and mode == "fine-grained":
-                result["region"] = region
-                result["region_text"] = f"Text from region {region}"
+            if output_format == "html":
+                # If mode is format, result is likely markdown/latex, wrap it
+                result["html"] = self._generate_html(res)
 
             return result
 
@@ -98,6 +144,7 @@ class GOTOCRBackend(OCRBackend):
 
     def _generate_html(self, text: str) -> str:
         """Generate HTML representation of OCR results."""
+        # Simple wrapper for now, assuming text might contain markdown
         html_template = f"""
         <!DOCTYPE html>
         <html lang="en">
@@ -106,35 +153,13 @@ class GOTOCRBackend(OCRBackend):
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>GOT-OCR2.0 Result</title>
             <style>
-                body {{
-                    font-family: Arial, sans-serif;
-                    margin: 40px;
-                    line-height: 1.6;
-                }}
-                .ocr-result {{
-                    background: #f9f9f9;
-                    padding: 20px;
-                    border-radius: 5px;
-                    border-left: 4px solid #007acc;
-                }}
-                .metadata {{
-                    color: #666;
-                    font-size: 0.9em;
-                    margin-top: 20px;
-                }}
+                body {{ font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }}
+                .content {{ background: #f9f9f9; padding: 20px; border-radius: 5px; }}
             </style>
         </head>
         <body>
-            <div class="ocr-result">
-                <h2>GOT-OCR2.0 Formatted Result</h2>
-                <div class="text-content">
-                    {text.replace(chr(10), "<br>")}
-                </div>
-            </div>
-            <div class="metadata">
-                <strong>Processed by:</strong> GOT-OCR2.0<br>
-                <strong>Confidence:</strong> 95%<br>
-                <strong>Format:</strong> Formatted Text with Layout Preservation
+            <div class="content">
+                {text.replace(chr(10), "<br>")}
             </div>
         </body>
         </html>
@@ -146,18 +171,12 @@ class GOTOCRBackend(OCRBackend):
         base_capabilities = super().get_capabilities()
         base_capabilities.update(
             {
-                "modes": ["text", "format", "fine-grained"],
-                "output_formats": ["text", "html", "json"],
+                "modes": ["text", "format"],
+                "output_formats": ["text", "html"],
                 "gpu_support": True,
                 "model_size": self.config.got_ocr_model_size,
-                "languages": ["auto"],  # Model handles multiple languages automatically
-                "features": [
-                    "formatted_text_preservation",
-                    "layout_analysis",
-                    "region_based_ocr",
-                    "html_rendering",
-                    "table_detection",
-                ],
+                "languages": ["auto"],
+                "features": ["formatted_text_preservation", "layout_analysis", "markdown_output"],
             }
         )
         return base_capabilities

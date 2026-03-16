@@ -4,6 +4,8 @@ Image Management Helpers for OCR-MCP Server
 
 import logging
 import os
+import tempfile
+from pathlib import Path
 from typing import Any
 
 from ..core.backend_manager import BackendManager
@@ -24,11 +26,28 @@ async def preprocess_image(
     config: OCRConfig | None = None,
 ) -> dict[str, Any]:
     """
-    Apply preprocessing to an image to improve OCR results.
+    Backend handler for image preprocess. See ocr_tools.image_management for MCP tool docstring.
+
+    Args:
+    - source_path (str, required): Path to image.
+    - grayscale (bool): Convert to grayscale. Default: True.
+    - denoise (bool): Apply denoising. Default: True.
+    - deskew (bool): Apply deskew. Default: True.
+    - threshold (bool): Apply thresholding. Default: False.
+    - autocrop (bool): Apply autocrop. Default: False.
+    - backend_manager: Injected BackendManager.
+    - config: Injected OCRConfig.
+
+    Returns:
+    FastMCP 2.14.1+ dialogic response: success, operation, result or error,
+    recommendations, next_steps, recovery_options (on error), related_operations.
     """
     logger.info(f"Preprocessing image: {source_path}")
 
     try:
+        import time
+
+        start = time.time()
         from PIL import Image, ImageFilter, ImageOps
         # import numpy as np
 
@@ -59,15 +78,26 @@ async def preprocess_image(
                 if bbox:
                     img = img.crop(bbox)
 
-        # Save to a temporary file or overwrite if output_path was provided (not in this simplified version)
-        # For now, let's just return success with info
-        # Real implementation would save to a temp file and return that path
+        # Save to temp file so pipeline next steps can use the preprocessed image
+        ext = Path(source_path).suffix.lower() or ".png"
+        if ext not in (".png", ".jpg", ".jpeg", ".tiff", ".bmp"):
+            ext = ".png"
+        fd, target_path = tempfile.mkstemp(suffix=ext, prefix="ocr_preprocess_")
+        try:
+            os.close(fd)
+            save_format = "PNG" if ext == ".png" else "JPEG" if ext in (".jpg", ".jpeg") else "PNG"
+            img.save(target_path, format=save_format)
+        except Exception as save_err:
+            if os.path.exists(target_path):
+                try:
+                    os.unlink(target_path)
+                except OSError:
+                    pass
+            return ErrorHandler.create_error(
+                "INTERNAL_ERROR", f"Failed to save preprocessed image: {save_err}"
+            ).to_dict()
 
-        import time
-
-        execution_time = (
-            time.time() - time.time()
-        )  # Placeholder - would track actual processing time
+        execution_time = time.time() - start
 
         # Analyze improvement potential
         operations_applied = []
@@ -105,6 +135,7 @@ async def preprocess_image(
             "operation": "preprocess_image",
             "execution_time": round(execution_time, 2),
             "source_path": source_path,
+            "target_path": target_path,
             "original_info": original_info,
             "processed_info": {
                 "width": img.width,

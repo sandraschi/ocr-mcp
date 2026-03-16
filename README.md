@@ -1,14 +1,13 @@
 # OCR-MCP: Professional Document Processing Suite
 
-[![Version](https://img.shields.io/badge/Version-0.2.0--alpha.0-red)](https://github.com/your-username/ocr-mcp/releases)
-[![Python](https://img.shields.io/badge/Python-3.11+-green)](https://python.org)
-[![FastMCP](https://img.shields.io/badge/FastMCP-2.14+-blue)](https://github.com/jlowin/fastmcp)
-[![OCR Engines](https://img.shields.io/badge/OCR--Engines-8+-orange)]()
-[![Web Interface](https://img.shields.io/badge/Web--Interface-Professional-purple)]()
+[![Version](https://img.shields.io/badge/Version-0.2.0--alpha-blue)](https://github.com/your-username/ocr-mcp/releases)
+[![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)](https://python.org)
+[![FastMCP](https://img.shields.io/badge/FastMCP-2.14.5%2B-0066CC)](https://github.com/jlowin/fastmcp)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
-[![CI/CD](https://img.shields.io/github/actions/workflow/status/your-username/ocr-mcp/ci.yml?branch=main)](https://github.com/your-username/ocr-mcp/actions)
-[![Coverage](https://img.shields.io/badge/Coverage-90%25+-brightgreen)]()
-[![Status](https://img.shields.io/badge/Status-Alpha-brightgreen)](OCR-MCP_MASTER_PLAN.md)
+[![OCR Engines](https://img.shields.io/badge/OCR%20Engines-10%2B-orange)](README#-ai-models--ocr-engines)
+[![Scanner](https://img.shields.io/badge/Scanner-WIA%20%28Windows%29-0078D4?logo=windows)](README#-scanner-integration)
+[![Web UI](https://img.shields.io/badge/Web%20UI-React-61DAFB?logo=react&logoColor=black)](README#-professional-web-interface)
+[![Status](https://img.shields.io/badge/Status-Alpha-green)](OCR-MCP_MASTER_PLAN.md)
 
 **Complete document processing solution with 7 state-of-the-art OCR engines, intelligent preprocessing, document analysis, quality assessment, workflow automation, and professional web interface.**
 
@@ -23,6 +22,9 @@
 - [🔧 Configuration](#-configuration)
 - [🧠 AI Models & OCR Engines](#-ai-models--ocr-engines)
 - [🖼️ Image Preprocessing](#️-image-preprocessing)
+- [📦 Packaging & Distribution](#-packaging--distribution)
+- [🛠️ Development](#️-development)
+- [📄 License](#-license)
 - [🔍 Document Analysis](#-document-analysis)
 - [📊 Quality Assessment](#-quality-assessment)
 - [🔄 Intelligent Workflows](#-intelligent-workflows)
@@ -75,29 +77,39 @@ OCR-MCP provides a full document processing ecosystem:
 - **Repository**: https://huggingface.co/deepseek-ai/DeepSeek-OCR
 - **Paper**: https://arxiv.org/abs/2510.18234
 
-**🎯 Florence-2 (June 2024)** - *Microsoft's Vision Foundation Model*
-- **Architecture**: Unified vision-language model for various vision tasks
-- **OCR Capabilities**: Excellent text extraction and layout understanding
-- **Strengths**: Multi-task learning, fine-grained text recognition
-- **Repository**: https://huggingface.co/microsoft/Florence-2-base
+**🎯 Florence-2 (June 2024)** - *Removed in v0.3.0 — general vision model, not OCR specialist*
+- Replaced by PaddleOCR-VL-1.5 which benchmarks at 94.5% vs Florence-2's stub implementation
 
-**📊 DOTS.OCR (July 2025)** - *Document Understanding Specialist*
+**🐼 PaddleOCR-VL-1.5 (January 2026)** - *Current SOTA for Document Parsing*
+- **Accuracy**: 94.5% on OmniDocBench v1.5 — #1 open-source at release
+- **Architecture**: NaViT encoder + ERNIE-4.5-0.3B LM (0.9B params total)
+- **Strengths**: Tables, formulas, charts, seals, irregular/tilted docs, 109 languages
+- **VRAM**: ~3.3GB with flash-attn; install: `pip install flash-attn --no-build-isolation`
+- **Repository**: https://huggingface.co/PaddlePaddle/PaddleOCR-VL-1.5
+
+**🔬 DeepSeek-OCR-2 (January 2026)** - *Visual Causal Flow Architecture*
+- **Architecture**: Visual Causal Flow for context-aware document extraction
+- **Strengths**: Clean structured markdown output, complex document layouts
+- **Parameters**: 3B, ~8GB VRAM (bfloat16)
+- **Repository**: https://huggingface.co/deepseek-ai/DeepSeek-OCR-2
+
+**🎓 olmOCR-2 (October 2025)** - *Academic Document Specialist*
+- **Built on**: Qwen2.5-VL-7B-Instruct with GRPO RL fine-tuning
+- **Benchmark**: 82.4 on olmOCR-Bench (1,403 diverse PDF documents)
+- **Strengths**: arXiv papers, LaTeX equations, multi-column academic layouts
+- **Repository**: https://huggingface.co/allenai/olmOCR-2-7B-1025
+
+**📊 DOTS.OCR (July 2025)** - *Document Table Specialist*
 - **Focus**: Document layout analysis, table recognition, formula extraction
-- **Strengths**: Structured document parsing, multilingual support
 - **Repository**: https://huggingface.co/rednote-hilab/dots.ocr
 
-**🚀 PP-OCRv5 (2025)** - *Industrial-Grade OCR*
-- **Performance**: PaddlePaddle's latest production-ready OCR system
-- **Strengths**: High accuracy, fast inference, edge deployment
+**🏭 PP-OCRv5 (2025)** - *Industrial-Grade OCR (Legacy Pipeline)*
+- **Strengths**: High throughput, CJK text, lightweight CPU deployment
 - **Repository**: https://huggingface.co/PaddlePaddle/PP-OCRv5
 
-**🎨 Qwen-Image-Layered (December 2025)** - *Advanced Image Decomposition*
-- **Technology**: Decomposes images into multiple independent RGBA layers
-- **OCR Integration**: Isolate text, background, and structural elements for better OCR
-- **Capabilities**: Layer-independent editing, resizing, repositioning, recoloring
-- **Repository**: https://huggingface.co/Qwen/Qwen-Image-Layered
-- **Paper**: https://arxiv.org/abs/2512.15603
-- **Use Case**: Pre-process complex documents by separating text layers from backgrounds
+**🎨 Qwen2.5-VL (December 2025)** - *Advanced Multimodal VLM*
+- **Benchmark**: Near GPT-4o on DocVQA and MathVista, 90+ languages
+- **Repository**: https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct
 
 #### OCR Capabilities
 
@@ -130,15 +142,29 @@ OCR-MCP automatically selects the best backend based on:
 #### Community & Industry Adoption
 
 Current OCR landscape shows rapid evolution:
-- **DeepSeek-OCR**: Leading downloads indicate community preference
-- **Florence-2**: Academic and research adoption
+- **DeepSeek-OCR**: Leading community downloads, strong enterprise interest
+- **PaddleOCR-VL-1.5**: January 2026 SOTA, 94.5% OmniDocBench — new reference point
 - **DOTS.OCR**: Document processing industry standard
 - **PP-OCRv5**: Production deployment in enterprise applications
+
+## 🤖 AI Hardware Requirements
+
+While basic Tesseract OCR runs on any CPU, advanced SOTA models have specific requirements:
+
+- **Minimal (Tesseract/EasyOCR)**: Any CPU, 4GB RAM.
+- **Recommended (PaddleOCR-VL-1.5/GOT-OCR2.0)**: NVIDIA RTX 3060+ (12GB VRAM). Requires flash-attn for PaddleOCR-VL.
+- **High Performance (DeepSeek-OCR-2/olmOCR-2/Qwen)**: NVIDIA RTX 3090/4090 (24GB VRAM).
+
+**Local Intelligence (LLM):**
+- **Auto-Discovery**: The system automatically detects and uses running Ollama or LM Studio instances for semantic document analysis and classification.
+
+> [!IMPORTANT]
+> **GPU Usage**: SOTA models behave significantly better with CUDA acceleration. CPU fallback is available for most models but performance will be 10-50x slower.
 
 ## ✨ Complete Feature Suite
 
 ### 🎯 Core OCR Capabilities
-- **7 State-of-the-Art OCR Engines**: Mistral OCR 3, DeepSeek-OCR, Florence-2, DOTS.OCR, PP-OCRv5, Qwen-Image-Layered, EasyOCR
+- **7 State-of-the-Art OCR Engines**: Mistral OCR, PaddleOCR-VL-1.5, DeepSeek-OCR-2, olmOCR-2, Qwen2.5-VL, GOT-OCR 2.0, DOTS.OCR (+ PP-OCRv5, EasyOCR, Tesseract legacy)
 - **Intelligent Backend Selection**: Auto-chooses optimal engine per document type
 - **Multiple Processing Modes**: Text, formatted, layout preservation, fine-grained extraction
 - **Multi-language Support**: 80+ languages across all backends
@@ -200,95 +226,68 @@ The OCR-MCP web interface is accessible at:
 
 OCR-MCP integrates **8 state-of-the-art AI models** for comprehensive document processing:
 
-#### Primary AI Models (7 Advanced Backends)
-🚀 **[DeepSeek-OCR](https://huggingface.co/deepseek-ai/DeepSeek-OCR)** - Vision-language model for complex documents
-🎨 **[Florence-2](https://huggingface.co/microsoft/Florence-2)** - Microsoft's unified vision foundation model
-📊 **[DOTS.OCR](https://huggingface.co/rednote-hilab/dots.ocr)** - Document table and structure specialist
-🏭 **[PP-OCRv5](https://huggingface.co/PaddlePaddle/PP-OCRv5)** - Industrial-grade PaddlePaddle OCR
-🖼️ **[Qwen-Image-Layered](https://huggingface.co/Qwen/Qwen-Image-Layered)** - Advanced image decomposition
-🎯 **[GOT-OCR 2.0](https://github.com/Ucas-HaoranWei/GOT-OCR2.0)** - General OCR theory implementation
+#### Primary AI Models (10 Backends)
+🐼 **[PaddleOCR-VL-1.5](https://huggingface.co/PaddlePaddle/PaddleOCR-VL-1.5)** - Jan 2026 SOTA, 94.5% OmniDocBench, 0.9B params
+🔬 **[DeepSeek-OCR-2](https://huggingface.co/deepseek-ai/DeepSeek-OCR-2)** - Visual Causal Flow, Jan 2026, 3B params
+🎓 **[olmOCR-2](https://huggingface.co/allenai/olmOCR-2-7B-1025)** - Academic PDFs, math equations, Oct 2025, 7B
+🚀 **[Mistral OCR](https://mistral.ai)** - Cloud API, 94.9% accuracy, Dec 2025
+🖼️ **[Qwen2.5-VL](https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct)** - Multimodal VLM, DocVQA near GPT-4o
+🎯 **[GOT-OCR 2.0](https://github.com/Ucas-HaoranWei/GOT-OCR2.0)** - Fast, lean (580M), mixed content
+🚀 **[DeepSeek-OCR](https://huggingface.co/deepseek-ai/DeepSeek-OCR)** - Original, cloud API
+📊 **[DOTS.OCR](https://huggingface.co/rednote-hilab/dots.ocr)** - Table and document structure specialist
 
 #### Legacy/Compatibility Models
-📖 **[Tesseract OCR](https://github.com/tesseract-ocr/tesseract)** - Classic open-source OCR engine
-🔤 **[EasyOCR](https://github.com/JaidedAI/EasyOCR)** - Ready-to-use OCR with GPU support
+📖 **[Tesseract OCR](https://github.com/tesseract-ocr/tesseract)** - Classic open-source OCR engine, CPU backstop
+🔤 **[EasyOCR](https://github.com/JaidedAI/EasyOCR)** - GPU-accelerated, 80+ languages, handwriting
+🏭 **[PP-OCRv5](https://huggingface.co/PaddlePaddle/PP-OCRv5)** - Industrial PaddlePaddle pipeline
 
 #### Model Capabilities Matrix
 
-| Model | Text OCR | Tables | Forms | Handwriting | Multi-lang | GPU Support | Speed |
-|-------|----------|--------|-------|-------------|------------|-------------|-------|
-| DeepSeek-OCR | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Medium |
-| Florence-2 | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | Fast |
-| DOTS.OCR | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | Fast |
-| PP-OCRv5 | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ | Very Fast |
-| Qwen-Layered | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Slow |
-| GOT-OCR 2.0 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Medium |
-| EasyOCR | ✅ | ⚠️ | ⚠️ | ✅ | ✅ | ✅ | Medium |
-| Tesseract | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ❌ | Very Fast |
+| Model | Text OCR | Tables | Formulas | Handwriting | Multi-lang | VRAM | Speed |
+|-------|----------|--------|----------|-------------|------------|------|-------|
+| **PaddleOCR-VL-1.5** | ✅ | ✅ | ✅ | ✅ | 109 langs | 3.3GB* | Fast |
+| **DeepSeek-OCR-2** | ✅ | ✅ | ✅ | ⚠️ | ✅ | ~8GB | Medium |
+| **olmOCR-2** | ✅ | ✅ | ✅ | ⚠️ | ✅ | ~16GB | Slow |
+| Mistral OCR | ✅ | ✅ | ✅ | ✅ | ✅ | 0 (API) | Fast |
+| Qwen2.5-VL | ✅ | ✅ | ✅ | ✅ | ✅ | ~16GB | Slow |
+| GOT-OCR 2.0 | ✅ | ✅ | ✅ | ✅ | ✅ | ~2GB | Medium |
+| DOTS.OCR | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ~6GB | Fast |
+| PP-OCRv5 | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | low | Very Fast |
+| EasyOCR | ✅ | ⚠️ | ⚠️ | ✅ | ✅ | low | Medium |
+| Tesseract | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | 0 | Very Fast |
+
+*\* PaddleOCR-VL-1.5 requires `flash-attn` for 3.3GB; without it ~40GB (OOM on 24GB GPU)*
 
 📖 **[Complete AI Models Documentation](AI_MODELS.md)** - Detailed information about all integrated AI models, performance benchmarks, and technical specifications.
 
-### Portmanteau Tool Ecosystem (6 Tools)
+### Portmanteau Tool Ecosystem (2026 SOTA)
 
-#### 🎯 Document Processing (Portmanteau Tool)
-**`document_processing(operation="...")`** - Consolidates OCR, analysis, and quality assessment
-- `"process_document"`: Single document OCR with backend selection
-- `"process_batch"`: Concurrent batch document processing
-- `"extract_regions"`: Fine-grained region-based OCR
-- `"analyze_layout"`: Document structure and layout detection
-- `"extract_table_data"`: Structured table data extraction
-- `"detect_form_fields"`: Form element identification
-- `"analyze_reading_order"`: Logical text flow determination
-- `"classify_document"`: Auto-document type classification
-- `"extract_metadata"`: Dates, names, numbers extraction
-- `"assess_quality"`: Comprehensive OCR quality scoring
-- `"compare_backends"`: Backend performance comparison
-- `"validate_accuracy"`: Ground truth accuracy validation
-- `"analyze_image_quality"`: Pre-OCR quality assessment
+#### Document Processing
+**`document_processing(operation, ...)`** - OCR, analysis, quality assessment
+- process_document, process_batch, analyze_layout, extract_tables, detect_forms
+- analyze_reading_order, classify_type, extract_metadata
+- assess_quality, validate_accuracy, compare_backends, analyze_image_quality
 
-#### 🖼️ Image Management (Portmanteau Tool)
-**`image_management(operation="...")`** - Consolidates preprocessing and conversion operations
-- `"deskew"`: Straighten skewed/scanned documents
-- `"enhance"`: Improve image quality (contrast, sharpness, noise reduction)
-- `"rotate"`: Rotate images by angle or auto-detect orientation
-- `"crop"`: Remove unwanted borders or focus on content areas
-- `"preprocess"`: Complete preprocessing pipeline for OCR
-- `"convert_format"`: Convert between image formats with quality control
-- `"convert_pdf_to_images"`: Extract images from PDF documents
-- `"embed_ocr_text"`: Create searchable PDFs with embedded OCR text
+#### Image Management
+**`image_management(operation, ...)`** - Preprocessing and format conversion
+- preprocess (deskew, denoise, grayscale, threshold, autocrop)
+- convert (PNG, JPG, TIFF, WebP)
+- pdf_to_images, embed_text (searchable PDF)
 
-#### 📷 Scanner Operations (Portmanteau Tool)
-**`scanner_operations(operation="...")`** - Consolidates all scanner hardware control
-- `"list_scanners"`: Discover and enumerate available scanners
-- `"scanner_properties"`: Get detailed scanner capabilities and settings
-- `"configure_scan"`: Set scan parameters (DPI, color mode, paper size)
-- `"scan_document"`: Perform single document scan
-- `"scan_batch"`: Batch scan multiple documents with ADF support
-- `"preview_scan"`: Low-resolution preview scan for positioning
+#### Scanner Operations (WIA, Windows)
+**`scanner_operations(operation, ...)`** - Scanner hardware control
+- list_scanners, scanner_properties, configure_scan
+- scan_document, scan_batch, preview_scan, diagnostics
 
-#### 🔄 Workflow Management (Portmanteau Tool)
-**`workflow_management(operation="...")`** - Consolidates batch processing and system operations
-- `"process_batch_intelligent"`: Intelligent batch processing with quality control
-- `"create_processing_pipeline"`: Create custom processing workflows
-- `"execute_pipeline"`: Run custom pipelines on documents
-- `"monitor_batch_progress"`: Track batch processing status and metrics
-- `"optimize_processing"`: Optimize batch processing parameters
-- `"ocr_health_check"`: System health and backend status
-- `"list_backends"`: Available OCR backends and capabilities
-- `"manage_models"`: GPU memory and model lifecycle management
+#### Workflow Management
+**`workflow_management(operation, ...)`** - Batch and pipeline orchestration
+- process_batch_intelligent, create_processing_pipeline, execute_pipeline
+- monitor_batch_progress, optimize_processing
+- ocr_health_check, list_backends, manage_models
 
-#### ❓ Help & Documentation (Portmanteau Tool)
-**`help(level="...", topic="...")`** - Contextual help and documentation
-- `"basic"`: Quick start guide and essential commands
-- `"intermediate"`: Detailed tool descriptions and workflows
-- `"advanced"`: Technical architecture and implementation details
-- `"expert"`: Development troubleshooting and system internals
-
-#### 📊 System Status (Portmanteau Tool)
-**`status(level="...", focus="...")`** - System monitoring and diagnostics
-- `"basic"`: Quick system health overview
-- `"intermediate"`: Detailed backend and resource status
-- `"advanced"`: Comprehensive diagnostics with performance metrics
-- Custom focus areas: `"backends"`, `"memory"`, `"disk"`, `"network"`
+#### Help & Status
+**`help(level, topic?)`** - basic | intermediate | advanced
+**`status(level)`** - basic | detailed
 
 ### WebApp Architecture
 
@@ -322,20 +321,28 @@ OCR-MCP integrates **8 state-of-the-art AI models** for comprehensive document p
 - **GPU recommended** (for GOT-OCR2.0 and other ML models)
 - **8GB+ VRAM** for optimal performance
 
-### Installation
+## 🚀 Installation
 
+### Prerequisites
+- [uv](https://docs.astral.sh/uv/) installed (RECOMMENDED)
+- Python 3.12+
+
+### 📦 Quick Start
+Run immediately via `uvx`:
 ```bash
-# Clone the repository
-git clone https://github.com/sandraschi/ocr-mcp.git
-cd ocr-mcp
-
-# Install dependencies with Poetry (recommended)
-poetry install
-
-# For GPU support (optional but recommended)
-poetry run pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+uvx ocr-mcp
 ```
 
+### 🎯 Claude Desktop Integration
+Add to your `claude_desktop_config.json`:
+```json
+"mcpServers": {
+  "ocr-mcp": {
+    "command": "uv",
+    "args": ["--directory", "D:/Dev/repos/ocr-mcp", "run", "ocr-mcp"]
+  }
+}
+```
 ### MCP Configuration
 
 Add to your `claude_desktop_config.json`:
@@ -647,7 +654,7 @@ layout = await document_processing(
 comparison = await document_processing(
     operation="compare_backends",
     source_path="/path/to/test_image.png",
-    backends=["deepseek-ocr", "florence-2", "pp-ocrv5"]
+    backends=["paddleocr-vl", "deepseek-ocr2", "got-ocr"]
 )
 # Returns: Accuracy scores, processing times, confidence metrics
 ```
@@ -695,23 +702,27 @@ backends:
 
 ## 📊 Performance Benchmarks
 
-### Single Image Processing (GTX 3080)
+### Published Benchmark Scores (2025–2026)
 
-| Backend | Plain OCR | Formatted OCR | Fine-grained |
-|---------|-----------|---------------|--------------|
-| GOT-OCR2.0 | 2.3s | 3.1s | 4.2s |
-| Tesseract | 0.8s | N/A | 1.2s |
-| EasyOCR | 1.5s | N/A | 2.1s |
-| PaddleOCR | 1.8s | 2.9s | 3.5s |
+| Backend | OmniDocBench v1.5 | olmOCR-Bench | Claimed Accuracy | Notes |
+|---------|-------------------|--------------|-----------------|-------|
+| **PaddleOCR-VL-1.5** | **94.5%** | — | — | Jan 2026 SOTA |
+| **Mistral OCR** | — | — | 94.9% | Dec 2025, API |
+| **DeepSeek-OCR-2** | — | — | — | Jan 2026, not benchmarked yet |
+| **olmOCR-2** | — | **82.4** | — | Oct 2025 |
+| GOT-OCR2.0 | — | — | 97.2% clean text | Internal |
+| Tesseract | — | — | 78–85% | Classic |
 
-### Accuracy Comparison (Clean Documents)
+### Speed Reference (RTX 4090)
 
-| Backend | Print Text | Handwriting | Mixed Content |
-|---------|------------|-------------|---------------|
-| GOT-OCR2.0 | 97.2% | 89.1% | 94.8% |
-| Tesseract | 92.1% | 45.3% | 78.9% |
-| EasyOCR | 94.7% | 78.2% | 88.5% |
-| PaddleOCR | 95.8% | 82.1% | 91.2% |
+| Backend | Approx. docs/min | VRAM |
+|---------|-----------------|------|
+| PaddleOCR-VL-1.5 | ~100 | 3.3GB |
+| GOT-OCR2.0 | ~200 | ~2GB |
+| DeepSeek-OCR-2 | ~60 | ~8GB |
+| olmOCR-2 | ~30 | ~16GB |
+| PP-OCRv5 | ~300 | low |
+| Tesseract | ~200 | 0 |
 
 ## 🛠️ Development Status
 
@@ -727,7 +738,7 @@ backends:
 
 ### ✅ **Completed Features**
 - **FastMCP 2.14.3 Integration**: State-of-the-art MCP server with conversational features
-- **8 AI Models**: DeepSeek-OCR, Florence-2, DOTS.OCR, PP-OCRv5, Qwen-Image-Layered, GOT-OCR 2.0, EasyOCR, Tesseract
+- **10 OCR Backends**: PaddleOCR-VL-1.5, DeepSeek-OCR-2, olmOCR-2, Mistral OCR, DeepSeek-OCR, DOTS.OCR, Qwen2.5-VL, GOT-OCR 2.0, EasyOCR, Tesseract
 - **Professional React Webapp**: Complete TypeScript frontend with modern UI/UX
 - **Intelligent Backend Selection**: Automatic model routing based on document analysis
 - **Document Processing Pipeline**: Multi-stage OCR with quality assessment
@@ -848,8 +859,23 @@ result = await calibre_ocr(
 4. **Set up development environment** (recommended)
    ```bash
    poetry run ocr-mcp-setup-dev
-   # This installs pre-commit hooks and sets up the development environment
+   # This installs pre-commit hooks and sets up the environment
    ```
+
+### 📦 Packaging & Distribution
+
+This repository is SOTA 2026 compliant and uses the officially validated `@anthropic-ai/mcpb` workflow for distribution.
+
+#### Pack Extension
+To generate a `.mcpb` distribution bundle with complete source code and automated build exclusions:
+```bash
+# SOTA 2026 standard pack command
+mcpb pack . dist/ocr-mcp.mcpb
+```
+
+---
+
+## 🛠️ Development
 
 5. **Run tests**
    ```bash

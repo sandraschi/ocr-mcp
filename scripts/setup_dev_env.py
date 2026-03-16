@@ -14,43 +14,43 @@ from pathlib import Path
 def run_command(command: list[str], cwd: Path = None) -> bool:
     """Run a command and return success status."""
     try:
-        result = subprocess.run(
+        subprocess.run(
             command, cwd=cwd or Path.cwd(), capture_output=True, text=True, check=True
         )
-        print(f"✓ {' '.join(command)}")
+        print(f"[OK] {' '.join(command)}")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"✗ {' '.join(command)} failed:")
+        print(f"[FAIL] {' '.join(command)} failed:")
         print(f"  Error: {e.stderr}")
         return False
 
 
 def main():
     """Set up the development environment."""
-    print("🚀 Setting up OCR-MCP Development Environment")
+    print("Setting up OCR-MCP Development Environment")
     print("=" * 50)
 
     project_root = Path(__file__).parent.parent
 
     # Check if we're in the right directory
     if not (project_root / "pyproject.toml").exists():
-        print("❌ Error: Not in OCR-MCP project root directory")
+        print("Error: Not in OCR-MCP project root directory")
         sys.exit(1)
 
-    print(f"📁 Working directory: {project_root}")
+    print(f"Working directory: {project_root}")
 
     # Install pre-commit hooks
-    print("\n📋 Installing pre-commit hooks...")
+    print("\nInstalling pre-commit hooks...")
     if not run_command(["poetry", "run", "pre-commit", "install"], project_root):
         print("⚠️  Pre-commit installation failed, but continuing...")
 
     # Install pre-commit hooks
-    print("\n🔧 Installing pre-commit hook environments...")
+    print("\nInstalling pre-commit hook environments...")
     if not run_command(["poetry", "run", "pre-commit", "install-hooks"], project_root):
         print("⚠️  Pre-commit hooks installation failed, but continuing...")
 
     # Run pre-commit on all files to check current status
-    print("\n🔍 Running pre-commit checks on all files...")
+    print("\nRunning pre-commit checks on all files...")
     result = subprocess.run(
         ["poetry", "run", "pre-commit", "run", "--all-files"],
         cwd=project_root,
@@ -69,16 +69,15 @@ def main():
     print("\n🧪 Testing basic functionality...")
 
     # Test imports - temporarily add src to path for testing
-    import sys
     src_path = project_root / "src"
     if str(src_path) not in sys.path:
         sys.path.insert(0, str(src_path))
 
     try:
-        import ocr_mcp
-        print("✅ Core imports work")
+        import ocr_mcp  # noqa: F401 - Import test only
+        print("Core imports work")
     except ImportError as e:
-        print(f"⚠️  Import test failed: {e}")
+        print(f"Import test failed: {e}")
         print("   This is normal if the package hasn't been installed yet.")
         print("   Run 'poetry install' to install the package.")
     finally:
@@ -88,20 +87,20 @@ def main():
 
     # Test Poetry environment
     if run_command(["poetry", "check"], project_root):
-        print("✅ Poetry configuration is valid")
+        print("Poetry configuration is valid")
     else:
-        print("⚠️  Poetry configuration issues detected")
+        print("Poetry configuration issues detected")
 
     print("\n" + "=" * 50)
-    print("🎉 Development environment setup complete!")
-    print("\n📚 Useful commands:")
+    print("Development environment setup complete!")
+    print("\nUseful commands:")
     print("  • poetry run pre-commit run --all-files    # Run all checks")
     print("  • poetry run pytest                        # Run tests")
     print("  • poetry run ruff check . --fix           # Fix code issues")
     print("  • poetry run ruff format .                # Format code")
     print("  • poetry run python scripts/run_webapp.py # Start webapp")
     print("  • poetry run python scripts/run_tests.py all # Run full test suite")
-    print("\n📖 See README.md and tests/README.md for more information.")
+    print("\nSee README.md and tests/README.md for more information.")
 
 
 if __name__ == "__main__":

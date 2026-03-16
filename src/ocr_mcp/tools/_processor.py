@@ -28,19 +28,20 @@ async def process_document(
     config: OCRConfig | None = None,
 ) -> dict[str, Any]:
     """
-    Process a single document image or PDF.
+    Backend handler for process_document. See ocr_tools.document_processing for MCP tool docstring.
 
     Args:
-        source_path: Path to the document
-        backend: OCR backend to use
-        mode: OCR mode (text, document, layout, etc.)
-        enhance: Whether to apply image enhancement
-        region: Optional [x, y, w, h] region of interest
-        backend_manager: Dependency injected backend manager
-        config: Dependency injected OCR configuration
+    - source_path (str, required): Path to the document.
+    - backend (str): OCR backend. Default: auto.
+    - mode (str): OCR mode. Default: text.
+    - enhance (bool): Apply image enhancement. Default: True.
+    - region (list[int] | None): [x, y, w, h] region of interest.
+    - backend_manager: Injected BackendManager.
+    - config: Injected OCRConfig.
 
     Returns:
-        OCR extraction result
+    FastMCP 2.14.1+ dialogic response: success, operation, result or error,
+    recommendations, next_steps, recovery_options (on error), related_operations.
     """
     logger.info(f"Processing document: {source_path} (backend: {backend}, mode: {mode})")
 
@@ -58,8 +59,6 @@ async def process_document(
         # Handle backend selection
         if backend == "auto":
             backend = config.default_backend if config else "tesseract"
-
-        import time
 
         start_time = time.time()
 
@@ -118,6 +117,8 @@ async def process_document(
                 "success": True,
                 "operation": "process_document",
                 "backend_used": backend_used,
+                "backend": backend_used,
+                "text": text_content,
                 "execution_time": round(execution_time, 2),
                 "confidence_score": confidence,
                 "text_length": len(text_content),
@@ -178,18 +179,19 @@ async def process_batch(
     config: OCRConfig | None = None,
 ) -> dict[str, Any]:
     """
-    Process all documents in a directory.
+    Backend handler for process_batch. See ocr_tools.document_processing for MCP tool docstring.
 
     Args:
-        source_dir: Directory containing documents
-        backend: OCR backend to use
-        mode: OCR mode
-        max_concurrent: Maximum number of concurrent processing tasks
-        backend_manager: Dependency injected backend manager
-        config: Dependency injected OCR configuration
+    - source_dir (str, required): Directory containing documents.
+    - backend (str): OCR backend. Default: auto.
+    - mode (str): OCR mode. Default: text.
+    - max_concurrent (int): Parallel limit. Default: 4.
+    - backend_manager: Injected BackendManager.
+    - config: Injected OCRConfig.
 
     Returns:
-        Batch processing summary and results
+    FastMCP 2.14.1+ dialogic response: success, operation, result or error,
+    recommendations, next_steps, recovery_options (on error), related_operations.
     """
     logger.info(f"Processing batch in: {source_dir}")
 

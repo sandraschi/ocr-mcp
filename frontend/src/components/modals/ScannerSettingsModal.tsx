@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
-import { Settings, Printer, Save, TestTube, RotateCcw, Play, Eye, Target, Zap } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Settings, Printer, Save, TestTube, RotateCcw, Eye, Target, Zap, Loader2, AlertCircle } from 'lucide-react'
 import { Dialog, DialogHeader, DialogTitle, DialogClose, DialogContent, DialogFooter } from '../ui/Dialog'
 import { Button } from '../ui/Button'
 import { cn } from '../../lib/utils'
+import { apiService, Scanner } from '../../services/api'
 
 interface ScannerSettingsModalProps {
   open: boolean
@@ -19,56 +20,76 @@ interface ScanProfile {
     paperSize: string
     brightness: number
     contrast: number
+    gamma: number
   }
 }
 
 export function ScannerSettingsModal({ open, onOpenChange }: ScannerSettingsModalProps) {
-  const [selectedScanner, setSelectedScanner] = useState<string>('scanner-1')
+  const [scanners, setScanners] = useState<Scanner[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedScanner, setSelectedScanner] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'device' | 'profiles' | 'advanced' | 'calibration'>('device')
   const [scanSettings, setScanSettings] = useState({
     dpi: 300,
-    colorMode: 'Color',
+    colorMode: 'Grayscale',
     paperSize: 'A4',
     brightness: 0,
     contrast: 0,
-    gamma: 1.0,
-    resolution: 'High'
+    gamma: 1.0
   })
 
-  const scanners = [
-    { id: 'scanner-1', name: 'HP LaserJet MFP', model: 'HP LaserJet Pro MFP M182nw', status: 'connected' },
-    { id: 'scanner-2', name: 'Epson Perfection V39', model: 'Epson Perfection V39', status: 'disconnected' },
-    { id: 'scanner-3', name: 'Canon CanoScan', model: 'Canon CanoScan LiDE 300', status: 'error' },
-  ]
+  const fetchScanners = async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const data = await apiService.getScanners()
+      setScanners(data.scanners)
+      if (data.scanners.length > 0 && !selectedScanner) {
+        setSelectedScanner(data.scanners[0].id)
+      }
+    } catch (err) {
+      console.error('Failed to fetch scanners:', err)
+      setError('Failed to discover scanners. Make sure the scanner bridge is running on your host.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (open) {
+      fetchScanners()
+    }
+  }, [open])
 
   const scanProfiles: ScanProfile[] = [
     {
       id: 'document',
       name: 'Document',
       description: 'High-quality scanning for text documents',
-      settings: { dpi: 300, colorMode: 'Grayscale', paperSize: 'A4', brightness: 0, contrast: 0 }
+      settings: { dpi: 300, colorMode: 'Grayscale', paperSize: 'A4', brightness: 0, contrast: 0, gamma: 1.0 }
     },
     {
       id: 'photo',
       name: 'Photo',
       description: 'High-resolution color scanning for photographs',
-      settings: { dpi: 600, colorMode: 'Color', paperSize: 'A4', brightness: 5, contrast: 10 }
+      settings: { dpi: 600, colorMode: 'Color', paperSize: 'A4', brightness: 5, contrast: 10, gamma: 1.2 }
     },
     {
       id: 'ocr',
       name: 'OCR Optimized',
       description: 'Optimized settings for best OCR accuracy',
-      settings: { dpi: 400, colorMode: 'Grayscale', paperSize: 'A4', brightness: -5, contrast: 15 }
+      settings: { dpi: 400, colorMode: 'Grayscale', paperSize: 'A4', brightness: -5, contrast: 15, gamma: 1.0 }
     },
     {
       id: 'archive',
       name: 'Archive',
       description: 'Maximum quality for long-term storage',
-      settings: { dpi: 600, colorMode: 'Color', paperSize: 'A4', brightness: 0, contrast: 0 }
+      settings: { dpi: 600, colorMode: 'Color', paperSize: 'A4', brightness: 0, contrast: 0, gamma: 1.0 }
     }
   ]
 
-  const [customProfiles, setCustomProfiles] = useState<ScanProfile[]>([])
+  const [customProfiles] = useState<ScanProfile[]>([])
   const [selectedProfile, setSelectedProfile] = useState<string>('document')
 
   const tabs = [
@@ -112,8 +133,51 @@ export function ScannerSettingsModal({ open, onOpenChange }: ScannerSettingsModa
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium mb-4">Scanner Selection</h3>
+
+        {isLoading && (
+          <div className="flex flex-col items-center justify-center p-12 border border-dashed rounded-lg bg-muted/50">
+            <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
+            <p className="text-sm text-muted-foreground text-center">
+              Discovering scanner devices... This may take a few seconds as we poll your local connection.
+            </p>
+          </div>
+        )}
+
+        {error && (
+          <div className="p-4 border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900/50 rounded-lg flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+            <div className="space-y-1">
+              <h4 className="text-sm font-medium text-red-800 dark:text-red-400">Discovery Error</h4>
+              <p className="text-sm text-red-700 dark:text-red-500">{error}</p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 p-0 h-auto"
+                onClick={fetchScanners}
+              >
+                Try Again
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {!isLoading && !error && scanners.length === 0 && (
+          <div className="flex flex-col items-center justify-center p-12 border border-dashed rounded-lg bg-muted/50">
+            <Printer className="w-8 h-8 text-muted-foreground mb-4" />
+            <p className="text-sm text-muted-foreground text-center mb-2">
+              No scanners found.
+            </p>
+            <p className="text-xs text-muted-foreground text-center max-w-sm">
+              Please ensure your scanner is connected and the scanner bridge is running on the host machine.
+            </p>
+            <Button variant="outline" size="sm" className="mt-4" onClick={fetchScanners}>
+              Rescan for Devices
+            </Button>
+          </div>
+        )}
+
         <div className="space-y-3">
-          {scanners.map((scanner) => (
+          {!isLoading && scanners.map((scanner) => (
             <div
               key={scanner.id}
               className={cn(
@@ -129,7 +193,9 @@ export function ScannerSettingsModal({ open, onOpenChange }: ScannerSettingsModa
                   <Printer className="w-6 h-6 text-primary" />
                   <div>
                     <h4 className="font-medium">{scanner.name}</h4>
-                    <p className="text-sm text-muted-foreground">{scanner.model}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {scanner.manufacturer || 'WIA Device'} • {scanner.type}
+                    </p>
                   </div>
                 </div>
                 <div className={cn('px-3 py-1 rounded-full text-xs font-medium', getStatusColor(scanner.status))}>
@@ -142,8 +208,13 @@ export function ScannerSettingsModal({ open, onOpenChange }: ScannerSettingsModa
       </div>
 
       <div className="pt-4 border-t border-border">
-        <Button variant="outline" className="gap-2">
-          <RotateCcw className="w-4 h-4" />
+        <Button
+          variant="outline"
+          className="gap-2"
+          onClick={fetchScanners}
+          disabled={isLoading}
+        >
+          <RotateCcw className={cn("w-4 h-4", isLoading && "animate-spin")} />
           Refresh Device List
         </Button>
       </div>
@@ -206,6 +277,7 @@ export function ScannerSettingsModal({ open, onOpenChange }: ScannerSettingsModa
                 value={scanSettings.dpi}
                 onChange={(e) => setScanSettings(prev => ({ ...prev, dpi: Number(e.target.value) }))}
                 className="w-full px-3 py-2 bg-background border border-border rounded-md"
+                title="Select Resolution (DPI)"
               >
                 <option value={150}>150 DPI - Draft</option>
                 <option value={200}>200 DPI - Good</option>
@@ -222,6 +294,7 @@ export function ScannerSettingsModal({ open, onOpenChange }: ScannerSettingsModa
                 value={scanSettings.colorMode}
                 onChange={(e) => setScanSettings(prev => ({ ...prev, colorMode: e.target.value }))}
                 className="w-full px-3 py-2 bg-background border border-border rounded-md"
+                title="Select Color Mode"
               >
                 <option value="Color">Color</option>
                 <option value="Grayscale">Grayscale</option>
@@ -235,6 +308,7 @@ export function ScannerSettingsModal({ open, onOpenChange }: ScannerSettingsModa
                 value={scanSettings.paperSize}
                 onChange={(e) => setScanSettings(prev => ({ ...prev, paperSize: e.target.value }))}
                 className="w-full px-3 py-2 bg-background border border-border rounded-md"
+                title="Select Paper Size"
               >
                 <option value="A4">A4</option>
                 <option value="Letter">Letter</option>
@@ -255,6 +329,7 @@ export function ScannerSettingsModal({ open, onOpenChange }: ScannerSettingsModa
                 value={scanSettings.brightness}
                 onChange={(e) => setScanSettings(prev => ({ ...prev, brightness: Number(e.target.value) }))}
                 className="w-full"
+                title="Adjust Brightness"
               />
             </div>
 
@@ -267,6 +342,7 @@ export function ScannerSettingsModal({ open, onOpenChange }: ScannerSettingsModa
                 value={scanSettings.contrast}
                 onChange={(e) => setScanSettings(prev => ({ ...prev, contrast: Number(e.target.value) }))}
                 className="w-full"
+                title="Adjust Contrast"
               />
             </div>
 
@@ -280,6 +356,7 @@ export function ScannerSettingsModal({ open, onOpenChange }: ScannerSettingsModa
                 value={scanSettings.gamma}
                 onChange={(e) => setScanSettings(prev => ({ ...prev, gamma: Number(e.target.value) }))}
                 className="w-full"
+                title="Adjust Gamma"
               />
             </div>
           </div>

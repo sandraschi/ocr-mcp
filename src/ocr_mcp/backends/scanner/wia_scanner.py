@@ -25,6 +25,12 @@ if IS_WINDOWS:
         # WIA 2.0 Device Manager ID
         WIA_DEVICE_MANAGER_ID = "{E1C5D730-1228-487F-9675-91F3E1F5483E}"
 
+        # WIA 2.0 Format GUIDs
+        WIA_FORMAT_BMP = "{B96B3CAB-0728-11D3-9D7B-0000F81EF32E}"
+        WIA_FORMAT_PNG = "{B96B3CAF-0728-11D3-9D7B-0000F81EF32E}"
+        WIA_FORMAT_JPEG = "{B96B3CAE-0728-11D3-9D7B-0000F81EF32E}"
+        WIA_FORMAT_TIFF = "{B96B3CB1-0728-11D3-9D7B-0000F81EF32E}"
+
         # Try to import WIA type library
         logger.info("Attempting to import WIA type library...")
         try:
@@ -144,38 +150,26 @@ class WIABackend:
             logger.warning("WIA dependencies not available")
             return
 
+        # We set _initialized to True if we are on Windows and dependencies are present.
+        # Actual DeviceManager is created lazily to handle thread/COM apartment issues.
+        self._initialized = True
+        logger.info("WIA scanner backend initialized (lazy mode)")
+
+    def _get_manager(self):
+        """Get or create the WIA DeviceManager for the current thread context."""
+        if not self.is_available():
+            return None
+
+        self._ensure_com_context()
+
+        # Always create a new manager or check if it's usable in this thread
+        # In multi-threaded environments (like FastAPI/uvicorn), creating it
+        # per-call or per-thread is safer than sharing a single instance.
         try:
-            # Initialize COM with proper apartment threading
-            # Canon scanners often require STA (Single Threaded Apartment)
-            try:
-                pythoncom.CoInitializeEx(0)  # COINIT_MULTITHREADED
-                self._com_initialized = True
-                logger.debug("COM initialized successfully")
-            except Exception as e:
-                logger.warning(f"COM initialization failed: {e}")
-                # Try alternative initialization
-                try:
-                    pythoncom.CoInitialize()
-                    self._com_initialized = True
-                    logger.debug("COM initialized with fallback method")
-                except Exception as e2:
-                    logger.error(f"All COM initialization attempts failed: {e2}")
-                    return
-
-            # Create WIA manager with error handling
-            try:
-                self._wia_manager = cc.CreateObject("WIA.DeviceManager")
-                self._initialized = True
-                logger.info("WIA scanner backend initialized successfully")
-            except Exception as e:
-                logger.error(f"Failed to create WIA DeviceManager: {e}")
-                self._cleanup_com()
-                return
-
+            return cc.CreateObject("WIA.DeviceManager")
         except Exception as e:
-            logger.error(f"Failed to initialize WIA backend: {e}")
-            self._cleanup_com()
-            self._initialized = False
+            logger.error(f"Failed to create WIA DeviceManager in current thread: {e}")
+            return None
 
     def _cleanup_com(self):
         """Clean up COM resources properly."""
@@ -191,10 +185,14 @@ class WIABackend:
         """Ensure COM is initialized for the current thread."""
         try:
             # Check if COM is already initialized for this thread
-            pythoncom.CoInitializeEx(0)  # COINIT_MULTITHREADED
+            # Try STA first as many Canon scanners prefer it
+            pythoncom.CoInitialize()
+            self._com_initialized = True
         except Exception:
             try:
-                pythoncom.CoInitialize()
+                # Fallback to MTA if STA fails (e.g. already set to MTA)
+                pythoncom.CoInitializeEx(0)
+                self._com_initialized = True
             except Exception:
                 # Already initialized
                 pass
@@ -214,14 +212,14 @@ class WIABackend:
             return []
 
         scanners = []
-        self._ensure_com_context()
+        manager = self._get_manager()
+        if not manager:
+            return []
 
+        new_devices = {}
         try:
-            # Clear existing connections to prevent conflicts
-            self._cleanup_device_connections()
-
-            # Enumerate WIA devices with better error handling
-            device_infos = self._wia_manager.DeviceInfos
+            # Enumerate first without releasing previous connections (releasing before enumerate can make WIA report 0 devices).
+            device_infos = manager.DeviceInfos
             logger.info(f"WIA reports {device_infos.Count} devices")
 
             for i in range(1, device_infos.Count + 1):  # WIA collections are 1-based
@@ -229,19 +227,14 @@ class WIABackend:
                     device_info = device_infos[i]
                     logger.debug(f"Attempting to connect to device {i}: {device_info.DeviceID}")
 
-                    # Try to connect with retry logic for busy devices
                     device = self._connect_device_with_retry(device_info)
                     if device:
-                        # Extract device information
                         scanner_info = self._extract_scanner_info(device)
                         if scanner_info:
                             scanners.append(scanner_info)
-                            # Store device connection for later use
-                            self._devices[scanner_info.device_id] = device
-                            self._device_connections[scanner_info.device_id] = True
+                            new_devices[scanner_info.device_id] = device
                             logger.info(f"Successfully connected to: {scanner_info.name}")
                         else:
-                            # Clean up failed connection
                             self._release_device(device)
                     else:
                         logger.warning(f"Failed to connect to device {i}")
@@ -249,6 +242,17 @@ class WIABackend:
                 except Exception as e:
                     logger.warning(f"Failed to process device {i}: {e}")
                     continue
+
+            # Release only old connections that are no longer in the new set; then adopt new_devices.
+            for device_id in list(self._devices.keys()):
+                if device_id not in new_devices:
+                    try:
+                        self._release_device(self._devices[device_id])
+                    except Exception as e:
+                        logger.debug(f"Cleanup warning for {device_id}: {e}")
+                    del self._devices[device_id]
+            self._devices.update(new_devices)
+            self._device_connections = {did: True for did in new_devices}
 
         except Exception as e:
             logger.error(f"Scanner discovery failed: {e}")
@@ -263,11 +267,15 @@ class WIABackend:
                 device = device_info.Connect()
                 return device
             except Exception as e:
-                error_code = getattr(e, 'hr', 0)
+                error_code = getattr(e, "hr", 0)
                 if error_code == -2145320955:  # WIA_ERROR_BUSY (0x8021006B)
                     if attempt < max_retries - 1:
-                        logger.warning(f"Device busy, retrying in 2 seconds (attempt {attempt + 1}/{max_retries})")
+                        logger.warning(
+                            f"Device busy, retrying in 2 seconds "
+                            f"(attempt {attempt + 1}/{max_retries})"
+                        )
                         import time
+
                         time.sleep(2)
                         continue
                     else:
@@ -280,14 +288,12 @@ class WIABackend:
         return None
 
     def _release_device(self, device):
-        """Release a device connection properly."""
+        """Release a device connection. Do NOT CoUninitialize - that tears down COM for the whole thread and breaks subsequent discovery."""
         try:
-            # Explicitly release COM objects
-            if device:
-                import pythoncom
-                pythoncom.CoUninitialize()
+            if device and hasattr(device, "Release"):
+                device.Release()
         except Exception as e:
-            logger.debug(f"Device cleanup warning: {e}")
+            logger.debug(f"Device release warning: {e}")
 
     def _cleanup_device_connections(self):
         """Clean up all device connections."""
@@ -370,10 +376,12 @@ class WIABackend:
         if not device:
             # Try to find and connect to the device
             try:
-                for device_info in self._wia_manager.DeviceInfos:
-                    if str(device_info.DeviceID) == device_id:
-                        device = device_info.Connect()
-                        break
+                manager = self._get_manager()
+                if manager:
+                    for device_info in manager.DeviceInfos:
+                        if str(device_info.DeviceID) == device_id:
+                            device = device_info.Connect()
+                            break
             except Exception as e:
                 logger.error(f"Failed to connect to scanner {device_id}: {e}")
                 return None
@@ -450,11 +458,20 @@ class WIABackend:
             # Get the scan item (usually the flatbed or feeder)
             # WIA 2.0 uses Items collection
             items = getattr(device, "Items", None)
-            if not items or len(items) == 0:
+            if not items or items.Count == 0:
                 logger.error(f"No scan items available for scanner {device_id}")
                 return False
 
-            item = items[0]  # Use first available item
+            # WIA collections are often 1-based in comtypes/WIA 2.0
+            try:
+                item = items[1]
+            except Exception:
+                try:
+                    item = items[0]
+                except Exception:
+                    logger.error(f"Could not access scan item for scanner {device_id}")
+                    return False
+
             properties = item.Properties
 
             # Configure resolution
@@ -520,6 +537,7 @@ class WIABackend:
                     if attempt < max_scan_attempts - 1:
                         self._release_device(device)
                         import time
+
                         time.sleep(1)
                         continue
                     return None
@@ -527,7 +545,6 @@ class WIABackend:
                 # Perform the actual scan
                 image = self._perform_scan(device, device_id)
                 if image:
-                    scan_success = True
                     logger.info(f"Scan completed successfully on {device_id}")
                     return image
                 else:
@@ -535,11 +552,12 @@ class WIABackend:
                     if attempt < max_scan_attempts - 1:
                         self._release_device(device)
                         import time
+
                         time.sleep(1)
                         continue
 
             except Exception as e:
-                error_code = getattr(e, 'hr', 0)
+                error_code = getattr(e, "hr", 0)
                 logger.warning(f"Scan attempt {attempt + 1} failed: {e} (Error code: {error_code})")
 
                 # Check for specific Canon scanner errors
@@ -553,6 +571,7 @@ class WIABackend:
                     if device:
                         self._release_device(device)
                     import time
+
                     time.sleep(2)  # Longer delay for retry
                     continue
                 else:
@@ -564,8 +583,13 @@ class WIABackend:
     def _get_fresh_device_connection(self, device_id: str) -> Any | None:
         """Get a fresh device connection, handling busy states."""
         try:
-            for device_info in self._wia_manager.DeviceInfos:
-                if str(device_info.DeviceID) == device_id or str(device_info.DeviceID) == device_id.replace('wia:', ''):
+            manager = self._get_manager()
+            if not manager:
+                return None
+            for device_info in manager.DeviceInfos:
+                if str(device_info.DeviceID) == device_id or str(
+                    device_info.DeviceID
+                ) == device_id.replace("wia:", ""):
                     return self._connect_device_with_retry(device_info)
         except Exception as e:
             logger.error(f"Failed to get fresh connection for {device_id}: {e}")
@@ -576,11 +600,19 @@ class WIABackend:
         try:
             # Get scan item
             items = getattr(device, "Items", None)
-            if not items or len(items) == 0:
+            if not items or items.Count == 0:
                 logger.error(f"No scan items available for scanner {device_id}")
                 return False
 
-            item = items[0]
+            # WIA collections are often 1-based
+            try:
+                item = items[1]
+            except Exception:
+                try:
+                    item = items[0]
+                except Exception:
+                    logger.error(f"Could not access scan item for scanner {device_id}")
+                    return False
             properties = item.Properties
 
             # Configure with error handling for each property
@@ -596,9 +628,9 @@ class WIABackend:
 
             # Color mode
             color_mode_map = {
-                "Color": 1,      # WIA_PHOTO_COLOR
+                "Color": 1,  # WIA_PHOTO_COLOR
                 "Grayscale": 2,  # WIA_PHOTO_GRAYSCALE
-                "BlackWhite": 4, # WIA_PHOTO_BLACKWHITE
+                "BlackWhite": 4,  # WIA_PHOTO_BLACKWHITE
             }
             color_value = color_mode_map.get(settings.color_mode, 1)
             if not self._set_property_safe(properties, "Current Intent", color_value):
@@ -607,6 +639,10 @@ class WIABackend:
             # Optional properties (don't fail if not supported)
             self._set_property_safe(properties, "Brightness", settings.brightness)
             self._set_property_safe(properties, "Contrast", settings.contrast)
+
+            # Set output format to BMP (most compatible for Transfer method)
+            if not self._set_property_safe(properties, "Format", WIA_FORMAT_BMP):
+                logger.warning(f"Failed to set BMP format for {device_id}, continuing with default")
 
             # Paper size and other settings are often not supported by Canon scanners
             # so we don't treat failures as critical
@@ -634,29 +670,102 @@ class WIABackend:
         try:
             # Get scan item
             items = getattr(device, "Items", None)
-            if not items or len(items) == 0:
+            if not items or items.Count == 0:
                 logger.error(f"No scan items available for scanner {device_id}")
                 return None
 
-            item = items[0]
+            # WIA collections are often 1-based
+            try:
+                item = items[1]
+            except Exception:
+                try:
+                    item = items[0]
+                except Exception:
+                    logger.error(f"Could not access scan item for scanner {device_id}")
+                    return None
 
             # Perform the scan with timeout handling
-            logger.info(f"Starting scan on {device_id}")
-            image_file = item.Transfer()
+            logger.info(f"Starting scan transfer on {device_id}...")
+            try:
+                # item.Transfer() returns an ImageFile object
+                image_file = item.Transfer()
+            except Exception as e:
+                logger.error(f"WIA Transfer call failed: {e}")
+                return None
+
+            if not image_file:
+                logger.error("WIA Transfer returned None")
+                return None
 
             # Convert WIA image to PIL Image
             import io
             from PIL import Image
 
             # WIA returns image data, convert to PIL
-            if hasattr(image_file, "FileData"):
-                # Handle WIA ImageFile format
-                image_data = image_file.FileData.getvalue()
-                image = Image.open(io.BytesIO(image_data))
-                logger.info(f"Scan successful: {image.size} pixels")
-                return image
-            else:
-                logger.error("Unsupported WIA image format")
+            try:
+                if hasattr(image_file, "FileData"):
+                    # WIA.ImageFile.FileData is a Vector object
+                    logger.info("Extracting image data from WIA ImageFile...")
+                    file_data = image_file.FileData
+
+                    image_data = None
+                    # Try various ways to get the bytes from the Vector
+                    logger.info(f"Introspecting WIA Vector (type: {type(file_data)})")
+
+                    # Direct attempt at BinaryData as it's the most standard
+                    try:
+                        image_data = file_data.BinaryData
+                        if image_data and isinstance(image_data, (bytes, bytearray)):
+                            logger.info(
+                                "Successfully extracted image data from BinaryData property"
+                            )
+                        else:
+                            if image_data:
+                                logger.warning(
+                                    f"BinaryData property returned {type(image_data)}, not bytes"
+                                )
+                                image_data = bytes(image_data)
+                    except Exception as e:
+                        logger.debug(f"Failed to access BinaryData property: {e}")
+
+                    if image_data is None:
+                        # try getvalue
+                        try:
+                            image_data = file_data.getvalue()
+                            logger.info("Successfully extracted image data using getvalue()")
+                        except Exception:
+                            pass
+
+                    if image_data is None or not isinstance(image_data, (bytes, bytearray)):
+                        # Final attempt: try to convert Vector to bytes directly
+                        try:
+                            # If file_data is a comtypes Vector, we might needs to iterate
+                            image_data = bytes(file_data)
+                            logger.info("Successfully converted Vector to bytes directly")
+                        except Exception:
+                            logger.error(
+                                f"All data extraction methods failed for Vector. "
+                                f"Type: {type(file_data)}"
+                            )
+                            # Introspect attributes for debugging
+                            attrs = [a for a in dir(file_data) if not a.startswith("_")]
+                            logger.debug(f"Vector attributes: {attrs}")
+                            return None
+
+                    if not isinstance(image_data, (bytes, bytearray)):
+                        logger.error(
+                            f"Extraction failed: final result is {type(image_data)}, not bytes"
+                        )
+                        return None
+
+                    image = Image.open(io.BytesIO(image_data))
+                    logger.info(f"Scan successful: {image.size} pixels, format={image.format}")
+                    return image
+                else:
+                    logger.error(f"Unsupported WIA object returned: {type(image_file)}")
+                    return None
+            except Exception as e:
+                logger.error(f"Failed to process WIA image data: {e}")
                 return None
 
         except Exception as e:
@@ -705,9 +814,13 @@ class WIABackend:
 
         if self.is_available():
             try:
-                device_count = self._wia_manager.DeviceInfos.Count
-                diagnostics["device_count"] = device_count
-                diagnostics["discovered_devices"] = list(self._devices.keys())
+                manager = self._get_manager()
+                if manager:
+                    device_count = manager.DeviceInfos.Count
+                    diagnostics["device_count"] = device_count
+                    diagnostics["discovered_devices"] = list(self._devices.keys())
+                else:
+                    diagnostics["error"] = "Failed to create DeviceManager for diagnostics"
 
                 if device_id and device_id in self._devices:
                     device = self._devices[device_id]

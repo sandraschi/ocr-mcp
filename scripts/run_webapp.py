@@ -24,6 +24,20 @@ if __name__ == "__main__":
     logger.info("Press Ctrl+C to stop the server")
 
     try:
+        # Pre-download models if needed
+        logger.info("Initializing model storage...")
+        try:
+            from scripts.download_models import download_models
+
+            download_models()
+        except ImportError:
+            # Fallback if scripts module generic import fails, though sys.path should handle it
+            # Or if dependencies missing (shouldn't happen in container)
+            logger.warning("Could not import download_models script, skipping pre-download.")
+        except Exception as e:
+            logger.error(f"Error during model pre-download: {e}")
+            # We continue even if download fails, app might still work or will fail later on specific requests
+
         main()
     except KeyboardInterrupt:
         logger.info("\nOCR-MCP WebApp stopped")

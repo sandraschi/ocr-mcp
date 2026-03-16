@@ -100,11 +100,11 @@ export function OCRResultViewer({ result, className }: OCRResultViewerProps) {
             {/* Footer */}
             <div className="bg-muted/30 px-4 py-2 border-t border-border flex items-center justify-between text-[10px] text-muted-foreground">
                 <div className="flex items-center gap-3">
-                    <span>Processed with <strong>{result.metadata.backend || 'auto'}</strong></span>
+                    <span>Processed with <strong>{result.metadata?.backend || 'auto'}</strong></span>
                     <span>•</span>
                     <span>Language: {result.language}</span>
                 </div>
-                <div>ID: {result.metadata.request_id || 'N/A'}</div>
+                <div>ID: {result.metadata?.request_id || 'N/A'}</div>
             </div>
         </div>
     )

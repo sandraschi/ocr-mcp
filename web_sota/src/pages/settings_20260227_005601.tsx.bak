@@ -1,0 +1,91 @@
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Settings as SettingsIcon, Database, ScanLine } from "lucide-react";
+
+interface BackendInfo {
+    name: string;
+    description?: string;
+    available: boolean;
+}
+
+interface ScannerInfo {
+    device_id: string;
+    name: string;
+    type?: string;
+}
+
+export function Settings() {
+    const [backends, setBackends] = useState<BackendInfo[]>([]);
+    const [scanners, setScanners] = useState<ScannerInfo[]>([]);
+
+    useEffect(() => {
+        fetch('/api/backends').then(r => r.json()).then(d => setBackends(d.backends || [])).catch(() => { });
+        fetch('/api/scanners').then(r => r.json()).then(d => setScanners(d.scanners || [])).catch(() => { });
+    }, []);
+
+    return (
+        <div className="space-y-6 max-w-4xl pb-12">
+            <div>
+                <h2 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                    <SettingsIcon className="w-6 h-6 text-slate-400" />
+                    System Settings
+                </h2>
+                <p className="text-slate-400">Manage connections and OCR preferences</p>
+            </div>
+
+            <div className="grid gap-6">
+                <Card className="border-slate-800 bg-slate-950/50">
+                    <CardHeader>
+                        <CardTitle className="text-white flex items-center gap-2"><Database className="w-5 h-5 text-blue-400" /> OCR Backends</CardTitle>
+                        <CardDescription className="text-slate-400">Available reasoning and extraction engines</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {backends.length === 0 ? (
+                            <div className="text-sm text-slate-500">No external backends loaded (using defaults).</div>
+                        ) : (
+                            <div className="space-y-2">
+                                {backends.map(b => (
+                                    <div key={b.name} className="flex items-center justify-between p-3 rounded-md border border-slate-800 bg-slate-900">
+                                        <div>
+                                            <p className="font-medium text-slate-200">{b.name}</p>
+                                            <p className="text-xs text-slate-500">{b.description || "Active Engine"}</p>
+                                        </div>
+                                        <div className={`text-xs px-2 py-1 rounded ${b.available ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'} border`}>
+                                            {b.available ? 'Available' : 'Offline'}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                <Card className="border-slate-800 bg-slate-950/50">
+                    <CardHeader>
+                        <CardTitle className="text-white flex items-center gap-2"><ScanLine className="w-5 h-5 text-purple-400" /> Scanners & Hardware</CardTitle>
+                        <CardDescription className="text-slate-400">Connected physical devices</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {scanners.length === 0 ? (
+                            <div className="text-sm text-slate-500">No hardware scanners detected.</div>
+                        ) : (
+                            <div className="space-y-2">
+                                {scanners.map(s => (
+                                    <div key={s.device_id} className="flex items-center justify-between p-3 rounded-md border border-slate-800 bg-slate-900">
+                                        <div>
+                                            <p className="font-medium text-slate-200">{s.name}</p>
+                                            <p className="text-xs text-slate-500">{s.type || "Scanner Device"}</p>
+                                        </div>
+                                        <div className="text-xs px-2 py-1 rounded bg-blue-500/10 text-blue-400 border-blue-500/20 border">
+                                            Ready
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    );
+}
