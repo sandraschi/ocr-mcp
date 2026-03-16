@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ocr-mcp"
-version = "0.2.0"
+version = "0.1.0"
 description = "FastMCP server providing comprehensive OCR capabilities to the MCP ecosystem"
 authors = [
     {name = "Sandra", email = "sandra@example.com"}
@@ -27,7 +27,7 @@ classifiers = [
 keywords = ["ocr", "mcp", "fastmcp", "computer-vision", "document-processing", "ai", "ml"]
 
 dependencies = [
-    "fastmcp[server]>=2.14.5",
+    "fastmcp>=3.1",
     "pydantic>=2.0.0",
     "python-dotenv>=1.0.0",
     "click>=8.1.0",
