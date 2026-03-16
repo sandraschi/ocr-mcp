@@ -27,9 +27,6 @@ except (ImportError, AttributeError):
     DOCUMENT_PROCESSOR_AVAILABLE = False
     document_processor = None
 
-logger = logging.getLogger(__name__)
-
-
 class MockOCRBackend:
     """Mock backend for failed OCR backends - provides graceful degradation"""
 
@@ -100,11 +97,11 @@ class OCRBackend:
 
 
 class BackendManager:
-    """Manages multiple OCR backends with unified interface."""
+    """Manages multiple OCR backends with unified interface and lazy loading."""
 
     def __init__(self, config: OCRConfig):
         self.config = config
-        self.backends: dict[str, OCRBackend] = {}
+        self.backends: dict[str, OCRBackend | None] = {}  # Allow None for lazy loading
         self.scanner_manager = scanner_manager
         self.document_processor = document_processor
 
@@ -115,107 +112,140 @@ class BackendManager:
         global model_manager
         model_manager.config = config
 
-        # Initialize available backends
-        self._initialize_backends()
+        # Initialize backend registry (lazy loading - no actual imports yet!)
+        self._initialize_backend_registry()
 
-    def _initialize_backends(self):
-        """Initialize all available OCR backends."""
+    def _initialize_backend_registry(self):
+        """Initialize backend registry for lazy loading - no actual imports yet!"""
+        # Registry of available backends with their import paths and model sizes
+        self.backend_registry = {
+            "deepseek-ocr": {
+                "module": "..backends.deepseek_backend",
+                "class": "DeepSeekOCRBackend",
+                "model_size": "~500MB+",
+                "description": "DeepSeek-OCR cloud API"
+            },
+            "paddleocr-vl": {
+                "module": "..backends.paddleocr_vl_backend",
+                "class": "PaddleOCRVLBackend",
+                "model_size": "~1.8GB (0.9B params)",
+                "description": "Baidu PaddleOCR-VL-1.5 — Jan 2026 SOTA, 94.5% OmniDocBench",
+            },
+            "deepseek-ocr2": {
+                "module": "..backends.deepseek_ocr2_backend",
+                "class": "DeepSeekOCR2Backend",
+                "model_size": "~6GB (3B params)",
+                "description": "DeepSeek-OCR-2 — Jan 2026, Visual Causal Flow",
+            },
+            "olmocr-2": {
+                "module": "..backends.olmocr_backend",
+                "class": "OlmOCR2Backend",
+                "model_size": "~14GB (7B params)",
+                "description": "Allen AI olmOCR-2 — Oct 2025, best for academic PDFs",
+            },
+            "dots-ocr": {
+                "module": "..backends.dots_backend",
+                "class": "DOTSBackend",
+                "model_size": "~200MB",
+                "description": "DOTS.OCR specialized OCR model"
+            },
+            "pp-ocrv5": {
+                "module": "..backends.ppocr_backend",
+                "class": "PPOCRBackend",
+                "model_size": "~100MB",
+                "description": "PaddlePaddle PP-OCRv5"
+            },
+            "qwen-layered": {
+                "module": "..backends.qwen_backend",
+                "class": "QwenLayeredBackend",
+                "model_size": "~2GB+",
+                "description": "Qwen-VL image layered processing"
+            },
+            "mistral-ocr": {
+                "module": "..backends.mistral_ocr_backend",
+                "class": "MistralOCRBackend",
+                "model_size": "~500MB",
+                "description": "Mistral OCR 3 cloud API"
+            },
+            "got-ocr": {
+                "module": "..backends.got_ocr_backend",
+                "class": "GOTOCRBackend",
+                "model_size": "~300MB",
+                "description": "GOT-OCR2.0 legacy backend"
+            },
+            "tesseract": {
+                "module": "..backends.tesseract_backend",
+                "class": "TesseractBackend",
+                "model_size": "~50MB",
+                "description": "Tesseract OCR engine"
+            },
+            "easyocr": {
+                "module": "..backends.easyocr_backend",
+                "class": "EasyOCRBackend",
+                "model_size": "~200MB",
+                "description": "EasyOCR with CRAFT detector"
+            }
+        }
 
-        # DeepSeek-OCR backend
+        # Initialize registry in backends dict (None means not loaded yet)
+        for backend_name in self.backend_registry:
+            self.backends[backend_name] = None  # Lazy loading placeholder
+
+    def _load_backend(self, backend_name: str) -> OCRBackend:
+        """Lazy load a backend only when first accessed."""
+        if backend_name not in self.backend_registry:
+            raise ValueError(f"Unknown backend: {backend_name}")
+
+        # Return already loaded backend
+        if self.backends[backend_name] is not None:
+            return self.backends[backend_name]
+
+        # Lazy load the backend - this is where the heavy lifting happens!
         try:
-            from ..backends.deepseek_backend import DeepSeekOCRBackend
+            registry_info = self.backend_registry[backend_name]
+            module_path = registry_info["module"]
+            class_name = registry_info["class"]
+            model_size = registry_info["model_size"]
 
-            self.backends["deepseek-ocr"] = DeepSeekOCRBackend(self.config)
-            logger.info("DeepSeek-OCR backend initialized")
+            logger.info(f"Lazy loading {backend_name} backend ({model_size})...")
+
+            # Dynamic import - only load when needed!
+            import importlib
+            module = importlib.import_module(module_path, __package__)
+            backend_class = getattr(module, class_name)
+
+            # Create instance
+            backend_instance = backend_class(self.config)
+            self.backends[backend_name] = backend_instance
+
+            logger.info(f"[OK] {backend_name} backend loaded successfully")
+            return backend_instance
+
         except Exception as e:
-            logger.warning(f"Failed to initialize DeepSeek-OCR backend: {e}")
-            self.backends["deepseek-ocr"] = MockOCRBackend("deepseek-ocr", str(e))
-
-        # Florence-2 backend
-        try:
-            from ..backends.florence_backend import FlorenceBackend
-
-            self.backends["florence-2"] = FlorenceBackend(self.config)
-            logger.info("Florence-2 backend initialized")
-        except Exception as e:
-            logger.warning(f"Failed to initialize Florence-2 backend: {e}")
-            self.backends["florence-2"] = MockOCRBackend("florence-2", str(e))
-
-        # DOTS.OCR backend
-        try:
-            from ..backends.dots_backend import DOTSBackend
-
-            self.backends["dots-ocr"] = DOTSBackend(self.config)
-            logger.info("DOTS.OCR backend initialized")
-        except Exception as e:
-            logger.warning(f"Failed to initialize DOTS.OCR backend: {e}")
-            self.backends["dots-ocr"] = MockOCRBackend("dots-ocr", str(e))
-
-        # PP-OCRv5 backend
-        try:
-            from ..backends.ppocr_backend import PPOCRBackend
-
-            self.backends["pp-ocrv5"] = PPOCRBackend(self.config)
-            logger.info("PP-OCRv5 backend initialized")
-        except Exception as e:
-            logger.warning(f"Failed to initialize PP-OCRv5 backend: {e}")
-            self.backends["pp-ocrv5"] = MockOCRBackend("pp-ocrv5", str(e))
-
-        # Qwen-Image-Layered backend
-        try:
-            from ..backends.qwen_backend import QwenLayeredBackend
-
-            self.backends["qwen-layered"] = QwenLayeredBackend(self.config)
-            logger.info("Qwen-Image-Layered backend initialized")
-        except Exception as e:
-            logger.warning(f"Failed to initialize Qwen-Image-Layered backend: {e}")
-            self.backends["qwen-layered"] = MockOCRBackend("qwen-layered", str(e))
-
-        # Mistral OCR 3 backend (Cloud API)
-        try:
-            from ..backends.mistral_ocr_backend import MistralOCRBackend
-
-            self.backends["mistral-ocr"] = MistralOCRBackend(self.config)
-            logger.info("Mistral OCR 3 backend initialized")
-        except Exception as e:
-            logger.warning(f"Failed to initialize Mistral OCR 3 backend: {e}")
-            self.backends["mistral-ocr"] = MockOCRBackend("mistral-ocr", str(e))
-
-        # Legacy backends for compatibility
-        try:
-            from ..backends.got_ocr_backend import GOTOCRBackend
-
-            self.backends["got-ocr"] = GOTOCRBackend(self.config)
-            logger.info("GOT-OCR2.0 legacy backend initialized")
-        except Exception as e:
-            logger.warning(f"Failed to initialize GOT-OCR legacy backend: {e}")
-            self.backends["got-ocr"] = MockOCRBackend("got-ocr", str(e))
-
-        try:
-            from ..backends.tesseract_backend import TesseractBackend
-
-            self.backends["tesseract"] = TesseractBackend(self.config)
-            logger.info("Tesseract legacy backend initialized")
-        except Exception as e:
-            logger.warning(f"Failed to initialize Tesseract legacy backend: {e}")
-            self.backends["tesseract"] = MockOCRBackend("tesseract", str(e))
-
-        try:
-            from ..backends.easyocr_backend import EasyOCRBackend
-
-            self.backends["easyocr"] = EasyOCRBackend(self.config)
-            logger.info("EasyOCR legacy backend initialized")
-        except Exception as e:
-            logger.warning(f"Failed to initialize EasyOCR legacy backend: {e}")
-            self.backends["easyocr"] = MockOCRBackend("easyocr", str(e))
+            logger.warning(f"Failed to lazy-load {backend_name} backend: {e}")
+            mock_backend = MockOCRBackend(backend_name, str(e))
+            self.backends[backend_name] = mock_backend
+            return mock_backend
 
     def get_available_backends(self) -> list[str]:
-        """Get list of available backend names."""
-        return [name for name, backend in self.backends.items() if backend.is_available()]
+        """Get list of available backend names (lazy loading compatible)."""
+        available = []
+        for name in self.backends.keys():
+            backend = self.get_backend(name)  # This triggers lazy loading if needed
+            if backend and backend.is_available():
+                available.append(name)
+        return available
 
     def get_backend(self, name: str) -> OCRBackend | None:
-        """Get a specific backend by name."""
-        return self.backends.get(name)
+        """Get a specific backend by name (lazy loading)."""
+        if name not in self.backends:
+            return None
+
+        # Lazy load if not already loaded
+        if self.backends[name] is None:
+            self.backends[name] = self._load_backend(name)
+
+        return self.backends[name]
 
     def select_backend(
         self, requested_backend: str = "auto", image_path: str | None = None
@@ -242,15 +272,17 @@ class BackendManager:
 
             # Fallback to preference order if intelligent selection fails
             preference_order = [
-                "mistral-ocr",  # Mistral OCR 3: 74% win rate over OCR2, state-of-the-art
-                "deepseek-ocr",  # 4.7M downloads, vision-language model
-                "florence-2",  # Microsoft's unified vision-language model
-                "dots-ocr",  # Document structure specialist
-                "pp-ocrv5",  # Industrial PaddlePaddle OCR
-                "qwen-layered",  # Image decomposition for complex content
-                "got-ocr",  # Legacy GOT-OCR2.0
-                "tesseract",  # Legacy Tesseract
-                "easyocr",  # Legacy EasyOCR
+                "paddleocr-vl",   # Jan 2026 SOTA: 94.5% OmniDocBench, 0.9B, efficient
+                "mistral-ocr",    # Dec 2025 API: 74% win rate, 94.9% accuracy
+                "deepseek-ocr2",  # Jan 2026: Visual Causal Flow, 3B
+                "olmocr-2",       # Oct 2025: 82.4 olmOCR-Bench, best for academic
+                "deepseek-ocr",   # Original DeepSeek-OCR API
+                "qwen-layered",   # Qwen2.5-VL: still solid
+                "got-ocr",        # GOT-OCR2.0: fast, lean
+                "dots-ocr",       # DOTS.OCR
+                "pp-ocrv5",       # PaddlePaddle classic pipeline
+                "easyocr",        # Legacy
+                "tesseract",      # Backstop — always last
             ]
             for backend_name in preference_order:
                 backend = self.get_backend(backend_name)
@@ -263,7 +295,14 @@ class BackendManager:
         # Specific backend requested - handle common aliases
         backend_name_map = {
             "deepseek": "deepseek-ocr",
-            "florence": "florence-2",
+            "deepseek2": "deepseek-ocr2",
+            "deepseek-ocr-2": "deepseek-ocr2",
+            "paddleocr": "paddleocr-vl",
+            "paddle": "paddleocr-vl",
+            "paddleocr-vl-1.5": "paddleocr-vl",
+            "olmocr": "olmocr-2",
+            "olm": "olmocr-2",
+            "florence": "paddleocr-vl",  # Florence removed; redirect to SOTA replacement
             "dots": "dots-ocr",
             "pp-ocr": "pp-ocrv5",
             "qwen": "qwen-layered",

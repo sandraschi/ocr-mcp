@@ -86,7 +86,7 @@ class ScannerManager:
             }
 
             # Get backend-specific diagnostics if available
-            if hasattr(backend, 'get_diagnostics'):
+            if hasattr(backend, "get_diagnostics"):
                 try:
                     backend_status["diagnostics"] = backend.get_diagnostics()
                 except Exception as e:
@@ -109,7 +109,7 @@ class ScannerManager:
         backend_name, actual_device_id = self._parse_device_id(device_id)
         backend = self.backends.get(backend_name)
 
-        if backend and hasattr(backend, 'get_diagnostics'):
+        if backend and hasattr(backend, "get_diagnostics"):
             try:
                 return backend.get_diagnostics(actual_device_id)
             except Exception as e:
@@ -174,8 +174,11 @@ class ScannerManager:
             return False
 
         try:
-            # Convert dict to ScanSettings object
-            scan_settings = ScanSettings(**settings)
+            # Convert dict to ScanSettings object if needed
+            if isinstance(settings, dict):
+                scan_settings = ScanSettings(**settings)
+            else:
+                scan_settings = settings
             return backend.configure_scan(actual_device_id, scan_settings)
         except Exception as e:
             logger.error(f"Failed to configure scanner {device_id}: {e}")
@@ -199,8 +202,11 @@ class ScannerManager:
             return None
 
         try:
-            # Convert dict to ScanSettings object
-            scan_settings = ScanSettings(**settings)
+            # Convert dict to ScanSettings object if needed
+            if isinstance(settings, dict):
+                scan_settings = ScanSettings(**settings)
+            else:
+                scan_settings = settings
             return backend.scan_document(actual_device_id, scan_settings)
         except Exception as e:
             logger.error(f"Failed to scan document on {device_id}: {e}")

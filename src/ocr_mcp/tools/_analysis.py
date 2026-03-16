@@ -34,20 +34,20 @@ async def analyze_document_layout(
     config: OCRConfig | None = None,
 ) -> dict[str, Any]:
     """
-    Analyze document layout and structure.
-
-    Detects document elements like headers, paragraphs, tables, forms,
-    images, and other structural components.
+    Backend handler for analyze_layout. See ocr_tools.document_processing for MCP tool docstring.
 
     Args:
-        image_path: Path to the document image
-        analysis_type: Type of analysis ("basic", "comprehensive", "detailed")
-        detect_tables: Enable table detection
-        detect_forms: Enable form field detection
-        detect_headers: Enable header/footer detection
+    - image_path (str, required): Path to the document image.
+    - analysis_type (str): Type of analysis. Default: comprehensive.
+    - detect_tables (bool): Enable table detection. Default: True.
+    - detect_forms (bool): Enable form field detection. Default: True.
+    - detect_headers (bool): Enable header/footer detection. Default: True.
+    - backend_manager: Injected BackendManager.
+    - config: Injected OCRConfig.
 
     Returns:
-        Document layout analysis with detected elements
+    FastMCP 2.14.1+ dialogic response: success, operation, result or error,
+    recommendations, next_steps, recovery_options (on error), related_operations.
     """
     logger.info(f"Analyzing document layout: {image_path}")
 

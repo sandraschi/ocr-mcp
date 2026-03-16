@@ -5,6 +5,82 @@ All notable changes to OCR-MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-03-16
+
+### Fixed
+- **WIA scanner discovery lost after first request**
+  - Scanner was found on first `/api/scanners` call then reported 0 devices on later calls.
+  - **Cause**: `_release_device()` called `pythoncom.CoUninitialize()`, tearing down COM for the whole executor thread; next discovery then ran in a broken COM state. Also, cleanup ran before re-enumerate so devices were released right before enumeration.
+  - **Changes**: (1) `_release_device()` now only releases the device COM reference (e.g. `device.Release()`), no longer calls `CoUninitialize()`. (2) Discovery no longer cleans up at start; it enumerates first, builds the new device list, then releases only connections no longer in the new set. (3) All WIA discovery and scan already use a single-thread executor so COM stays on one STA thread.
+- **Agentic document workflow** — was simulated single-step mock; now uses real `context.sample_step` loop with tool execution (FastMCP 2.14+).
+- **GET /api/scanners** — no longer returns fake "Demo Scanner" when discovery fails; returns `scanners: []` and `error` message.
+
+### Changed
+- **Web backend** — WIA operations use a dedicated single-thread `ThreadPoolExecutor` instead of `asyncio.to_thread()` so every discovery/scan runs on the same STA thread and device list stays stable.
+
+## [Unreleased] - 2026-02-27
+
+### Added
+- **PaddleOCR-VL-1.5 backend** (`paddleocr_vl_backend.py`) — January 2026 SOTA
+  - 94.5% accuracy on OmniDocBench v1.5 — top of all open-source benchmarks
+  - 0.9B parameters (NaViT encoder + ERNIE-4.5-0.3B LM), ~1.8GB on disk
+  - ~3.3GB VRAM with flash-attn; ~40GB without — flash-attn is mandatory on GPU
+  - First model with irregular box localization (tilted, folded, screen-captured docs)
+  - Supports text, tables, formulas, charts, seals, 109 languages
+  - HF: `PaddlePaddle/PaddleOCR-VL-1.5`
+- **DeepSeek-OCR-2 backend** (`deepseek_ocr2_backend.py`) — January 2026
+  - "Visual Causal Flow" architecture (arXiv:2601.20552)
+  - 3B parameters, strong structured markdown output
+  - HF: `deepseek-ai/DeepSeek-OCR-2`
+  - Requires: `einops addict easydict flash-attn==2.7.3`
+- **olmOCR-2 backend** (`olmocr_backend.py`) — October 2025, Allen Institute for AI
+  - Built on Qwen2.5-VL-7B-Instruct, 82.4 on olmOCR-Bench
+  - Best choice for scientific/academic PDFs with math equations and multi-column layouts
+  - GRPO RL training specifically targets equations and tables
+  - HF: `allenai/olmOCR-2-7B-1025`
+
+### Changed
+- **Auto backend priority order** updated to reflect 2026 SOTA reality:
+  `paddleocr-vl → mistral-ocr → deepseek-ocr2 → olmocr-2 → deepseek-ocr → qwen-layered → got-ocr → dots-ocr → pp-ocrv5 → easyocr → tesseract`
+- **Backend alias map** extended with `paddleocr`, `paddle`, `deepseek2`, `olmocr`, `olm`, `paddleocr-vl-1.5`; `florence` alias now redirects to `paddleocr-vl`
+
+### Removed
+- **Florence-2 backend** (`florence_backend.py`) — deleted
+  - Florence-2 is a general-purpose vision foundation model (object detection, captioning, grounding), not an OCR specialist
+  - The OCR task prompt it exposed produced inferior results; confidence score was hardcoded; structured output methods were stubs
+  - Replaced by PaddleOCR-VL-1.5 which is purpose-built and measurably better
+- **Demo mode backend list** no longer references florence-2 or pp-ocrv5 as defaults
+
+### Fixed
+- **Scanner bug: `"id"` → `"device_id"` in `/api/scanners` response**
+  - Frontend `ScannerInfo` interface expected `device_id`; backend was returning `id`
+  - `selectedScanner` was always `undefined`, FormData sent garbage device_id, scan never triggered
+- **WIA COM threading: scan now runs in dedicated thread via `asyncio.to_thread()`**
+  - WIA COM operations require STA apartment; uvicorn async event loop thread uses MTA
+  - Calling `scanner_manager.scan_document()` directly in an `async def` endpoint caused silent failures
+  - Fixed by wrapping in `asyncio.to_thread()` which creates a new thread with proper COM context
+- **Pipeline execution: `backend` parameter now passed through to `execute_pipeline_background()`**
+  - `/api/pipelines/execute` now accepts `backend` as a Form field
+  - Previously hardcoded `"auto"` regardless of user selection
+
+### Changed (webapp)
+- **`process.tsx` (Pipeline page) rewritten** — was non-functional placeholder
+  - Each pipeline card now has file picker + OCR backend selector + Run Pipeline button
+  - Polls `/api/job/{id}` until complete; shows extracted text inline in expandable result panel
+  - Quality Optimizer kept as separate utility below the pipeline cards
+- **`settings.tsx`** — added Default OCR Backend selector (persisted to `localStorage`)
+  - Shows scanner details: manufacturer, max DPI, raw device_id
+- **`scanner.tsx`** — added OCR Backend dropdown; "OCR this Scan" now uses selected backend instead of hardcoded `"auto"`
+
+## [Unreleased] - 2026-02-09
+
+### Changed
+- Upgraded FastMCP to 2.14.4+ (2026 SOTA standard)
+- Removed lifespan storage usage (mcp_instance.storage not in FastMCP 2.14.5)
+- Portmanteau tool docstrings: 2026 SOTA format, no triple quotes within
+- README: Portmanteau Tool Ecosystem aligned with actual operations
+- README: FastMCP badge updated to 2.14.4+ (2026 SOTA)
+
 ## [0.2.0-alpha.0] - 2026-01-19
 
 ### 🚀 **Major Improvements**

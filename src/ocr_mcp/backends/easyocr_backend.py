@@ -41,9 +41,15 @@ class EasyOCRBackend(OCRBackend):
             original_verbose = os.environ.get("EASYOCR_VERBOSE", "1")
             os.environ["EASYOCR_VERBOSE"] = "0"  # Disable verbose output
 
-            # Initialize reader with configured languages
+            # Initialize reader with configured languages and persistent storage
+            model_dir = self.config.model_dir / "easyocr"
+            model_dir.mkdir(parents=True, exist_ok=True)
+
             self._reader = self._easyocr.Reader(
-                self.config.easyocr_languages, gpu=True, verbose=False
+                self.config.easyocr_languages,
+                gpu=True,
+                verbose=False,
+                model_storage_directory=str(model_dir),
             )
             self._initialized = True
             logger.info("EasyOCR reader initialized successfully")

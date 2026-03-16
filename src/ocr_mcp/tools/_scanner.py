@@ -25,33 +25,32 @@ async def handle_scanner_op(
     **kwargs,
 ) -> dict[str, Any]:
     """
-    PORTMANTEAU TOOL: Scanner Hardware Operations
-
-    Consolidates all scanner discovery, configuration, and control operations into a single tool.
+    Backend handler for scanner operations. See ocr_tools.scanner_operations for MCP tool docstring.
 
     OPERATIONS:
-    - "list_scanners": Discover and enumerate available scanners
-    - "scanner_properties": Get detailed scanner capabilities and settings
-    - "configure_scan": Set scan parameters (DPI, color mode, paper size)
-    - "scan_document": Perform single document scan
-    - "scan_batch": Batch scan multiple documents with ADF support
-    - "preview_scan": Low-resolution preview scan for positioning
-    - "diagnostics": Get diagnostic information for troubleshooting scanner issues
+    - list_scanners: Discover and enumerate available scanners. No device_id.
+    - scanner_properties: Get capabilities and settings. Requires: device_id.
+    - configure_scan: Set scan parameters. Requires: device_id.
+    - scan_document: Perform single document scan. Requires: device_id.
+    - scan_batch: Batch scan with ADF. Requires: device_id.
+    - preview_scan: Low-resolution preview. Requires: device_id.
+    - diagnostics: Troubleshooting. Optional: device_id.
 
     Args:
-        operation: The specific operation to perform
-        device_id: Scanner device ID
-        scan_source: Source for scanning ("flatbed" or "adf")
-        resolution: DPI (resolution)
-        color_mode: Color mode
-        paper_size: Paper size
-        output_prefix: Prefix for output files
-        backend_manager: BackendManager instance
-        config: OCRConfig instance
-        **kwargs: Additional parameters (save_path, save_directory, brightness, contrast, count, etc.)
+    - operation (str, required): Operation to perform. Must be one of OPERATIONS above.
+    - device_id (str | None): WIA device ID. Required for most operations.
+    - scan_source (str): flatbed or adf. Default: flatbed.
+    - resolution (int): DPI. Default: 300.
+    - color_mode (str): Color mode. Default: Color.
+    - paper_size (str): Paper size. Default: A4.
+    - output_prefix (str): Prefix for output files. Default: scan_.
+    - backend_manager: Injected BackendManager.
+    - config: Injected OCRConfig.
+    - **kwargs: save_path, save_directory, brightness, contrast, count, use_adf, duplex.
 
     Returns:
-        Operation-specific results
+    FastMCP 2.14.1+ dialogic response: success, operation, result or error,
+    recommendations, next_steps, recovery_options (on error), related_operations.
     """
     # Map parameters if necessary
     dpi = resolution
@@ -95,26 +94,31 @@ async def handle_scanner_op(
                 details={"backend_status": "unavailable"},
             ).to_dict()
 
+        # Resolve device_id when missing: use first flatbed scanner
+        resolved_device_id = device_id
+        if not resolved_device_id:
+            resolved_device_id = await _resolve_default_device_id(backend_manager, scan_source)
+
         # Route to appropriate handler based on operation
         if operation == "list_scanners":
             return await _handle_list_scanners(backend_manager)
 
         elif operation == "scanner_properties":
-            if not device_id:
+            if not resolved_device_id:
                 return ErrorHandler.create_error(
-                    "PARAMETERS_INVALID",
-                    message_override="device_id required for scanner_properties operation",
+                    "SCANNER_NOT_FOUND",
+                    message_override="No scanner found. Specify device_id or ensure a flatbed scanner is connected.",
                 ).to_dict()
-            return await _handle_scanner_properties(device_id, backend_manager)
+            return await _handle_scanner_properties(resolved_device_id, backend_manager)
 
         elif operation == "configure_scan":
-            if not device_id:
+            if not resolved_device_id:
                 return ErrorHandler.create_error(
-                    "PARAMETERS_INVALID",
-                    message_override="device_id required for configure_scan operation",
+                    "SCANNER_NOT_FOUND",
+                    message_override="No scanner found. Specify device_id or ensure a flatbed scanner is connected.",
                 ).to_dict()
             return await _handle_configure_scan(
-                device_id,
+                resolved_device_id,
                 dpi,
                 color_mode,
                 paper_size,
@@ -126,13 +130,13 @@ async def handle_scanner_op(
             )
 
         elif operation == "scan_document":
-            if not device_id:
+            if not resolved_device_id:
                 return ErrorHandler.create_error(
-                    "PARAMETERS_INVALID",
-                    message_override="device_id required for scan_document operation",
+                    "SCANNER_NOT_FOUND",
+                    message_override="No scanner found. Specify device_id or ensure a flatbed scanner is connected.",
                 ).to_dict()
             return await _handle_scan_document(
-                device_id,
+                resolved_device_id,
                 dpi,
                 color_mode,
                 paper_size,
@@ -145,13 +149,13 @@ async def handle_scanner_op(
             )
 
         elif operation == "scan_batch":
-            if not device_id:
+            if not resolved_device_id:
                 return ErrorHandler.create_error(
-                    "PARAMETERS_INVALID",
-                    message_override="device_id required for scan_batch operation",
+                    "SCANNER_NOT_FOUND",
+                    message_override="No scanner found. Specify device_id or ensure a flatbed scanner is connected.",
                 ).to_dict()
             return await _handle_scan_batch(
-                device_id,
+                resolved_device_id,
                 count,
                 dpi,
                 color_mode,
@@ -165,19 +169,41 @@ async def handle_scanner_op(
             )
 
         elif operation == "preview_scan":
-            if not device_id:
+            if not resolved_device_id:
                 return ErrorHandler.create_error(
-                    "PARAMETERS_INVALID",
-                    message_override="device_id required for preview_scan operation",
+                    "SCANNER_NOT_FOUND",
+                    message_override="No scanner found. Specify device_id or ensure a flatbed scanner is connected.",
                 ).to_dict()
-            return await _handle_preview_scan(device_id, save_path, backend_manager)
+            return await _handle_preview_scan(resolved_device_id, save_path, backend_manager)
 
         elif operation == "diagnostics":
-            return await _handle_diagnostics(device_id, backend_manager)
+            return await _handle_diagnostics(resolved_device_id, backend_manager)
 
     except Exception as e:
         logger.error(f"Scanner operation failed: {operation}, error: {e}")
         return ErrorHandler.handle_exception(e, context=f"scanner_operations_{operation}")
+
+
+async def _resolve_default_device_id(backend_manager, scan_source: str = "flatbed") -> str | None:
+    """
+    Resolve device_id when not provided: use first flatbed if scan_source is flatbed,
+    otherwise first available scanner.
+    """
+    try:
+        scanners = backend_manager.scanner_manager.discover_scanners(force_refresh=True)
+        if not scanners:
+            return None
+
+        if scan_source.lower() == "flatbed":
+            for scanner in scanners:
+                dev_type = str(getattr(scanner, "device_type", "")).lower()
+                if "flatbed" in dev_type:
+                    return getattr(scanner, "device_id", None) or str(scanner)
+
+        return getattr(scanners[0], "device_id", None) or str(scanners[0])
+    except Exception as e:
+        logger.warning(f"Could not resolve default device_id: {e}")
+        return None
 
 
 # Operation handler functions
@@ -300,16 +326,31 @@ async def _handle_scan_document(
             "duplex": duplex,
         }
 
-        # Perform scan
-        result = backend_manager.scanner_manager.scan_document(device_id, settings, save_path)
+        # Perform scan (ScannerManager.scan_document takes device_id, settings only)
+        result = backend_manager.scanner_manager.scan_document(device_id, settings)
 
         if result is None:
             return ErrorHandler.create_error(
                 "SCAN_FAILED", message_override=f"Scan failed for device {device_id}"
             ).to_dict()
 
+        saved_path = None
+        if save_path and hasattr(result, "save"):
+            from pathlib import Path
+
+            path = Path(save_path)
+            if not path.suffix:
+                path = path.with_suffix(".png")
+            result.save(str(path))
+            saved_path = str(path)
+
         return create_success_response(
-            {"device_id": device_id, "scan_result": str(result), "settings": settings}
+            {
+                "device_id": device_id,
+                "scan_result": str(result),
+                "saved_path": saved_path,
+                "settings": settings,
+            }
         )
 
     except Exception as e:
@@ -385,15 +426,17 @@ async def _handle_diagnostics(device_id, backend_manager):
         diagnostics = {}
 
         # Get backend status
-        if hasattr(backend_manager.scanner_manager, 'get_backend_status'):
+        if hasattr(backend_manager.scanner_manager, "get_backend_status"):
             diagnostics["backend_status"] = backend_manager.scanner_manager.get_backend_status()
         else:
             diagnostics["backend_status"] = "Backend status not available"
 
         # Get device-specific diagnostics if device_id provided
         if device_id:
-            if hasattr(backend_manager.scanner_manager, 'get_scanner_diagnostics'):
-                device_diagnostics = backend_manager.scanner_manager.get_scanner_diagnostics(device_id)
+            if hasattr(backend_manager.scanner_manager, "get_scanner_diagnostics"):
+                device_diagnostics = backend_manager.scanner_manager.get_scanner_diagnostics(
+                    device_id
+                )
                 if device_diagnostics:
                     diagnostics["device_diagnostics"] = device_diagnostics
                 else:
@@ -401,10 +444,13 @@ async def _handle_diagnostics(device_id, backend_manager):
             else:
                 diagnostics["device_diagnostics"] = "Device diagnostics not supported"
         else:
-            diagnostics["device_diagnostics"] = "No device_id specified - run diagnostics on specific scanner for detailed info"
+            diagnostics["device_diagnostics"] = (
+                "No device_id specified - run diagnostics on specific scanner for detailed info"
+            )
 
         # Add general system information
         import platform
+
         diagnostics["system_info"] = {
             "platform": platform.platform(),
             "python_version": platform.python_version(),
@@ -420,7 +466,7 @@ async def _handle_diagnostics(device_id, backend_manager):
                 "Device busy - wait and retry",
                 "Driver conflicts or outdated drivers",
                 "USB power management issues",
-                "Antivirus blocking scanner access"
+                "Antivirus blocking scanner access",
             ],
             "canon_lide_specific": [
                 "Power cycle the scanner",
@@ -428,8 +474,8 @@ async def _handle_diagnostics(device_id, backend_manager):
                 "Update Canon drivers from official website",
                 "Disable USB selective suspend in Power Options",
                 "Try different USB port",
-                "Close other scanning applications"
-            ]
+                "Close other scanning applications",
+            ],
         }
 
         return create_success_response(diagnostics)

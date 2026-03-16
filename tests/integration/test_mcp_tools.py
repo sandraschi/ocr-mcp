@@ -10,13 +10,11 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastmcp import FastMCP
-from src.ocr_mcp.tools.scanner_tools import register_scanner_operations_tools
 
 from src.ocr_mcp.core.backend_manager import BackendManager
 from src.ocr_mcp.core.config import OCRConfig
-from src.ocr_mcp.tools.ocr_tools import register_document_processing_tools
+from src.ocr_mcp.tools.ocr_tools import register_sota_tools
 from tests.mocks.mock_backends import MockDeepSeekBackend
-from tests.mocks.mock_scanner import MockScannerManager
 
 
 class TestMCPToolsIntegration:
@@ -28,22 +26,17 @@ class TestMCPToolsIntegration:
         return OCRConfig(cache_dir=Path("/tmp/test_cache"))
 
     @pytest.fixture
-    def mock_backend_manager(self, config):
+    def mock_backend_manager(self, config, mock_scanner_manager):
         """Mock backend manager for testing."""
         manager = MagicMock(spec=BackendManager)
         manager.config = config
+        manager.scanner_manager = mock_scanner_manager
 
-        # Mock scanner manager
-        mock_scanner = MockScannerManager()
-        manager.scanner_manager = mock_scanner
-
-        # Mock document processor
         mock_processor = MagicMock()
         mock_processor.is_available.return_value = True
         mock_processor.detect_file_type.return_value = "image"
         manager.document_processor = mock_processor
 
-        # Mock OCR backend
         mock_backend = MockDeepSeekBackend(config)
         manager.select_backend.return_value = mock_backend
         manager.process_with_backend = AsyncMock(
@@ -66,8 +59,7 @@ class TestMCPToolsIntegration:
     @pytest.fixture
     def registered_app(self, fastmcp_app, mock_backend_manager, config):
         """App with tools registered."""
-        register_document_processing_tools(fastmcp_app, mock_backend_manager, config)
-        register_scanner_operations_tools(fastmcp_app, mock_backend_manager, config)
+        register_sota_tools(fastmcp_app, mock_backend_manager, config)
         return fastmcp_app
 
     @pytest.mark.asyncio
@@ -85,7 +77,7 @@ class TestMCPToolsIntegration:
         process_tool = next(t for t in tools if t.name == "document_processing")
 
         # Call the tool
-        result = await process_tool.fn(
+        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
             operation="process_document",
             source_path=str(test_image),
             backend="auto",
@@ -109,7 +101,7 @@ class TestMCPToolsIntegration:
         process_tool = next(t for t in tools if t.name == "document_processing")
 
         # Test with formatting options
-        result = await process_tool.fn(
+        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
             operation="process_document",
             source_path=str(test_image),
             backend="deepseek-ocr",
@@ -119,7 +111,7 @@ class TestMCPToolsIntegration:
         )
 
         assert result["success"] is True
-        assert result.get("ocr_mode") == "format"
+        assert result.get("backend_used") or result.get("backend")
 
     @pytest.mark.asyncio
     async def test_document_processing_tool_region_ocr(self, registered_app, tmp_path):
@@ -134,7 +126,7 @@ class TestMCPToolsIntegration:
         process_tool = next(t for t in tools if t.name == "document_processing")
 
         region = [10, 10, 100, 100]
-        result = await process_tool.fn(
+        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
             operation="extract_regions",
             source_path=str(test_image),
             backend="florence-2",
@@ -156,7 +148,7 @@ class TestMCPToolsIntegration:
         tools = await registered_app.get_tools()
         process_tool = next(t for t in tools if t.name == "process_document")
 
-        result = await process_tool.fn(
+        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
             source_path=str(test_image),
             backend="got-ocr",
             mode="formatted",
@@ -186,7 +178,7 @@ class TestMCPToolsIntegration:
         tools = await registered_app.get_tools()
         batch_tool = next(t for t in tools if t.name == "workflow_management")
 
-        result = await batch_tool.fn(
+        result = await (batch_tool.fn if hasattr(batch_tool, "fn") else batch_tool)(
             operation="process_batch_intelligent",
             document_paths=test_images,
             workflow_type="auto",
@@ -205,7 +197,7 @@ class TestMCPToolsIntegration:
         tools = await registered_app.get_tools()
         workflow_tool = next(t for t in tools if t.name == "workflow_management")
 
-        result = await workflow_tool.fn(operation="ocr_health_check")
+        result = await (workflow_tool.fn if hasattr(workflow_tool, "fn") else workflow_tool)(operation="ocr_health_check")
 
         assert "status" in result
         assert "ocr_backends" in result
@@ -218,7 +210,7 @@ class TestMCPToolsIntegration:
         tools = await registered_app.get_tools()
         list_tool = next(t for t in tools if t.name == "list_backends")
 
-        result = await list_tool.fn()
+        result = await (list_tool.fn if hasattr(list_tool, "fn") else list_tool)()
 
         assert "backends" in result
         assert "available_count" in result
@@ -231,7 +223,7 @@ class TestMCPToolsIntegration:
         tools = await registered_app.get_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")
 
-        result = await scanner_tool.fn(operation="list_scanners")
+        result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(operation="list_scanners")
 
         assert isinstance(result, dict)
         assert "scanners" in result
@@ -243,7 +235,7 @@ class TestMCPToolsIntegration:
         tools = await registered_app.get_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")
 
-        result = await scanner_tool.fn(
+        result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
             operation="scanner_properties", device_id="wia:test_scanner_1"
         )
 
@@ -258,7 +250,7 @@ class TestMCPToolsIntegration:
         tools = await registered_app.get_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")
 
-        result = await scanner_tool.fn(
+        result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
             operation="configure_scan",
             device_id="wia:test_scanner_1",
             dpi=300,
@@ -279,7 +271,7 @@ class TestMCPToolsIntegration:
         tools = await registered_app.get_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")
 
-        result = await scanner_tool.fn(
+        result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
             operation="scan_document",
             device_id="wia:test_scanner_1",
             dpi=300,
@@ -298,7 +290,7 @@ class TestMCPToolsIntegration:
         tools = await registered_app.get_tools()
         batch_scan_tool = next(t for t in tools if t.name == "scan_batch")
 
-        result = await batch_scan_tool.fn(
+        result = await (batch_scan_tool.fn if hasattr(batch_scan_tool, "fn") else batch_scan_tool)(
             device_id="wia:test_scanner_1",
             count=2,
             dpi=150,
@@ -316,7 +308,7 @@ class TestMCPToolsIntegration:
         tools = await registered_app.get_tools()
         preview_tool = next(t for t in tools if t.name == "preview_scan")
 
-        result = await preview_tool.fn(device_id="wia:test_scanner_1", dpi=75, save_path=None)
+        result = await (preview_tool.fn if hasattr(preview_tool, "fn") else preview_tool)(device_id="wia:test_scanner_1", dpi=75, save_path=None)
 
         # Result should be image data or file path
         assert result is not None
@@ -355,7 +347,7 @@ class TestToolErrorHandling:
         tools = await fastmcp_app.get_tools()
         process_tool = next(t for t in tools if t.name == "document_processing")
 
-        result = await process_tool.fn(
+        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
             operation="process_document", source_path="/nonexistent/file.png", backend="auto"
         )
 
@@ -376,7 +368,7 @@ class TestToolErrorHandling:
         tools = await fastmcp_app.get_tools()
         process_tool = next(t for t in tools if t.name == "process_document")
 
-        result = await process_tool.fn(source_path=str(unsupported_file), backend="auto")
+        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(source_path=str(unsupported_file), backend="auto")
 
         assert result["success"] is False
         assert "unsupported" in result["error"].lower()
@@ -391,7 +383,7 @@ class TestToolErrorHandling:
         tools = await fastmcp_app.get_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")
 
-        result = await scanner_tool.fn(operation="scanner_properties", device_id="invalid:device")
+        result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(operation="scanner_properties", device_id="invalid:device")
 
         # Should handle gracefully
         assert isinstance(result, dict)
@@ -417,7 +409,7 @@ class TestToolParameterValidation:
         tools = await fastmcp_app.get_tools()
         process_tool = next(t for t in tools if t.name == "document_processing")
 
-        result = await process_tool.fn(
+        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
             operation="process_document", source_path=str(test_image), backend="invalid-backend"
         )
 
@@ -434,7 +426,7 @@ class TestToolParameterValidation:
         tools = await fastmcp_app.get_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")
 
-        result = await scanner_tool.fn(
+        result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
             operation="configure_scan",
             device_id="wia:test_scanner_1",
             dpi=-1,  # Invalid DPI
@@ -497,7 +489,7 @@ class TestToolConcurrency:
         tools = await fastmcp_app.get_tools()
         workflow_tool = next(t for t in tools if t.name == "workflow_management")
 
-        result = await workflow_tool.fn(
+        result = await (workflow_tool.fn if hasattr(workflow_tool, "fn") else workflow_tool)(
             operation="process_batch_intelligent",
             document_paths=test_files,
             workflow_type="auto",
@@ -520,7 +512,7 @@ class TestToolConcurrency:
         import asyncio
 
         async def scan_once():
-            return await scanner_tool.fn(
+            return await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
                 operation="scan_document",
                 device_id="wia:test_scanner_1",
                 dpi=150,

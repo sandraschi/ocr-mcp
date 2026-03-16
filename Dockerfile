@@ -28,8 +28,8 @@ COPY backend/ backend/
 # Install the package itself (verify dependencies are satisfied)
 RUN pip install --no-cache-dir --no-deps .
 
-# Make port 15000 available to the world outside this container
-EXPOSE 15000
+# Make port 10859 available to the world outside this container
+EXPOSE 10859
 
 # Run the application
 CMD ["python", "scripts/run_webapp.py"]

@@ -1,13 +1,25 @@
 {
   "mcpServers": {
     "ocr-mcp": {
+      "name": "ocr-mcp",
       "command": "python",
-      "args": ["-m", "src.ocr_mcp.server"],
+      "args": [
+        "-m",
+        "src.ocr_mcp.server"
+      ],
       "env": {
         "PYTHONPATH": "${workspaceFolder}"
       },
-      "description": "Advanced Document Processing Server with State-of-the-Art OCR",
+      "description": "Professional Document Processing Suite with 7 SOTA OCR engines (Mistral, DeepSeek, Florence-2) and a built-in React WebApp.",
       "capabilities": {
+        "webapp": {
+          "enabled": true,
+          "url": "http://localhost:15550"
+        },
+        "ai_features": {
+          "enabled": true,
+          "notes": "State-of-the-art OCR (GOT-OCR2.0, DeepSeek) requires GPU (RTX 3060+). Auto-detects running Ollama/LM Studio for semantic analysis."
+        },
         "tools": {
           "enabled": true,
           "listChanged": true
@@ -26,12 +38,26 @@
         "message": 60000
       },
       "metadata": {
-        "version": "1.0.0",
-        "author": "OCR-MCP Team",
-        "homepage": "https://github.com/sandr/ocr-mcp",
+        "version": "1.2.0",
+        "author": "Sandra Schipal",
+        "homepage": "https://github.com/sandraschi/ocr-mcp",
         "license": "MIT",
-        "tags": ["ocr", "document-processing", "ai", "computer-vision", "pdf", "image-processing"],
-        "categories": ["Productivity", "AI/ML", "Document Processing"]
+        "tags": [
+          "ocr",
+          "document-processing",
+          "ai",
+          "webapp",
+          "computer-vision",
+          "pdf",
+          "mistral",
+          "deepseek"
+        ],
+        "categories": [
+          "Productivity",
+          "AI/ML",
+          "Document Processing",
+          "Web Applications"
+        ]
       }
     }
   }

@@ -3,13 +3,6 @@
 version = 4
 
 [[package]]
-name = "OCRDocumentProcessing"
-version = "0.1.0"
-dependencies = [
- "zed_extension_api",
-]
-
-[[package]]
 name = "anyhow"
 version = "1.0.100"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -83,6 +76,13 @@ name = "memchr"
 version = "2.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273"
+
+[[package]]
+name = "ocrdocument_processing"
+version = "0.1.0"
+dependencies = [
+ "zed_extension_api",
+]
 
 [[package]]
 name = "proc-macro2"

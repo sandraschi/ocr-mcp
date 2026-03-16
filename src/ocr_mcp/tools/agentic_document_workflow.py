@@ -1,19 +1,8 @@
 """
 FastMCP 2.14.1+ Sampling with Tools Orchestration Tools (SEP-1577)
 
-These tools demonstrate SEP-1577: Sampling with tools, enabling agentic workflows
-where servers borrow the client's LLM and autonomously control tool execution.
-
-Benefits:
-- Eliminates client round-trips for complex multi-step operations
-- LLM autonomously orchestrates tool usage decisions
-- Server controls execution flow and logic
-- Massive efficiency gains for document processing
-
-DOCUMENT PROCESSING WORKFLOWS:
-- "Process all invoices this month" → autonomous document batch processing, quality assessment
-- "Digitize all documents" → intelligent workflow routing, format conversion pipelines
-- "Extract data from forms" → multi-document analysis and data extraction
+Real agentic workflows: context.sample_step loop with tool execution.
+No mocks; requires FastMCP 2.14+ and client sampling support.
 """
 
 import logging
@@ -22,43 +11,27 @@ from fastmcp import Context
 
 logger = logging.getLogger(__name__)
 
-# Conditional imports for advanced_memory integration
-try:
-    from advanced_memory.mcp.inter_server import SamplingResult, create_tool_spec, sample_with_tools
-    from advanced_memory.mcp.mcp_instance import mcp
-    from advanced_memory.mcp.tools.content_manager import (
-        build_error_response,
-        build_success_response,
-    )
+# Fallback response builders (no optional advanced_memory dependency)
+def build_success_response(**kwargs) -> dict:
+    return {
+        "success": True,
+        "operation": kwargs.get("operation", "unknown"),
+        "summary": kwargs.get("summary", "Operation completed"),
+        "result": kwargs.get("result", {}),
+        "next_steps": kwargs.get("next_steps", []),
+        "suggestions": kwargs.get("suggestions", []),
+    }
 
-    _advanced_memory_available = True
-except ImportError:
-    _advanced_memory_available = False
-    logger.warning("Advanced Memory not available - using fallback response builders")
 
-    # Fallback response builders when advanced_memory is not available
-    def build_success_response(**kwargs) -> dict:
-        return {
-            "success": True,
-            "operation": kwargs.get("operation", "unknown"),
-            "summary": kwargs.get("summary", "Operation completed"),
-            "result": kwargs.get("result", {}),
-            "next_steps": kwargs.get("next_steps", []),
-            "suggestions": kwargs.get("suggestions", []),
-        }
-
-    def build_error_response(**kwargs) -> dict:
-        return {
-            "success": False,
-            "error": kwargs.get("error", "Unknown error"),
-            "error_code": kwargs.get("error_code", "UNKNOWN_ERROR"),
-            "message": kwargs.get("message", "An error occurred"),
-            "recovery_options": kwargs.get("recovery_options", []),
-            "urgency": kwargs.get("urgency", "medium"),
-        }
-
-    # Fallback MCP instance - we'll need to get this from the OCR app
-    mcp = None
+def build_error_response(**kwargs) -> dict:
+    return {
+        "success": False,
+        "error": kwargs.get("error", "Unknown error"),
+        "error_code": kwargs.get("error_code", "UNKNOWN_ERROR"),
+        "message": kwargs.get("message", "An error occurred"),
+        "recovery_options": kwargs.get("recovery_options", []),
+        "urgency": kwargs.get("urgency", "medium"),
+    }
 
 
 def register_agentic_document_workflow(app):
@@ -74,62 +47,34 @@ def register_agentic_document_workflow(app):
         """
         Execute agentic document workflows using FastMCP 2.14.1+ sampling with tools.
 
-        This tool demonstrates SEP-1577 by enabling the server's LLM to autonomously
-        orchestrate complex document processing operations without client round-trips.
-
-        MASSIVE EFFICIENCY GAINS:
-        - LLM autonomously decides tool usage and sequencing
-        - No client mediation for multi-step document operations
-        - Structured validation and error recovery
-        - Parallel processing capabilities
-
-        DOCUMENT WORKFLOW EXAMPLES:
-        - "Process all invoices this month" → autonomous document batch processing, quality assessment
-        - "Digitize all documents" → intelligent workflow routing, format conversion pipelines
-        - "Extract data from forms" → multi-document analysis and data extraction
+        Uses context.sample_step in a loop: LLM decides tool calls, tools are executed,
+        results fed back until the LLM returns a final text response or max_iterations.
 
         Args:
-            workflow_prompt: Description of the document workflow to execute
-            available_tools: List of document tool names to make available to the LLM
-            max_iterations: Maximum LLM-tool interaction loops (default: 5)
+            workflow_prompt: Description of the document workflow to execute.
+            available_tools: List of tool names to expose to the LLM (e.g. document_processing, scanner_operations).
+            max_iterations: Maximum LLM-tool interaction rounds (default 5).
 
         Returns:
-            Structured response with workflow execution results
-
-        Example:
-            # Process invoice batch workflow
-            result = await agentic_document_workflow(
-                workflow_prompt="Process all invoices from this month",
-                available_tools=["process_document", "assess_quality", "convert_format"],
-                max_iterations=10
-            )
+            Structured response with workflow execution results.
         """
         try:
             if not workflow_prompt:
                 return build_error_response(
                     error="No workflow prompt provided",
                     error_code="MISSING_WORKFLOW_PROMPT",
-                    message="workflow_prompt is required to guide the document workflow",
-                    recovery_options=[
-                        "Provide a clear description of the document workflow to execute",
-                        "Include specific goals and available tools",
-                    ],
+                    message="workflow_prompt is required",
+                    recovery_options=["Provide a clear description of the document workflow"],
                     urgency="medium",
                 )
-
             if not available_tools:
                 return build_error_response(
                     error="No tools specified",
                     error_code="EMPTY_TOOLS_LIST",
-                    message="available_tools list cannot be empty",
-                    recovery_options=[
-                        "Specify which document tools the LLM can use",
-                        "Include at least one document tool for the workflow",
-                    ],
+                    message="available_tools cannot be empty",
+                    recovery_options=["Include at least one tool name the LLM can use"],
                     urgency="medium",
                 )
-
-            # Check if context has sampling capability
             if not hasattr(context, "sample_step"):
                 return build_error_response(
                     error="Sampling not available",
@@ -138,74 +83,92 @@ def register_agentic_document_workflow(app):
                     recovery_options=[
                         "Ensure FastMCP 2.14.1+ is installed",
                         "Check that sampling handlers are configured",
-                        "Verify LLM provider supports tool calling",
                     ],
                     urgency="high",
                 )
 
-            logger.info(f"Starting agentic document workflow: {workflow_prompt[:50]}...")
+            # Resolve tools from app by name
+            all_tools = await app.list_tools()
+            name_to_tool = {t.name: t for t in all_tools if hasattr(t, "name")}
+            tools_for_sampling = [
+                name_to_tool[name] for name in available_tools if name in name_to_tool
+            ]
+            missing = [n for n in available_tools if n not in name_to_tool]
+            if missing:
+                logger.warning("Agentic workflow: tools not found on app: %s", missing)
+            if not tools_for_sampling:
+                return build_error_response(
+                    error="No matching tools found",
+                    error_code="TOOLS_NOT_FOUND",
+                    message=f"None of available_tools matched registered tools. Registered: {list(name_to_tool.keys())}",
+                    recovery_options=["Use tool names from status() or document_processing, scanner_operations, etc."],
+                    urgency="high",
+                )
 
-            # Placeholder for actual workflow execution using sample_with_tools
-            # This would involve iteratively calling context.sample_step
-            # and executing tools based on the LLM's decisions.
-            # For this example, we'll simulate a single step.
+            system_prompt = (
+                "You are an OCR/document workflow assistant. Use the provided tools to accomplish the user's document workflow. "
+                "After using tools, summarize what was done and any next steps. Be concise."
+            )
+            messages: list = [{"role": "user", "content": workflow_prompt}]
+            executed_tools: list[str] = []
+            iterations = 0
 
-            # Example: Simulate a tool call decision by the LLM
-            # In a real scenario, this would come from context.sample_step
-            simulated_tool_call = {
-                "tool_name": available_tools[0],
-                "parameters": {
-                    "source_path": "/path/to/document.pdf",
-                    "backend": "auto",
-                    "output_format": "text",
-                },
-            }
-
-            # Simulate tool execution
-            # In a real scenario, you would dynamically call the tool function
-            # tool_result = await getattr(app.tools, simulated_tool_call["tool_name"]).fn(**simulated_tool_call["parameters"])
-            tool_result = {
-                "status": "processed",
-                "document_path": "/path/to/document.pdf",
-                "confidence": 0.95,
-            }
-
-            final_content = f"Document workflow completed. Executed {simulated_tool_call['tool_name']} with result: Document processed with {tool_result['confidence'] * 100:.1f}% confidence"
+            while iterations < max_iterations:
+                iterations += 1
+                logger.info("Agentic workflow step %s/%s", iterations, max_iterations)
+                step = await context.sample_step(
+                    messages,
+                    system_prompt=system_prompt,
+                    tools=tools_for_sampling,
+                    execute_tools=True,
+                    max_tokens=4096,
+                )
+                # Updated history for next round (when execute_tools=True, sampling run appends tool results)
+                if hasattr(step, "history") and step.history:
+                    messages = list(step.history)
+                if hasattr(step, "tool_calls") and step.tool_calls:
+                    for tc in step.tool_calls:
+                        name = getattr(tc, "name", None) or getattr(tc, "tool_name", str(tc))
+                        if name:
+                            executed_tools.append(name)
+                # Done when LLM returns text (no tool use)
+                if not getattr(step, "is_tool_use", True):
+                    final_text = getattr(step, "text", "") or ""
+                    return build_success_response(
+                        operation="agentic_document_workflow",
+                        summary=f"Workflow completed in {iterations} round(s).",
+                        result={
+                            "final_output": final_text,
+                            "iterations": iterations,
+                            "executed_tools": list(dict.fromkeys(executed_tools)),
+                        },
+                        next_steps=["Review output and run further workflows if needed."],
+                        suggestions=[
+                            "Try workflow_management(operation='process_batch_intelligent', source_dir='...')",
+                            "Use document_processing(operation='process_document', source_path='...')",
+                        ],
+                    )
 
             return build_success_response(
                 operation="agentic_document_workflow",
-                summary=f"Document workflow '{workflow_prompt[:50]}...' completed successfully.",
+                summary=f"Workflow stopped after {max_iterations} iterations (max).",
                 result={
-                    "final_output": final_content,
-                    "iterations": 1,  # Placeholder
-                    "executed_tools": [simulated_tool_call["tool_name"]],
-                    "documents_processed": 1,
-                    "average_confidence": tool_result["confidence"],
+                    "final_output": getattr(step, "text", "") or "(max iterations reached)",
+                    "iterations": iterations,
+                    "executed_tools": list(dict.fromkeys(executed_tools)),
                 },
-                next_steps=[
-                    "Verify all documents were processed correctly",
-                    "Review OCR quality and confidence scores",
-                    "Check output format and file organization",
-                    "Set up automated document monitoring",
-                ],
-                suggestions=[
-                    'Try \'agentic_document_workflow(workflow_prompt="Process all receipts", available_tools=["process_document", "extract_tables"])\'',
-                    "Explore batch processing with quality assessment workflows",
-                    "Combine with document analysis for intelligent data extraction",
-                ],
+                next_steps=["Increase max_iterations or simplify the workflow prompt."],
+                suggestions=[],
             )
         except Exception as e:
-            logger.error(f"Agentic document workflow failed: {e}", exc_info=True)
+            logger.error("Agentic document workflow failed: %s", e, exc_info=True)
             return build_error_response(
-                error="Agentic document workflow execution failed",
+                error="Workflow execution failed",
                 error_code="WORKFLOW_EXECUTION_ERROR",
-                message=f"An unexpected error occurred during the document workflow: {str(e)}",
+                message=str(e),
                 recovery_options=[
-                    "Check the workflow_prompt for clarity and valid document instructions",
-                    "Ensure all document tools in available_tools are correctly implemented and registered",
-                    "Review document file paths and accessibility",
-                    "Check OCR backend availability and configuration",
+                    "Check workflow_prompt and available_tools",
+                    "Ensure OCR backends and scanner are available",
                 ],
-                diagnostic_info={"exception": str(e), "workflow_type": "document_processing"},
                 urgency="high",
             )

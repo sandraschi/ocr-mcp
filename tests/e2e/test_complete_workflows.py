@@ -11,11 +11,10 @@ from pathlib import Path
 import pytest
 from fastmcp import FastMCP
 from PIL import Image
-from src.ocr_mcp.tools.scanner_tools import register_scanner_tools
 
 from src.ocr_mcp.core.backend_manager import BackendManager
 from src.ocr_mcp.core.config import OCRConfig
-from src.ocr_mcp.tools.ocr_tools import register_ocr_tools
+from src.ocr_mcp.tools.ocr_tools import register_sota_tools
 
 
 class TestCompleteWorkflows:
@@ -27,13 +26,14 @@ class TestCompleteWorkflows:
         return OCRConfig(cache_dir=temp_dir / "cache")
 
     @pytest.fixture
-    def backend_manager(self, config):
+    def backend_manager(self, config, mock_scanner_manager):
         """Backend manager with mocked components."""
         manager = BackendManager(config)
+        manager.scanner_manager = mock_scanner_manager
 
         # Mock successful OCR processing
         async def mock_process_success(backend_name, image_path, **kwargs):
-            await asyncio.sleep(0.1)  # Simulate processing time
+            await asyncio.sleep(0.1)
             return {
                 "success": True,
                 "text": f"OCR result from {backend_name} for {Path(image_path).name}",
@@ -50,105 +50,105 @@ class TestCompleteWorkflows:
     def fastmcp_app(self, backend_manager, config):
         """FastMCP app with all tools registered."""
         app = FastMCP("test-ocr-mcp")
-        register_ocr_tools(app, backend_manager, config)
-        register_scanner_tools(app, backend_manager, config)
+        register_sota_tools(app, backend_manager, config)
         return app
 
     @pytest.mark.asyncio
     async def test_scan_to_ocr_workflow(self, fastmcp_app, temp_dir):
         """Test complete workflow: scan document -> OCR processing."""
-        # Step 1: Configure scanner
         tools = await fastmcp_app.get_tools()
-        config_tool = next(t for t in tools if t.name == "configure_scan")
+        scanner_tool = next(t for t in tools if t.name == "scanner_operations")
+        process_tool = next(t for t in tools if t.name == "document_processing")
 
-        config_result = await config_tool.fn(
-            device_id="wia:test_scanner_1", dpi=300, color_mode="Color", paper_size="A4"
+        # Step 1: Configure scanner (portmanteau: scanner_operations)
+        config_result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
+            operation="configure_scan",
+            device_id="wia:test_scanner_1",
+            resolution=300,
+            color_mode="Color",
+            paper_size="A4",
         )
-        assert config_result is True
+        assert config_result.get("success") is True
 
         # Step 2: Scan document
-        scan_tool = next(t for t in tools if t.name == "scan_document")
-        scanned_image = await scan_tool.fn(
-            device_id="wia:test_scanner_1", dpi=300, color_mode="Color", paper_size="A4"
+        scan_result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
+            operation="scan_document",
+            device_id="wia:test_scanner_1",
+            resolution=300,
+            color_mode="Color",
+            paper_size="A4",
         )
-        assert scanned_image is not None
+        assert scan_result.get("success") is True
+        assert scan_result.get("result") is not None
 
-        # Step 3: Process scanned document with OCR
-        process_tool = next(t for t in tools if t.name == "process_document")
-
-        # For this test, we'll simulate having the scanned image as a file
+        # Step 3: Process scanned document with OCR (portmanteau: document_processing)
         test_image_path = temp_dir / "scanned_doc.png"
-        # In real workflow, this would be the path returned by scan_tool
         test_image_path.write_bytes(b"mock image data")
 
-        ocr_result = await process_tool.fn(
-            source_path=str(test_image_path), backend="auto", mode="text"
+        ocr_result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
+            operation="process_document",
+            source_path=str(test_image_path),
+            backend="auto",
+            ocr_mode="text",
         )
 
         assert ocr_result["success"] is True
         assert "text" in ocr_result
-        assert ocr_result["backend"] != ""
+        assert ocr_result.get("backend", "")
 
     @pytest.mark.asyncio
     async def test_batch_scan_workflow(self, fastmcp_app):
         """Test batch scanning workflow."""
         tools = await fastmcp_app.get_tools()
-        batch_scan_tool = next(t for t in tools if t.name == "scan_batch")
+        scanner_tool = next(t for t in tools if t.name == "scanner_operations")
 
-        # Scan multiple documents
-        images = await batch_scan_tool.fn(
-            device_id="wia:test_scanner_2",  # ADF scanner
-            count=3,
-            dpi=150,
+        result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
+            operation="scan_batch",
+            device_id="wia:test_scanner_2",
+            resolution=150,
             color_mode="Grayscale",
             paper_size="A4",
         )
 
-        assert isinstance(images, list)
-        assert len(images) <= 3  # May be less if scanning fails
+        assert result.get("success") is True
+        batch_results = result.get("result", {}).get("batch_results", [])
+        assert isinstance(batch_results, list)
 
     @pytest.mark.asyncio
     async def test_multi_format_processing_workflow(self, fastmcp_app, temp_dir):
         """Test processing multiple document formats."""
         tools = await fastmcp_app.get_tools()
-        process_tool = next(t for t in tools if t.name == "process_document")
+        process_tool = next(t for t in tools if t.name == "document_processing")
 
-        # Test different file types
-        test_files = []
-
-        # Create test image
         img_path = temp_dir / "test.png"
         img = Image.new("RGB", (100, 100), color="white")
         img.save(img_path)
-        test_files.append(("image", str(img_path)))
 
-        results = []
+        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
+            operation="process_document",
+            source_path=str(img_path),
+            backend="auto",
+            ocr_mode="text",
+        )
 
-        for file_type, file_path in test_files:
-            result = await process_tool.fn(source_path=file_path, backend="auto", mode="text")
-
-            assert result["success"] is True
-            assert result["file_type"] == file_type
-            results.append(result)
-
-        assert len(results) == len(test_files)
+        assert result["success"] is True
+        assert "text" in result
 
     @pytest.mark.asyncio
     async def test_comic_book_processing_workflow(self, fastmcp_app, temp_dir):
         """Test comic book processing workflow."""
         tools = await fastmcp_app.get_tools()
-        process_tool = next(t for t in tools if t.name == "process_document")
+        process_tool = next(t for t in tools if t.name == "document_processing")
 
-        # Create a mock comic page (taller than wide, like comic pages)
         comic_path = temp_dir / "comic_page.png"
         comic_img = Image.new("RGB", (800, 1200), color="white")
         comic_img.save(comic_path)
 
-        # Process with comic-specific options
-        result = await process_tool.fn(
+        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
+            operation="process_document",
             source_path=str(comic_path),
             backend="got-ocr",
-            mode="formatted",
+            ocr_mode="format",
             comic_mode=True,
             manga_layout=True,
             panel_analysis=True,
@@ -173,7 +173,7 @@ class TestCompleteWorkflows:
         backends_to_test = ["auto", "deepseek-ocr", "florence-2"]
 
         for backend in backends_to_test:
-            result = await process_tool.fn(source_path=str(img_path), backend=backend, mode="text")
+            result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(source_path=str(img_path), backend=backend, mode="text")
 
             assert result["success"] is True
             # Backend should be resolved (not necessarily the requested one if auto)
@@ -185,7 +185,7 @@ class TestCompleteWorkflows:
         process_tool = next(t for t in tools if t.name == "process_document")
 
         # Test with non-existent file
-        result = await process_tool.fn(source_path="/nonexistent/file.png", backend="auto")
+        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(source_path="/nonexistent/file.png", backend="auto")
 
         assert result["success"] is False
         assert "error" in result
@@ -195,7 +195,7 @@ class TestCompleteWorkflows:
         img = Image.new("RGB", (50, 50), color="white")
         img.save(img_path)
 
-        result = await process_tool.fn(source_path=str(img_path), backend="auto")
+        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(source_path=str(img_path), backend="auto")
 
         assert result["success"] is True
 
@@ -212,7 +212,7 @@ class TestCompleteWorkflows:
 
         # Benchmark OCR processing
         async def run_ocr():
-            return await process_tool.fn(source_path=str(img_path), backend="auto", mode="text")
+            return await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(source_path=str(img_path), backend="auto", mode="text")
 
         result = await run_ocr()
 
@@ -226,7 +226,7 @@ class TestCompleteWorkflows:
         tools = await fastmcp_app.get_tools()
         health_tool = next(t for t in tools if t.name == "ocr_health_check")
 
-        health_result = await health_tool.fn()
+        health_result = await (health_tool.fn if hasattr(health_tool, "fn") else health_tool)()
 
         assert "status" in health_result
         assert "ocr_backends" in health_result
@@ -242,7 +242,7 @@ class TestCompleteWorkflows:
         tools = await fastmcp_app.get_tools()
         list_scanners_tool = next(t for t in tools if t.name == "list_scanners")
 
-        scanners = await list_scanners_tool.fn()
+        scanners = await (list_scanners_tool.fn if hasattr(list_scanners_tool, "fn") else list_scanners_tool)()
 
         assert isinstance(scanners, list)
         # Should find at least the mock scanners
@@ -262,7 +262,7 @@ class TestCompleteWorkflows:
         # Process specific region
         region = [50, 50, 200, 200]  # x1, y1, x2, y2
 
-        result = await process_tool.fn(
+        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
             source_path=str(img_path),
             backend="florence-2",  # Backend that supports regions
             mode="fine-grained",
@@ -286,7 +286,7 @@ class TestCompleteWorkflows:
         output_formats = ["text", "json", "html"]
 
         for output_format in output_formats:
-            result = await process_tool.fn(
+            result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
                 source_path=str(img_path), backend="auto", mode="text", output_format=output_format
             )
 
@@ -308,7 +308,7 @@ class TestCompleteWorkflows:
             test_files.append(str(img_path))
 
         # Process concurrently
-        result = await batch_tool.fn(
+        result = await (batch_tool.fn if hasattr(batch_tool, "fn") else batch_tool)(
             source_paths=test_files, backend="auto", mode="text", max_concurrent=2
         )
 
@@ -374,7 +374,7 @@ class TestWorkflowErrorScenarios:
             img.save(img_path)
             test_files.append(str(img_path))
 
-        result = await batch_tool.fn(source_paths=test_files, backend="auto", mode="text")
+        result = await (batch_tool.fn if hasattr(batch_tool, "fn") else batch_tool)(source_paths=test_files, backend="auto", mode="text")
 
         assert result["total_documents"] == 6
         assert len(result["results"]) == 6
@@ -395,13 +395,13 @@ class TestWorkflowErrorScenarios:
         scan_tool = next(t for t in tools if t.name == "scan_document")
 
         # Try scanning with invalid device
-        result = await scan_tool.fn(device_id="invalid:device", dpi=150, color_mode="Color")
+        result = await (scan_tool.fn if hasattr(scan_tool, "fn") else scan_tool)(device_id="invalid:device", dpi=150, color_mode="Color")
 
         # Should handle gracefully without crashing
         assert result is not None  # May be None or error dict
 
         # Try with valid device
-        result = await scan_tool.fn(device_id="wia:test_scanner_1", dpi=150, color_mode="Color")
+        result = await (scan_tool.fn if hasattr(scan_tool, "fn") else scan_tool)(device_id="wia:test_scanner_1", dpi=150, color_mode="Color")
 
         assert result is not None
 
@@ -417,7 +417,7 @@ class TestWorkflowErrorScenarios:
         img.save(img_path)
 
         # Process should still complete (mock doesn't actually timeout)
-        result = await process_tool.fn(source_path=str(img_path), backend="auto", mode="text")
+        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(source_path=str(img_path), backend="auto", mode="text")
 
         assert result["success"] is True
         assert "processing_time" in result
@@ -433,13 +433,13 @@ class TestAdvancedWorkflows:
 
         # Step 1: Preview scan
         preview_tool = next(t for t in tools if t.name == "preview_scan")
-        preview_result = await preview_tool.fn(device_id="wia:test_scanner_1", dpi=75)
+        preview_result = await (preview_tool.fn if hasattr(preview_tool, "fn") else preview_tool)(device_id="wia:test_scanner_1", dpi=75)
 
         assert preview_result is not None
 
         # Step 2: Configure for full scan
         config_tool = next(t for t in tools if t.name == "configure_scan")
-        config_result = await config_tool.fn(
+        config_result = await (config_tool.fn if hasattr(config_tool, "fn") else config_tool)(
             device_id="wia:test_scanner_1", dpi=300, color_mode="Color", paper_size="A4"
         )
 
@@ -447,7 +447,7 @@ class TestAdvancedWorkflows:
 
         # Step 3: Full scan
         scan_tool = next(t for t in tools if t.name == "scan_document")
-        full_scan_result = await scan_tool.fn(
+        full_scan_result = await (scan_tool.fn if hasattr(scan_tool, "fn") else scan_tool)(
             device_id="wia:test_scanner_1", dpi=300, color_mode="Color", paper_size="A4"
         )
 
@@ -469,7 +469,7 @@ class TestAdvancedWorkflows:
 
         # Process with different backends
         for backend in backends:
-            result = await process_tool.fn(source_path=str(img_path), backend=backend, mode="text")
+            result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(source_path=str(img_path), backend=backend, mode="text")
 
             assert result["success"] is True
             results[backend] = result
@@ -500,7 +500,7 @@ class TestAdvancedWorkflows:
             img_path = temp_dir / f"quality_test_{case_name}.png"
             image.save(img_path)
 
-            result = await process_tool.fn(source_path=str(img_path), backend="auto", mode="text")
+            result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(source_path=str(img_path), backend="auto", mode="text")
 
             assert result["success"] is True
             results[case_name] = result

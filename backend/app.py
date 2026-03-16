@@ -4,12 +4,17 @@ FastAPI server providing web interface for OCR-MCP functionality
 """
 
 import asyncio
+import concurrent.futures
 import json
 import logging
 import os
 import tempfile
+import uuid
 from pathlib import Path
 from typing import Any
+
+# Single-thread executor for WIA: COM is thread-affine; one STA thread for all scanner ops.
+_wia_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="wia_sta")
 
 import uvicorn
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
@@ -20,7 +25,24 @@ from fastapi.staticfiles import StaticFiles
 # Module-level singleton variables for FastAPI dependencies
 FILE_DEPENDENCY = File()
 FILE_LIST_DEPENDENCY = File()
-FORM_DEPENDENCY = Form()
+
+# Max jobs to retain (prevents unbounded growth)
+MAX_PROCESSING_JOBS = 500
+
+
+def _prune_old_jobs():
+    """Remove oldest completed/failed jobs when over limit."""
+    if len(processing_jobs) <= MAX_PROCESSING_JOBS:
+        return
+    completed = [
+        k for k, v in processing_jobs.items() if v.get("status") in ("completed", "failed")
+    ]
+    to_remove = min(len(completed), len(processing_jobs) - MAX_PROCESSING_JOBS)
+    if to_remove <= 0:
+        return
+    for k in completed[:to_remove]:
+        processing_jobs.pop(k, None)
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -37,6 +59,8 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "http://localhost:10858",
+        "http://localhost:10818",
         "http://localhost:15550",
         "http://localhost:13334",
         "http://localhost:15001",
@@ -100,8 +124,17 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown"""
-    # Cleanup managers if needed
-    pass
+    for job_id, job in list(processing_jobs.items()):
+        for key in ("file_path", "file_paths"):
+            paths = job.get(key)
+            if paths is None:
+                continue
+            for path in paths if isinstance(paths, list) else [paths]:
+                try:
+                    if path and os.path.exists(path):
+                        os.unlink(path)
+                except OSError:
+                    pass
 
 
 # Remove the home route since the React app is now served statically
@@ -150,8 +183,8 @@ async def upload_file(
             temp_file.write(content)
             temp_file_path = temp_file.name
 
-        # Generate job ID
-        job_id = f"job_{len(processing_jobs)}"
+        _prune_old_jobs()
+        job_id = f"job_{uuid.uuid4().hex[:12]}"
 
         # Store job info
         processing_jobs[job_id] = {
@@ -164,8 +197,15 @@ async def upload_file(
             "error": None,
         }
 
-        # Always use demo processing for now to ensure it works
-        background_tasks.add_task(process_file_demo, job_id, file.filename, ocr_mode, backend)
+        # Use real OCR when backend_manager available, else demo
+        if backend_manager and backend_manager.get_available_backends():
+            background_tasks.add_task(
+                process_file_background, job_id, temp_file_path, ocr_mode, backend
+            )
+        else:
+            background_tasks.add_task(
+                process_file_demo, job_id, temp_file_path, file.filename, ocr_mode, backend
+            )
 
         return {"job_id": job_id, "status": "processing"}
 
@@ -211,8 +251,8 @@ async def process_batch(
                 file_paths.append(temp_file.name)
                 filenames.append(file.filename)
 
-        # Generate job ID
-        job_id = f"batch_job_{len(processing_jobs)}"
+        _prune_old_jobs()
+        job_id = f"batch_job_{uuid.uuid4().hex[:12]}"
 
         # Store job info
         processing_jobs[job_id] = {
@@ -225,8 +265,15 @@ async def process_batch(
             "error": None,
         }
 
-        # Always use demo batch processing for now
-        background_tasks.add_task(process_batch_demo, job_id, filenames, ocr_mode, backend)
+        # Use real OCR when backend_manager available, else demo
+        if backend_manager and backend_manager.get_available_backends():
+            background_tasks.add_task(
+                process_batch_background, job_id, file_paths, ocr_mode, backend
+            )
+        else:
+            background_tasks.add_task(
+                process_batch_demo, job_id, file_paths, filenames, ocr_mode, backend
+            )
 
         return {"job_id": job_id, "status": "processing", "file_count": len(files)}
 
@@ -241,24 +288,15 @@ async def get_backends():
     if demo_mode:
         return {
             "backends": [
-                {
-                    "name": "florence-2",
-                    "available": True,
-                    "description": "Microsoft Florence-2 vision model",
-                },
-                {
-                    "name": "pp-ocrv5",
-                    "available": True,
-                    "description": "PaddlePaddle OCR v5",
-                },
-                {
-                    "name": "tesseract",
-                    "available": True,
-                    "description": "Tesseract OCR",
-                },
-                {"name": "easyocr", "available": True, "description": "EasyOCR"},
+                {"name": "paddleocr-vl", "available": True, "description": "Baidu PaddleOCR-VL-1.5 — Jan 2026 SOTA, 94.5% OmniDocBench"},
+                {"name": "deepseek-ocr2", "available": True, "description": "DeepSeek-OCR-2 — Jan 2026, Visual Causal Flow"},
+                {"name": "olmocr-2", "available": True, "description": "Allen AI olmOCR-2 — academic PDFs, math, multi-column"},
+                {"name": "mistral-ocr", "available": True, "description": "Mistral OCR API — 94.9% accuracy"},
+                {"name": "got-ocr", "available": True, "description": "GOT-OCR2.0 — fast, lean"},
+                {"name": "qwen-layered", "available": True, "description": "Qwen2.5-VL — complex layouts"},
+                {"name": "tesseract", "available": True, "description": "Tesseract OCR — CPU backstop"},
             ],
-            "default_backend": "florence-2",
+            "default_backend": "paddleocr-vl",
         }
 
     if not backend_manager:
@@ -304,8 +342,8 @@ async def optimize_processing(
             temp_file.write(content)
             temp_file_path = temp_file.name
 
-        # Generate job ID
-        job_id = f"optimize_{len(processing_jobs)}"
+        _prune_old_jobs()
+        job_id = f"optimize_{uuid.uuid4().hex[:12]}"
 
         # Store job info
         processing_jobs[job_id] = {
@@ -334,7 +372,7 @@ async def optimize_processing(
 async def convert_format(
     background_tasks: BackgroundTasks,
     file: UploadFile = FILE_DEPENDENCY,
-    target_format: str = FORM_DEPENDENCY,
+    target_format: str = Form("json"),
     ocr_mode: str = Form("auto"),
     backend: str = Form("auto"),
 ):
@@ -348,8 +386,8 @@ async def convert_format(
             temp_file.write(content)
             temp_file_path = temp_file.name
 
-        # Generate job ID
-        job_id = f"convert_{len(processing_jobs)}"
+        _prune_old_jobs()
+        job_id = f"convert_{uuid.uuid4().hex[:12]}"
 
         # Store job info
         processing_jobs[job_id] = {
@@ -456,6 +494,7 @@ async def execute_pipeline(
     background_tasks: BackgroundTasks,
     pipeline_id: str = Form(...),
     file: UploadFile = FILE_DEPENDENCY,
+    backend: str = Form("auto"),
 ):
     """Execute a processing pipeline"""
     try:
@@ -467,8 +506,8 @@ async def execute_pipeline(
             temp_file.write(content)
             temp_file_path = temp_file.name
 
-        # Generate job ID
-        job_id = f"pipeline_{len(processing_jobs)}"
+        _prune_old_jobs()
+        job_id = f"pipeline_{uuid.uuid4().hex[:12]}"
 
         # Store job info
         processing_jobs[job_id] = {
@@ -481,7 +520,7 @@ async def execute_pipeline(
         }
 
         # Process in background
-        background_tasks.add_task(execute_pipeline_background, job_id, pipeline_id, temp_file_path)
+        background_tasks.add_task(execute_pipeline_background, job_id, pipeline_id, temp_file_path, backend)
 
         return {"job_id": job_id, "status": "processing"}
 
@@ -496,11 +535,9 @@ async def process_file_background(job_id: str, file_path: str, ocr_mode: str, ba
         if not backend_manager:
             raise Exception("Backend manager not initialized")
 
-        ocr_backend = backend_manager.get_backend(backend)
-        if not ocr_backend:
-            raise Exception(f"Backend {backend} not found")
-
-        result = await ocr_backend.process_document(source_path=file_path, ocr_mode=ocr_mode)
+        result = await backend_manager.process_with_backend(
+            backend_name=backend, image_path=file_path, mode=ocr_mode
+        )
 
         processing_jobs[job_id]["status"] = "completed"
         processing_jobs[job_id]["result"] = result
@@ -515,6 +552,10 @@ async def process_file_background(job_id: str, file_path: str, ocr_mode: str, ba
         logger.error(f"Failed to process file {job_id}: {e}")
         processing_jobs[job_id]["status"] = "failed"
         processing_jobs[job_id]["error"] = str(e)
+        try:
+            os.unlink(file_path)
+        except OSError:
+            pass
 
 
 async def process_batch_background(job_id: str, file_paths: list[str], ocr_mode: str, backend: str):
@@ -523,26 +564,19 @@ async def process_batch_background(job_id: str, file_paths: list[str], ocr_mode:
         if not backend_manager:
             raise Exception("Backend manager not initialized")
 
-        ocr_backend = backend_manager.get_backend(backend)
-        if not ocr_backend:
-            raise Exception(f"Backend {backend} not found")
-
-        # Fallback to single processing if batch not supported by backend directly
-        # or implement batch logic in backend_manager
-        result = []
+        results = []
         for path in file_paths:
-            res = await ocr_backend.process_document(source_path=path, ocr_mode=ocr_mode)
-            result.append(res)
-
-        # Wrap as batch result
-        result = {
-            "total_files": len(file_paths),
-            "successful": len(result),
-            "results": result,
-        }
+            res = await backend_manager.process_with_backend(
+                backend_name=backend, image_path=path, mode=ocr_mode
+            )
+            results.append(res)
 
         processing_jobs[job_id]["status"] = "completed"
-        processing_jobs[job_id]["result"] = result
+        processing_jobs[job_id]["result"] = {
+            "total_files": len(file_paths),
+            "successful": sum(1 for r in results if r.get("success")),
+            "results": results,
+        }
 
         # Clean up temp files
         for file_path in file_paths:
@@ -555,9 +589,16 @@ async def process_batch_background(job_id: str, file_paths: list[str], ocr_mode:
         logger.error(f"Failed to process batch {job_id}: {e}")
         processing_jobs[job_id]["status"] = "failed"
         processing_jobs[job_id]["error"] = str(e)
+        for fp in file_paths:
+            try:
+                os.unlink(fp)
+            except OSError:
+                pass
 
 
-async def process_file_demo(job_id: str, filename: str, ocr_mode: str, backend: str):
+async def process_file_demo(
+    job_id: str, file_path: str, filename: str, ocr_mode: str, backend: str
+):
     """Demo processing - simulate OCR results"""
     try:
         logger.info(f"Starting demo processing for job {job_id}, file {filename}")
@@ -602,13 +643,29 @@ async def process_file_demo(job_id: str, filename: str, ocr_mode: str, backend: 
         processing_jobs[job_id]["result"] = mock_result
         logger.info(f"Demo processing completed successfully for job {job_id}")
 
+        # Clean up temp file
+        try:
+            os.unlink(file_path)
+        except OSError:
+            pass
+
     except Exception as e:
         logger.error(f"Failed to process demo file {job_id}: {e}")
         processing_jobs[job_id]["status"] = "failed"
         processing_jobs[job_id]["error"] = str(e)
+        try:
+            os.unlink(file_path)
+        except OSError:
+            pass
 
 
-async def process_batch_demo(job_id: str, filenames: list[str], ocr_mode: str, backend: str):
+async def process_batch_demo(
+    job_id: str,
+    file_paths: list[str],
+    filenames: list[str],
+    ocr_mode: str,
+    backend: str,
+):
     """Demo batch processing - simulate results for multiple files"""
     try:
         results = []
@@ -645,10 +702,22 @@ async def process_batch_demo(job_id: str, filenames: list[str], ocr_mode: str, b
         processing_jobs[job_id]["status"] = "completed"
         processing_jobs[job_id]["result"] = batch_result
 
+        # Clean up temp files
+        for fp in file_paths:
+            try:
+                os.unlink(fp)
+            except OSError:
+                pass
+
     except Exception as e:
         logger.error(f"Failed to process demo batch {job_id}: {e}")
         processing_jobs[job_id]["status"] = "failed"
         processing_jobs[job_id]["error"] = str(e)
+        for fp in file_paths:
+            try:
+                os.unlink(fp)
+            except OSError:
+                pass
 
 
 async def optimize_background(
@@ -660,7 +729,7 @@ async def optimize_background(
         best_result = None
         best_quality = 0.0
 
-        backends = ["auto", "florence-2", "deepseek-ocr", "pp-ocrv5"]
+        backends = ["auto", "paddleocr-vl", "deepseek-ocr2", "olmocr-2", "mistral-ocr", "got-ocr", "qwen-layered", "tesseract"]
         modes = ["auto", "text", "format"]
 
         for attempt in range(max_attempts):
@@ -670,13 +739,14 @@ async def optimize_background(
                         if not backend_manager:
                             continue
 
-                        ocr_backend = backend_manager.get_backend(backend)
-                        if not ocr_backend:
-                            continue
-
-                        result = await ocr_backend.process_document(
-                            source_path=file_path, ocr_mode=mode
+                        result = await backend_manager.process_with_backend(
+                            backend_name=backend,
+                            image_path=file_path,
+                            mode=mode if mode != "auto" else "text",
                         )
+
+                        if not result.get("success"):
+                            continue
 
                         # Check quality score (mock for now)
                         quality_score = result.get("quality_score", 0.5)
@@ -712,6 +782,10 @@ async def optimize_background(
         logger.error(f"Failed to optimize {job_id}: {e}")
         processing_jobs[job_id]["status"] = "failed"
         processing_jobs[job_id]["error"] = str(e)
+        try:
+            os.unlink(file_path)
+        except OSError:
+            pass
 
 
 async def convert_background(
@@ -724,12 +798,10 @@ async def convert_background(
             if not backend_manager:
                 raise Exception("Backend manager not initialized")
 
-            ocr_backend = backend_manager.get_backend(backend)
-            if not ocr_backend:
-                raise Exception(f"Backend {backend} not found")
-
-            ocr_result = await ocr_backend.process_document(
-                source_path=file_path, ocr_mode=ocr_mode
+            ocr_result = await backend_manager.process_with_backend(
+                backend_name=backend,
+                image_path=file_path,
+                mode=ocr_mode if ocr_mode != "auto" else "text",
             )
 
         # Convert format logic (simplified fallback for now)
@@ -738,7 +810,7 @@ async def convert_background(
             "status": "completed",
             "target_path": f"{file_path}.{target_format}",
             "format": target_format,
-            "text_included": ocr_result is not None,
+            "text_included": ocr_result is not None and ocr_result.get("success", False),
         }
 
         processing_jobs[job_id]["status"] = "completed"
@@ -754,9 +826,13 @@ async def convert_background(
         logger.error(f"Failed to convert {job_id}: {e}")
         processing_jobs[job_id]["status"] = "failed"
         processing_jobs[job_id]["error"] = str(e)
+        try:
+            os.unlink(file_path)
+        except OSError:
+            pass
 
 
-async def execute_pipeline_background(job_id: str, pipeline_id: str, file_path: str):
+async def execute_pipeline_background(job_id: str, pipeline_id: str, file_path: str, backend: str = "auto"):
     """Execute processing pipeline in background"""
     try:
         # Define pipeline steps
@@ -785,9 +861,10 @@ async def execute_pipeline_background(job_id: str, pipeline_id: str, file_path: 
                 if step == "process_document":
                     if not backend_manager:
                         raise Exception("Backend manager not initialized")
-                    ocr_backend = backend_manager.get_backend("auto")
-                    result = await ocr_backend.process_document(
-                        source_path=file_path, ocr_mode="auto"
+                    result = await backend_manager.process_with_backend(
+                        backend_name=backend,
+                        image_path=file_path,
+                        mode="text",
                     )
                 elif step == "deskew_image":
                     # Placeholder for deskew logic
@@ -825,6 +902,10 @@ async def execute_pipeline_background(job_id: str, pipeline_id: str, file_path: 
         logger.error(f"Pipeline execution failed for {job_id}: {e}")
         processing_jobs[job_id]["status"] = "failed"
         processing_jobs[job_id]["error"] = str(e)
+        try:
+            os.unlink(file_path)
+        except OSError:
+            pass
 
 
 # End of processing jobs
@@ -882,28 +963,23 @@ def dict_to_csv(data: dict[str, Any]) -> str:
 
 @app.get("/api/scanners")
 async def get_scanners():
-    """Get list of available scanners"""
+    """Get list of available scanners. WIA discovery runs in a thread (STA) so flatbed is found."""
     if not scanner_manager:
         return {"scanners": [], "error": "Scanner manager not initialized"}
 
     try:
-        scanners = scanner_manager.discover_scanners()
+        # WIA is thread-affine: use single dedicated STA thread so every request sees devices.
+        loop = asyncio.get_event_loop()
+        scanners = await loop.run_in_executor(
+            _wia_executor,
+            lambda: scanner_manager.discover_scanners(True),
+        )
         if not scanners:
-            # Return demo/mock scans if discovery fails for testing
-            return {
-                "scanners": [
-                    {
-                        "id": "demo_1",
-                        "name": "Demo Scanner (Host Bridge)",
-                        "manufacturer": "Virtual",
-                        "status": "ready",
-                    }
-                ]
-            }
+            return {"scanners": [], "error": "No scanners found. Check USB connection and WIA drivers."}
 
         scanner_list = [
             {
-                "id": s.device_id,
+                "device_id": s.device_id,
                 "name": s.name,
                 "manufacturer": s.manufacturer,
                 "type": s.device_type,
@@ -916,8 +992,8 @@ async def get_scanners():
         ]
         return {"scanners": scanner_list}
     except Exception as e:
-        logger.error(f"Error fetching scanners: {e}")
-        return {"scanners": []}
+        logger.error("Error fetching scanners: %s", e)
+        return {"scanners": [], "error": str(e)}
 
 
 @app.post("/api/scan")
@@ -935,10 +1011,14 @@ async def scan_document(
         # Create settings object
         settings = ScanSettings(dpi=dpi, color_mode=color_mode, paper_size=paper_size)
 
-        logger.info(f"Starting scan on {device_id} with settings: {settings}")
+        logger.info("Starting scan on %s with settings: %s", device_id, settings)
 
-        # Perform scan
-        image = scanner_manager.scan_document(device_id, settings)
+        # Same WIA STA thread as discovery so scan sees the device.
+        loop = asyncio.get_event_loop()
+        image = await loop.run_in_executor(
+            _wia_executor,
+            lambda: scanner_manager.scan_document(device_id, settings),
+        )
 
         if not image:
             return {
@@ -983,6 +1063,77 @@ async def scan_document(
         return {"success": False, "message": str(e), "device_id": device_id}
 
 
+@app.post("/api/ocr_scanned")
+async def ocr_scanned_document(
+    background_tasks: BackgroundTasks,
+    filename: str = Form(...),
+    ocr_mode: str = Form("text"),
+    backend: str = Form("auto"),
+):
+    """Process an already scanned document with OCR"""
+    try:
+        scans_dir = project_root / "scans"
+        file_path = scans_dir / filename
+
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail=f"Scanned file {filename} not found")
+
+        _prune_old_jobs()
+        job_id = f"scan_ocr_{uuid.uuid4().hex[:12]}"
+
+        # Store job info
+        processing_jobs[job_id] = {
+            "status": "processing",
+            "filename": filename,
+            "file_path": str(file_path),
+            "ocr_mode": ocr_mode,
+            "backend": backend,
+            "result": None,
+            "error": None,
+        }
+
+        # Process in background (note: we don't delete the file after processing for scans)
+        if backend_manager and backend_manager.get_available_backends():
+            background_tasks.add_task(
+                process_scanned_background, job_id, str(file_path), ocr_mode, backend
+            )
+        else:
+            # demo mode
+            background_tasks.add_task(
+                process_file_demo, job_id, str(file_path), filename, ocr_mode, backend
+            )
+
+        return {"job_id": job_id, "status": "processing"}
+
+    except Exception as e:
+        logger.error(f"Failed to start OCR for scanned file: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+async def process_scanned_background(job_id: str, file_path: str, ocr_mode: str, backend: str):
+    """Process scanned file in background without deleting original"""
+    try:
+        if not backend_manager:
+            raise Exception("Backend manager not initialized")
+
+        result = await backend_manager.process_with_backend(
+            backend_name=backend, image_path=file_path, mode=ocr_mode
+        )
+
+        processing_jobs[job_id]["status"] = "completed"
+        processing_jobs[job_id]["result"] = result
+
+    except Exception as e:
+        logger.error(f"Failed to process scanned file {job_id}: {e}")
+        processing_jobs[job_id]["status"] = "failed"
+        processing_jobs[job_id]["error"] = str(e)
+
+
+# Handle static files for scans
+scans_dir = project_root / "scans"
+scans_dir.mkdir(exist_ok=True)
+app.mount("/static/scans", StaticFiles(directory=str(scans_dir)), name="scans")
+
 # Mount React app static files (defined after all API routes for proper precedence)
 if dist_dir.exists():
     # Mount static assets (JS, CSS, images, etc.)
@@ -1022,7 +1173,7 @@ else:
 
 def main():
     """Entry point for running the webapp"""
-    port = int(os.getenv("WEBAPP_PORT", "15550"))
+    port = int(os.getenv("WEBAPP_PORT", "10859"))
     reload = os.getenv("RELOAD", "false").lower() == "true"
     uvicorn.run("backend.app:app", host="0.0.0.0", port=port, reload=reload)
 

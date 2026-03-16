@@ -12,7 +12,22 @@ from typing import Any
 
 from ..core.error_handler import ErrorHandler, create_success_response
 
+from . import _analysis, _conversion, _image, _processor, _quality
+
 logger = logging.getLogger(__name__)
+
+# Map pipeline step tool names to (module, function_name)
+_STEP_TOOL_MAP = {
+    "process_document": (_processor, "process_document"),
+    "assess_ocr_quality": (_quality, "assess_ocr_quality"),
+    "analyze_document_layout": (_analysis, "analyze_document_layout"),
+    "extract_table_data": (_analysis, "extract_table_data"),
+    "convert_image_format": (_conversion, "convert_image"),
+    "deskew_image": (_image, "deskew_image"),
+    "enhance_image": (_image, "preprocess_image"),
+    "rotate_image": (_image, "rotate_image"),
+    "crop_image": (_image, "preprocess_image"),
+}
 
 
 def get_help_content(level: str = "basic", topic: str | None = None) -> str:
@@ -469,24 +484,133 @@ async def _handle_create_processing_pipeline(pipeline_name, steps, quality_gates
     }
 
 
-async def _handle_execute_pipeline(pipeline_config, input_documents, execution_mode):
-    """Handle pipeline execution."""
+async def _handle_execute_pipeline(
+    pipeline_config, input_documents, execution_mode, backend_manager
+):
+    """Execute pipeline steps on each document. Passes output of each step to the next."""
+    steps = pipeline_config.get("steps", [])
+    if not steps:
+        return ErrorHandler.create_error(
+            "PARAMETERS_INVALID",
+            message_override="Pipeline has no steps",
+        ).to_dict()
+
+    config = getattr(backend_manager, "config", None)
     results = []
-    # Mock execution for now as tools aren't fully integrated recursively
-    for doc in input_documents:
+
+    for doc_idx, doc_path in enumerate(input_documents):
+        current_path = doc_path
+        current_ocr_result = None
+        step_results = []
+        failed = False
+
+        for step_idx, step in enumerate(steps):
+            tool_name = step.get("tool")
+            params = dict(step.get("parameters", {}))
+
+            if tool_name not in _STEP_TOOL_MAP:
+                step_results.append(
+                    {
+                        "step": step_idx + 1,
+                        "tool": tool_name,
+                        "success": False,
+                        "error": f"Unknown tool: {tool_name}",
+                    }
+                )
+                failed = True
+                break
+
+            module, func_name = _STEP_TOOL_MAP[tool_name]
+            func = getattr(module, func_name)
+
+            # Build kwargs per tool
+            kwargs = dict(params)
+            kwargs.setdefault("backend_manager", backend_manager)
+            kwargs.setdefault("config", config)
+
+            if tool_name == "process_document":
+                kwargs["source_path"] = current_path
+            elif tool_name in ("analyze_document_layout", "extract_table_data"):
+                kwargs["image_path"] = current_path
+            elif tool_name == "convert_image_format":
+                kwargs["source_path"] = current_path
+            elif tool_name in ("deskew_image", "rotate_image"):
+                kwargs["image_path"] = current_path
+            elif tool_name in ("enhance_image", "crop_image"):
+                kwargs["source_path"] = current_path
+                if tool_name == "crop_image":
+                    kwargs["autocrop"] = True
+            elif tool_name == "assess_ocr_quality":
+                if current_ocr_result is None:
+                    step_results.append(
+                        {
+                            "step": step_idx + 1,
+                            "tool": tool_name,
+                            "success": False,
+                            "error": "No OCR result from previous step for assess_ocr_quality",
+                        }
+                    )
+                    failed = True
+                    break
+                kwargs["ocr_result"] = current_ocr_result
+
+            # Remove backend_manager/config for tools that do not accept them
+            if tool_name in ("deskew_image", "rotate_image"):
+                kwargs.pop("backend_manager", None)
+                kwargs.pop("config", None)
+
+            try:
+                result = await func(**kwargs)
+            except Exception as e:
+                step_results.append(
+                    {
+                        "step": step_idx + 1,
+                        "tool": tool_name,
+                        "success": False,
+                        "error": str(e),
+                    }
+                )
+                failed = True
+                break
+
+            step_results.append(
+                {
+                    "step": step_idx + 1,
+                    "tool": tool_name,
+                    "success": result.get("success", False),
+                }
+            )
+
+            if not result.get("success", False):
+                failed = True
+                step_results[-1]["error"] = result.get("error", "Step failed")
+                break
+
+            if tool_name == "process_document":
+                current_ocr_result = result.get("result", result)
+            elif result.get("target_path"):
+                current_path = result["target_path"]
+
         results.append(
             {
-                "document": doc,
-                "success": True,
-                "pipeline_executed": pipeline_config["name"],
-                "steps_completed": len(pipeline_config["steps"]),
+                "document": doc_path,
+                "document_index": doc_idx,
+                "success": not failed,
+                "steps_completed": len(step_results),
+                "step_results": step_results,
+                "final_path": current_path,
             }
         )
 
+    successful = sum(1 for r in results if r["success"])
     return {
         "success": True,
-        "results": results,
         "pipeline_name": pipeline_config["name"],
+        "total_documents": len(input_documents),
+        "successful": successful,
+        "failed": len(input_documents) - successful,
+        "results": results,
+        "message": f"Pipeline executed: {successful}/{len(input_documents)} documents processed",
     }
 
 
@@ -542,35 +666,32 @@ async def _handle_manage_models(backend_manager, target_free_mb, max_idle_second
 # Backward compatibility alias for watch_folder service
 async def workflow_management(
     operation: str,
-    backend_manager: Any,  # Injected dependency
-    # Batch processing parameters
+    backend_manager: Any,
     document_paths: list[str] | None = None,
     workflow_type: str = "auto",
     quality_threshold: float = 0.8,
     max_concurrent: int = 3,
     output_directory: str | None = None,
     save_intermediates: bool = False,
-    # Pipeline parameters
     pipeline_name: str | None = None,
     steps: list[dict[str, Any]] | None = None,
     quality_gates: list[dict[str, Any]] | None = None,
     error_handling: dict[str, Any] | None = None,
     input_documents: list[str] | None = None,
     execution_mode: str = "sequential",
-    # System monitoring parameters
     batch_id: str | None = None,
     include_metrics: bool = True,
     include_errors: bool = True,
-    # Health check parameters
     detailed: bool = False,
     focus: str | None = None,
-    # Model management parameters
     target_free_mb: int = 1024,
     max_idle_seconds: int = 300,
-    # Pipeline execution parameters
     pipeline_config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Backward compatibility wrapper for handle_workflow_op."""
+    """
+    Backward compatibility wrapper. Delegates to handle_workflow_op.
+    See ocr_tools.workflow_management for MCP tool docstring.
+    """
     return await handle_workflow_op(
         operation=operation,
         backend_manager=backend_manager,
@@ -599,38 +720,75 @@ async def workflow_management(
 
 async def handle_workflow_op(
     operation: str,
-    backend_manager: Any,  # Injected dependency
-    # Batch processing parameters
+    backend_manager: Any,
     document_paths: list[str] | None = None,
     workflow_type: str = "auto",
     quality_threshold: float = 0.8,
     max_concurrent: int = 3,
     output_directory: str | None = None,
     save_intermediates: bool = False,
-    # Pipeline parameters
     pipeline_name: str | None = None,
     steps: list[dict[str, Any]] | None = None,
     quality_gates: list[dict[str, Any]] | None = None,
     error_handling: dict[str, Any] | None = None,
     input_documents: list[str] | None = None,
     execution_mode: str = "sequential",
-    # System monitoring parameters
     batch_id: str | None = None,
     include_metrics: bool = True,
     include_errors: bool = True,
-    # Health check parameters
     detailed: bool = False,
     focus: str | None = None,
-    # Model management parameters
     target_free_mb: int = 1024,
     max_idle_seconds: int = 300,
-    # Pipeline execution parameters
     pipeline_config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    """
+    Backend handler for workflow operations. See ocr_tools.workflow_management for MCP tool docstring.
+    Note: ocr_tools exposes simplified API (workflow_name, source_dir, output_dir, pipeline_config);
+    this accepts full API. Some handlers are placeholders (monitor_batch_progress, manage_models).
+
+    OPERATIONS:
+    - process_batch_intelligent: Auto workflow per document. Requires: document_paths.
+    - create_processing_pipeline: Define custom pipeline. Requires: pipeline_name, steps.
+    - execute_pipeline: Run pipeline on documents. Requires: pipeline_config, input_documents.
+    - monitor_batch_progress: Batch progress (placeholder).
+    - optimize_processing: Recommended settings. Requires: document_paths.
+    - ocr_health_check: Backend health.
+    - list_backends: Available OCR backends.
+    - manage_models: Model memory (placeholder).
+
+    Args:
+    - operation (str, required): Operation to perform. Must be one of OPERATIONS above.
+    - backend_manager: Injected BackendManager.
+    - document_paths (list[str] | None): Input paths. Required for: process_batch_intelligent, optimize_processing.
+    - workflow_type (str): auto or ocr_only. Default: auto.
+    - quality_threshold (float): Target quality. Default: 0.8.
+    - max_concurrent (int): Parallel limit. Default: 3.
+    - output_directory (str | None): Output dir for batch.
+    - save_intermediates (bool): Save intermediates. Default: False.
+    - pipeline_name (str | None): Pipeline name. Required for: create_processing_pipeline.
+    - steps (list[dict] | None): Pipeline steps. Required for: create_processing_pipeline.
+    - pipeline_config (dict | None): Pipeline config. Required for: execute_pipeline.
+    - input_documents (list[str] | None): Documents for execute_pipeline.
+    - execution_mode (str): sequential or parallel. Default: sequential.
+    - batch_id (str | None): For monitor_batch_progress.
+    - include_metrics (bool): Include metrics. Default: True.
+    - include_errors (bool): Include errors. Default: True.
+    - detailed (bool): Detailed health. Default: False.
+    - focus (str | None): Health focus.
+    - target_free_mb (int): For manage_models. Default: 1024.
+    - max_idle_seconds (int): For manage_models. Default: 300.
+    - quality_gates (list[dict] | None): Pipeline quality gates.
+    - error_handling (dict | None): Pipeline error handling.
+
+    Returns:
+    FastMCP 2.14.1+ dialogic response: success, operation, result or error,
+    recommendations, next_steps, recovery_options (on error), related_operations.
+    """
     try:
         logger.info(f"Workflow management operation: {operation}")
 
-        # Validate operation parameter
+        # Validate operation
         valid_operations = [
             "process_batch_intelligent",
             "create_processing_pipeline",
@@ -682,7 +840,9 @@ async def handle_workflow_op(
                     "PARAMETERS_INVALID",
                     message_override="pipeline_config and input_documents required for execute_pipeline operation",
                 ).to_dict()
-            return await _handle_execute_pipeline(pipeline_config, input_documents, execution_mode)
+            return await _handle_execute_pipeline(
+                pipeline_config, input_documents, execution_mode, backend_manager
+            )
 
         elif operation == "monitor_batch_progress":
             return await _handle_monitor_batch_progress(batch_id, include_metrics, include_errors)

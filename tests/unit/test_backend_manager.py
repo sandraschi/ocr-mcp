@@ -32,7 +32,8 @@ class TestOCRBackend:
         assert "languages" in capabilities
         assert "gpu_support" in capabilities
 
-    def test_backend_process_image_not_implemented(self, config):
+    @pytest.mark.asyncio
+    async def test_backend_process_image_not_implemented(self, config):
         """Test that process_image raises NotImplementedError."""
         backend = OCRBackend("test-backend", config)
 
@@ -63,9 +64,12 @@ class TestBackendManager:
 
             manager = BackendManager(config)
 
-            # Mock all backends as unavailable
-            for backend in manager.backends.values():
-                backend._available = False
+            # Replace backends with unavailable mocks (avoid lazy loading)
+            for name in manager.backends:
+                mock_b = Mock()
+                mock_b.name = name
+                mock_b.is_available.return_value = False
+                manager.backends[name] = mock_b
 
             available = manager.get_available_backends()
             assert available == []
@@ -250,16 +254,15 @@ class TestBackendManager:
         assert selected is None
 
     def test_backend_initialization_with_imports(self, config):
-        """Test that backend manager initializes all expected backends."""
+        """Test that backend manager has all expected backends in registry."""
         manager = BackendManager(config)
 
-        # Should have initialized all expected backends
         expected_backends = [
             "deepseek-ocr",
             "florence-2",
             "dots-ocr",
             "pp-ocrv5",
-            "qwen-image-layered",
+            "qwen-layered",
             "got-ocr",
             "tesseract",
             "easyocr",
@@ -267,14 +270,14 @@ class TestBackendManager:
 
         for backend_name in expected_backends:
             assert backend_name in manager.backends
-            assert isinstance(manager.backends[backend_name], OCRBackend)
 
     def test_backend_manager_with_config_inheritance(self, config):
         """Test that backends inherit config correctly."""
         manager = BackendManager(config)
 
         for backend in manager.backends.values():
-            assert backend.config == config
+            if backend is not None:
+                assert backend.config == config
 
     def test_backend_manager_error_handling(self, config):
         """Test error handling in backend manager initialization."""
@@ -289,15 +292,15 @@ class TestBackendManager:
         """Test getting available backends when only some are available."""
         manager = BackendManager(config)
 
-        # Mock some backends as available, others not
         available_count = 0
-        for i, backend in enumerate(manager.backends.values()):
-            if i % 2 == 0:  # Make every other backend available
-                backend._available = True
+        for i, name in enumerate(manager.backends):
+            mock_b = Mock()
+            mock_b.name = name
+            mock_b.is_available.return_value = (i % 2 == 0)
+            if i % 2 == 0:
                 available_count += 1
-            else:
-                backend._available = False
+            manager.backends[name] = mock_b
 
         available = manager.get_available_backends()
         assert len(available) == available_count
-        assert all(name in manager.backends for name in available)
+        assert all(n in manager.backends for n in available)

@@ -12,6 +12,7 @@ import { QualityPage } from '@pages/QualityPage'
 import { SettingsPage } from '@pages/SettingsPage'
 import { PreprocessingPage } from '@pages/PreprocessingPage'
 import { ConversionPage } from '@pages/ConversionPage'
+import { ExportPage } from '@pages/ExportPage'
 import { usePerformanceMonitor } from '@hooks/usePerformanceMonitor'
 import { Topbar } from './components/layout/Topbar'
 import { LeftSidebar } from './components/layout/LeftSidebar'
@@ -83,7 +84,7 @@ function App() {
                     <Route path="/pipelines" element={<PlaceholderPage title="Custom Pipelines" />} />
                     <Route path="/optimization" element={<PlaceholderPage title="Auto-Optimization" />} />
                     <Route path="/conversion" element={<ConversionPage />} />
-                    <Route path="/export" element={<PlaceholderPage title="Export & Download" />} />
+                    <Route path="/export" element={<ExportPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="*" element={<Navigate to="/upload" replace />} />
                   </Routes>

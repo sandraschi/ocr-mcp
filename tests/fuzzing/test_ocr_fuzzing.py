@@ -7,6 +7,7 @@ against unexpected inputs and edge cases.
 
 import random
 import string
+from pathlib import Path
 
 import pytest
 from hypothesis import Verbosity, given, settings

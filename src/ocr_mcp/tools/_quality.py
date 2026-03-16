@@ -32,20 +32,18 @@ async def assess_ocr_quality(
     config: OCRConfig | None = None,
 ) -> dict[str, Any]:
     """
-    Assess the quality and accuracy of OCR results.
-
-    Provides detailed quality metrics, confidence analysis, and
-    recommendations for improving OCR accuracy.
+    Backend handler for assess_quality. See ocr_tools.document_processing for MCP tool docstring.
 
     Args:
-        ocr_result: OCR result dictionary from any OCR operation
-        ground_truth: Optional ground truth text for accuracy calculation
-        assessment_type: Type of assessment ("basic", "comprehensive", "detailed")
-        backend_manager: Optional backend manager for dependency injection
-        config: Optional OCR configuration for dependency injection
+    - ocr_result (dict[str, Any], required): OCR result from any OCR operation.
+    - ground_truth (str | None): Ground truth text for accuracy calculation.
+    - assessment_type (str): Type of assessment. Default: comprehensive.
+    - backend_manager: Injected BackendManager.
+    - config: Injected OCRConfig.
 
     Returns:
-        Comprehensive quality assessment with metrics and recommendations
+    FastMCP 2.14.1+ dialogic response: success, operation, result or error,
+    recommendations, next_steps, recovery_options (on error), related_operations.
     """
     logger.info(f"Assessing OCR quality (type: {assessment_type})")
 
