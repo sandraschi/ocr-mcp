@@ -4,7 +4,7 @@ Items that were or still are stubs. Fixes applied 2026-03.
 
 ## Fixed
 
-- **agentic_document_workflow**: Was simulated single-step mock. Now uses real `context.sample_step` loop with tool execution (FastMCP 2.14+).
+- **agentic_document_workflow**: Was simulated single-step mock. Now uses real `context.sample_step` loop with tool execution (FastMCP 3.1).
 - **GET /api/scanners**: Was returning fake "Demo Scanner" when discovery failed. Now returns `scanners: []` and `error` message. Discovery and scan run on a single dedicated STA thread; device release no longer calls `CoUninitialize()` so subsequent discovery still sees devices.
 
 ## Remaining (non-gaslighting)

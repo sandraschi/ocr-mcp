@@ -3,7 +3,7 @@ name = "OCR Document Processing"
 version = "0.2.0"
 schema_version = 1
 authors = ["Sandra <sandraschipal@hotmail.com>"]
-description = "Advanced multi-engine OCR and document analysis with FastMCP 2.14.3 conversational features"
+description = "Advanced multi-engine OCR and document analysis with FastMCP 3.1 conversational features"
 repository = "https://github.com/sandraschipal/ocr-mcp"
 
 [context_servers.ocr-mcp]
@@ -26,7 +26,7 @@ conversational_responses = true
 agentic_workflows = true
 
 [context_servers.ocr-mcp.features]
-fastmcp_version = "2.14.3"
+fastmcp_version = "3.1"
 conversational_returns = true
 sampling_with_tools = true
 sep_1577_compliant = true
@@ -43,15 +43,19 @@ agentic_document_workflow = "AI-orchestrated multi-document processing (SEP-1577
 [context_servers.ocr-mcp.prompts]
 process_instructions = "Interactive OCR processing guidance"
 quality_assessment_guide = "OCR quality evaluation workflow"
+scanner_workflow = "Scanner capture and OCR workflow (WIA)"
+batch_processing_guide = "Batch document processing guidance"
+agentic_workflow_instructions = "Agentic document workflow (SEP-1577, sampling with tools)"
 
 [context_servers.ocr-mcp.resources]
 logs = "OCR processing logs and system status"
-capabilities = "Available OCR backends and features"
+capabilities = "Available OCR backends and FastMCP 3.1 capabilities"
+skills = "OCR-MCP skills reference for LLMs"
 performance_metrics = "Processing statistics and performance data"
 
 [context_servers.ocr-mcp.dependencies]
 python = ">=3.11"
-fastmcp = ">=2.14.3"
+fastmcp = ">=3.1"
 torch = ">=2.0.0"
 transformers = ">=4.35.0"
 

@@ -1,0 +1,27 @@
+# OCR-MCP
+
+> FastMCP 3.1 document OCR server: 10+ SOTA backends, sampling, agentic workflow (SEP-1577), prompts, skills resource, WIA scanner (Windows). React web UI.
+
+## Core
+
+- [README](README.md) – Overview, quick start, installation, web UI, tools
+- [CHANGELOG](CHANGELOG.md) – Version history and fixes
+- [AI Models](AI_MODELS.md) – OCR backends, benchmarks, VRAM
+- [Master plan](OCR-MCP_MASTER_PLAN.md) – Architecture and roadmap
+
+## For LLMs and agents
+
+- [Placeholder audit](docs/PLACEHOLDER_AUDIT.md) – What is real vs mock
+- [PRD (central docs)](https://github.com/sandraschi/ocr-mcp) – Product summary; see also mcp-central-docs/projects/ocr-mcp/PRD.md
+
+## Install and run
+
+- **Justfile**: `just` to list recipes; `just run`, `just test`, `just webapp`, `just install` ([just](https://github.com/casey/just))
+- **Recommended**: `uv run ocr-mcp` (from repo root; requires [uv](https://docs.astral.sh/uv/))
+- **Alternative**: `python -m ocr_mcp.server` with `PYTHONPATH` set to repo root
+- **Web UI**: `just webapp` or see README “Web Interface”; backend and frontend ports in docs
+
+## MCP listing
+
+- **Glama.ai**: Use [glama.json](glama.json) snippet for MCP client config
+- **GitHub**: https://github.com/sandraschi/ocr-mcp (stars welcome)

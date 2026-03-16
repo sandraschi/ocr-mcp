@@ -1,5 +1,5 @@
 """
-OCR Sampling Handler for FastMCP 2.14.3
+OCR Sampling Handler for FastMCP 3.1
 
 Provides AI-powered sampling capabilities for intelligent document processing workflows,
 enabling autonomous orchestration of OCR operations based on document characteristics.
@@ -35,7 +35,7 @@ class SamplingResult:
 
 class OCRSamplingHandler:
     """
-    FastMCP 2.14.3 Sampling Handler for OCR operations.
+    FastMCP 3.1 Sampling Handler for OCR operations.
 
     Enables AI-powered document processing workflows by providing sampling
     capabilities that allow the server to make intelligent decisions about
@@ -56,7 +56,7 @@ class OCRSamplingHandler:
 
     async def sample(self, request: SamplingRequest) -> SamplingResult:
         """
-        Execute sampling request for OCR operations with FastMCP 2.14.3 SEP-1577 compliance.
+        Execute sampling request for OCR operations with FastMCP 3.1 SEP-1577 compliance.
 
         This method enables AI-powered agentic document processing workflows:
         - Intelligent OCR backend selection based on document analysis

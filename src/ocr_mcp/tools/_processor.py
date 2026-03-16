@@ -40,7 +40,7 @@ async def process_document(
     - config: Injected OCRConfig.
 
     Returns:
-    FastMCP 2.14.1+ dialogic response: success, operation, result or error,
+    FastMCP 3.1 dialogic response: success, operation, result or error,
     recommendations, next_steps, recovery_options (on error), related_operations.
     """
     logger.info(f"Processing document: {source_path} (backend: {backend}, mode: {mode})")
@@ -190,7 +190,7 @@ async def process_batch(
     - config: Injected OCRConfig.
 
     Returns:
-    FastMCP 2.14.1+ dialogic response: success, operation, result or error,
+    FastMCP 3.1 dialogic response: success, operation, result or error,
     recommendations, next_steps, recovery_options (on error), related_operations.
     """
     logger.info(f"Processing batch in: {source_dir}")

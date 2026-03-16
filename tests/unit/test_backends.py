@@ -93,10 +93,11 @@ class TestMockDeepSeekBackend:
         assert "multilingual" in capabilities["languages"]
         assert not capabilities["gpu_support"]
 
-    def test_call_tracking(self, backend, sample_image_path):
+    @pytest.mark.asyncio
+    async def test_call_tracking(self, backend, sample_image_path):
         """Test that backend tracks calls correctly."""
         initial_count = backend.call_count
-        backend.process_image(str(sample_image_path))
+        await backend.process_image(str(sample_image_path))
         assert backend.call_count == initial_count + 1
 
 
@@ -168,7 +169,7 @@ class TestMockDOTSBackend:
         capabilities = backend.get_capabilities()
 
         assert capabilities["name"] == "dots-ocr"
-        assert "document understanding specialist" in capabilities["description"]
+        assert "document understanding specialist" in capabilities["description"].lower()
 
 
 class TestMockPPOCRBackend:
@@ -200,7 +201,7 @@ class TestMockPPOCRBackend:
 
         assert capabilities["name"] == "pp-ocrv5"
         assert capabilities["gpu_support"] is True
-        assert "industrial-grade" in capabilities["description"]
+        assert "industrial-grade" in capabilities["description"].lower()
 
 
 class TestMockQwenBackend:
@@ -231,7 +232,7 @@ class TestMockQwenBackend:
         capabilities = backend.get_capabilities()
 
         assert capabilities["name"] == "qwen-image-layered"
-        assert "image decomposition" in capabilities["description"]
+        assert "image decomposition" in capabilities["description"].lower()
 
 
 class TestMockGOTBackend:

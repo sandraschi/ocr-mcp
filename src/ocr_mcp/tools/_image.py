@@ -39,7 +39,7 @@ async def preprocess_image(
     - config: Injected OCRConfig.
 
     Returns:
-    FastMCP 2.14.1+ dialogic response: success, operation, result or error,
+    FastMCP 3.1 dialogic response: success, operation, result or error,
     recommendations, next_steps, recovery_options (on error), related_operations.
     """
     logger.info(f"Preprocessing image: {source_path}")

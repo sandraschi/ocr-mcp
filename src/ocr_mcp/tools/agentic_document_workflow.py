@@ -1,8 +1,8 @@
 """
-FastMCP 2.14.1+ Sampling with Tools Orchestration Tools (SEP-1577)
+FastMCP 3.1 Sampling with Tools Orchestration Tools (SEP-1577)
 
 Real agentic workflows: context.sample_step loop with tool execution.
-No mocks; requires FastMCP 2.14+ and client sampling support.
+No mocks; requires FastMCP 3.1+ and client sampling support.
 """
 
 import logging
@@ -45,7 +45,7 @@ def register_agentic_document_workflow(app):
         context: Context | None = None,
     ) -> dict:
         """
-        Execute agentic document workflows using FastMCP 2.14.1+ sampling with tools.
+        Execute agentic document workflows using FastMCP 3.1 sampling with tools.
 
         Uses context.sample_step in a loop: LLM decides tool calls, tools are executed,
         results fed back until the LLM returns a final text response or max_iterations.
@@ -79,9 +79,9 @@ def register_agentic_document_workflow(app):
                 return build_error_response(
                     error="Sampling not available",
                     error_code="SAMPLING_UNAVAILABLE",
-                    message="FastMCP context does not support sampling with tools",
+                    message="FastMCP context does not support sampling with tools (requires 3.1+)",
                     recovery_options=[
-                        "Ensure FastMCP 2.14.1+ is installed",
+                        "Ensure FastMCP 3.1+ is installed",
                         "Check that sampling handlers are configured",
                     ],
                     urgency="high",

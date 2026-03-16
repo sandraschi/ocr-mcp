@@ -25,7 +25,20 @@ from ocr_mcp.core.backend_manager import BackendManager
 
 # Import OCR-MCP modules
 from ocr_mcp.core.config import OCRConfig
-from tests.utils.test_helpers import TestFileManager
+from tests.utils.test_helpers import (
+    AsyncTestHelper,
+    PerformanceProfiler,
+    TestDataGenerator,
+    TestDataValidator,
+    TestFileManager,
+)
+
+
+# Ensure test environment marker (optional; tests can skip if not set)
+def pytest_configure(config):
+    import os
+    if "OCR_TESTING" not in os.environ:
+        os.environ["OCR_TESTING"] = "true"
 
 
 # Test Configuration
@@ -560,6 +573,50 @@ def integration_config():
         "retry_delay": 1,  # seconds
         "cleanup_temp_files": True,
         "validate_results": True,
+    }
+
+
+# Fixtures from test_helpers for smoke and other tests
+@pytest.fixture
+def test_data_generator():
+    """Fixture for test data generator."""
+    return TestDataGenerator()
+
+
+@pytest.fixture
+def performance_profiler():
+    """Fixture for performance profiling."""
+    return PerformanceProfiler()
+
+
+@pytest.fixture
+def async_helper():
+    """Fixture for async test helpers."""
+    return AsyncTestHelper()
+
+
+@pytest.fixture
+def async_test_helper():
+    """Alias for async_helper (smoke tests)."""
+    return AsyncTestHelper()
+
+
+@pytest.fixture
+def data_validator():
+    """Fixture for data validation."""
+    return TestDataValidator()
+
+
+@pytest.fixture
+def test_context(test_data_generator, performance_profiler, file_manager, async_helper, data_validator):
+    """Comprehensive test context for integration-style tests."""
+    return {
+        "data_generator": test_data_generator,
+        "profiler": performance_profiler,
+        "file_manager": file_manager,
+        "async_helper": async_helper,
+        "validator": data_validator,
+        "server_manager": None,  # Optional; tests can set if needed
     }
 
 

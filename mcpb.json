@@ -5,7 +5,7 @@
     "runtime": "python",
     "entry_point": "src/ocr_mcp/server.py",
     "dependencies": [
-        "fastmcp>=2.14.4,<3.0.0",
+        "fastmcp>=3.1",
         "pytesseract>=0.3.10"
     ],
     "build": {

@@ -42,7 +42,7 @@ async def assess_ocr_quality(
     - config: Injected OCRConfig.
 
     Returns:
-    FastMCP 2.14.1+ dialogic response: success, operation, result or error,
+    FastMCP 3.1 dialogic response: success, operation, result or error,
     recommendations, next_steps, recovery_options (on error), related_operations.
     """
     logger.info(f"Assessing OCR quality (type: {assessment_type})")

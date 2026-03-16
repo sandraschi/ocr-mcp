@@ -8,8 +8,8 @@ testing without requiring actual model downloads or GPU resources.
 import asyncio
 from typing import Any
 
-from src.ocr_mcp.core.backend_manager import OCRBackend
-from src.ocr_mcp.core.config import OCRConfig
+from ocr_mcp.core.backend_manager import OCRBackend
+from ocr_mcp.core.config import OCRConfig
 
 
 class MockDeepSeekBackend(OCRBackend):

@@ -7,16 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2026-03-16
 
+### Added
+- **FastMCP 3.1 prompts**: `quality-assessment-guide`, `scanner-workflow`, `batch-processing-guide`, `agentic-workflow-instructions` (in addition to `process-instructions`).
+- **Resources**: `resource://ocr/capabilities` (backends + 3.1 features), `resource://ocr/skills` (LLM-oriented skills reference for document processing, scanning, workflows, agentic).
+- **Server docstring**: Documents sampling, agentic workflow tool, prompts, and skills in module header.
+
 ### Fixed
 - **WIA scanner discovery lost after first request**
   - Scanner was found on first `/api/scanners` call then reported 0 devices on later calls.
   - **Cause**: `_release_device()` called `pythoncom.CoUninitialize()`, tearing down COM for the whole executor thread; next discovery then ran in a broken COM state. Also, cleanup ran before re-enumerate so devices were released right before enumeration.
   - **Changes**: (1) `_release_device()` now only releases the device COM reference (e.g. `device.Release()`), no longer calls `CoUninitialize()`. (2) Discovery no longer cleans up at start; it enumerates first, builds the new device list, then releases only connections no longer in the new set. (3) All WIA discovery and scan already use a single-thread executor so COM stays on one STA thread.
-- **Agentic document workflow** — was simulated single-step mock; now uses real `context.sample_step` loop with tool execution (FastMCP 2.14+).
+- **Agentic document workflow** — was simulated single-step mock; now uses real `context.sample_step` loop with tool execution (FastMCP 3.1).
 - **GET /api/scanners** — no longer returns fake "Demo Scanner" when discovery fails; returns `scanners: []` and `error` message.
+- **MCP server not starting in Cursor (FastMCP 3.x API)** — FastMCP 3.x removed `on_duplicate_tools`, `on_duplicate_resources`, `on_duplicate_prompts` and `include_fastmcp_meta`. Server now uses single `on_duplicate="replace"` and no longer passes removed kwargs, so it starts correctly in Cursor and other MCP clients.
 
 ### Changed
 - **Web backend** — WIA operations use a dedicated single-thread `ThreadPoolExecutor` instead of `asyncio.to_thread()` so every discovery/scan runs on the same STA thread and device list stays stable.
+- **FastMCP** — Upgraded from 2.14.x to **3.1**: dependency `fastmcp[server]>=3.1`, all docs and docstrings updated.
 
 ## [Unreleased] - 2026-02-27
 
@@ -75,11 +82,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - 2026-02-09
 
 ### Changed
-- Upgraded FastMCP to 2.14.4+ (2026 SOTA standard)
-- Removed lifespan storage usage (mcp_instance.storage not in FastMCP 2.14.5)
+- Upgraded FastMCP to 3.1 (see 2026-03-16 section)
+- Removed lifespan storage usage (mcp_instance.storage not in FastMCP 3.x)
 - Portmanteau tool docstrings: 2026 SOTA format, no triple quotes within
 - README: Portmanteau Tool Ecosystem aligned with actual operations
-- README: FastMCP badge updated to 2.14.4+ (2026 SOTA)
 
 ## [0.2.0-alpha.0] - 2026-01-19
 

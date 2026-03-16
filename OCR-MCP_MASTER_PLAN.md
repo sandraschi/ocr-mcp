@@ -1,28 +1,26 @@
-# OCR-MCP: Revolutionary Document Understanding Server
+# OCR-MCP: Technical Architecture & Roadmap
+
+**See also:** [README](README.md) (install, quick start, dual nature) · [AI_MODELS.md](AI_MODELS.md) (backends and benchmarks)
 
 ## 🎯 Executive Summary
 
-**OCR-MCP** is a revolutionary **dual-repository OCR ecosystem** providing comprehensive document digitization and understanding capabilities:
+**OCR-MCP** is a single repo with two surfaces: a **web app** for humans and a **FastMCP 3.1 MCP server** for agentic IDEs (Claude, Cursor, Windsurf). Both share the same OCR backends, scanner layer, and pipelines.
 
-### **🖥️ OCR-MCP Server (This Repo)**
-- **FastMCP 2.13+ Backend**: Specialized server with scanner control and OCR processing
-- **Hardware Integration**: Direct flatbed scanner control via WIA/TWAIN
-- **Multiple OCR Backends**: GOT-OCR2.0, Tesseract, EasyOCR, PaddleOCR, TrOCR
-- **Advanced Processing**: Plain text, formatted text, layout preservation, HTML rendering
-- **MCP Ecosystem**: Serve any MCP client with OCR capabilities
+### **🖥️ MCP Server (this repo)**
+- **FastMCP 3.1**: Tools for OCR, preprocessing, scanner control, workflows; sampling and agentic flows (SEP-1577)
+- **Hardware**: Flatbed scanner control via WIA (Windows); TWAIN planned
+- **Backends**: See [AI_MODELS.md](AI_MODELS.md) — PaddleOCR-VL, DeepSeek-OCR-2, olmOCR-2, Mistral OCR, GOT-OCR, Tesseract, EasyOCR, etc.
+- **Output**: Plain text, formatted text, layout, HTML, JSON, searchable PDF
 
-### **🌐 OCR-MCP Frontend (Integrated)**
-- **Web Application**: Modern React-based interface for scanner control and OCR workflow (Integrated)
-- **Windows 64-bit App**: Native desktop application with full scanner integration
-- **Batch Processing**: Multi-document scanning and processing pipelines
-- **Results Management**: Organized storage and export of OCR results
+### **🌐 Web App (this repo)**
+- **Stack**: React (frontend) + FastAPI (backend); ports 10858 / 10859
+- **Features**: Upload or scan, pick backend, batch processing, results export
+- **Same engines**: Uses the same backend list as the MCP server
 
-### **🔧 Key Innovations**
-- **Scanner Control**: Direct hardware integration with flatbed scanners
-- **One-Touch Digitization**: Scan → OCR → Export in single workflow
-- **Multi-Format Output**: Text, HTML, Markdown, JSON, XML, PDF
-- **Batch Operations**: Process multiple documents with progress tracking
-- **Open-Source Democratization**: Bring professional OCR to everyone
+### **🔧 Design**
+- **Scanner**: WIA 2.0 integration; one-touch scan → OCR → export
+- **Formats**: Text, HTML, Markdown, JSON, XML, PDF
+- **Batch**: Multi-document pipelines with progress
 
 ## 🏗️ Architecture Overview
 
@@ -81,7 +79,7 @@ OCR-MCP Server
 │   └── Format Conversion (HTML, Markdown, JSON, XML)
 │
 └── Integration Layer
-    ├── MCP Protocol Handler (FastMCP 2.13+)
+    ├── MCP Protocol Handler (FastMCP 3.1)
     ├── Result Formatting (structured data, error handling)
     └── Client Adaptation (different MCP clients)
 ```
@@ -188,7 +186,7 @@ class WIAScannerManager:
 ## 🛠️ Implementation Plan
 
 ### **Phase 1: Core Infrastructure (Week 1-2)** ✅ **COMPLETED**
-- [x] Project structure setup (FastMCP 2.13+, dependencies)
+- [x] Project structure setup (FastMCP 3.1, dependencies)
 - [x] Basic server skeleton with MCP protocol
 - [x] Backend manager framework
 - [x] Model management system
@@ -245,7 +243,7 @@ class WIAScannerManager:
 ```toml
 [tool.poetry.dependencies]
 python = "^3.11"
-fastmcp = {extras = ["server"], version = "^2.13.0"}
+fastmcp = {extras = ["server"], version = ">=3.1"}
 transformers = "^4.35.0"
 torch = "^2.1.0"
 pillow = "^10.0.0"
@@ -352,7 +350,7 @@ ocr-mcp-ecosystem/
 ## 🔧 Development Roadmap
 
 ### **Week 1-2: Foundation**
-- [ ] Initialize repository with FastMCP 2.13+
+- [ ] Initialize repository with FastMCP 3.1
 - [ ] Set up project structure and dependencies
 - [ ] Implement basic MCP server with health check
 - [ ] Create backend manager framework

@@ -2,23 +2,19 @@
   "mcpServers": {
     "ocr-mcp": {
       "name": "ocr-mcp",
-      "command": "python",
-      "args": [
-        "-m",
-        "src.ocr_mcp.server"
-      ],
-      "env": {
-        "PYTHONPATH": "${workspaceFolder}"
-      },
-      "description": "Professional Document Processing Suite with 7 SOTA OCR engines (Mistral, DeepSeek, Florence-2) and a built-in React WebApp.",
+      "command": "uv",
+      "args": ["--directory", "${workspaceFolder}", "run", "ocr-mcp"],
+      "env": {},
+      "description": "FastMCP 3.1 document OCR server: 10+ SOTA backends (PaddleOCR-VL-1.5, DeepSeek-OCR-2, olmOCR-2, etc.), sampling, agentic workflow (SEP-1577), prompts, skills resource. WIA scanner (Windows). React web UI.",
       "capabilities": {
         "webapp": {
           "enabled": true,
           "url": "http://localhost:15550"
         },
+        "sampling": true,
         "ai_features": {
           "enabled": true,
-          "notes": "State-of-the-art OCR (GOT-OCR2.0, DeepSeek) requires GPU (RTX 3060+). Auto-detects running Ollama/LM Studio for semantic analysis."
+          "notes": "Sampling + agentic_document_workflow. SOTA OCR needs GPU (RTX 3060+). Optional Ollama/LM Studio for semantic analysis."
         },
         "tools": {
           "enabled": true,
@@ -38,19 +34,22 @@
         "message": 60000
       },
       "metadata": {
-        "version": "1.2.0",
+        "version": "0.2.0",
         "author": "Sandra Schipal",
         "homepage": "https://github.com/sandraschi/ocr-mcp",
         "license": "MIT",
+        "stars": "GitHub stars welcome — repo has 7+",
         "tags": [
           "ocr",
           "document-processing",
-          "ai",
-          "webapp",
+          "fastmcp-3.1",
+          "sampling",
+          "agentic",
+          "sep-1577",
           "computer-vision",
           "pdf",
-          "mistral",
-          "deepseek"
+          "scanner",
+          "wia"
         ],
         "categories": [
           "Productivity",

@@ -85,7 +85,7 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
         PORTMANTEAU PATTERN RATIONALE:
         Consolidates 13 document OCR, analysis, and quality operations into a single
         interface. Prevents tool explosion while maintaining full functionality. Follows
-        FastMCP 2.14+ best practices.
+        FastMCP 3.1 best practices.
 
         OPERATIONS:
         - process_document: Main OCR for single images/PDFs. Requires: source_path.
@@ -138,7 +138,7 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
         - panel_analysis (bool): Analyze panels. Used by: process_document.
 
         Returns:
-        FastMCP 2.14.1+ dialogic response: success, operation, result or error,
+        FastMCP 3.1 dialogic response: success, operation, result or error,
         recommendations, next_steps, recovery_options (on error), related_operations.
         Enables conversational back-and-forth between client and assistant.
         """
@@ -267,7 +267,7 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
         PORTMANTEAU PATTERN RATIONALE:
         Consolidates 4 image preprocessing and conversion operations into a single
         interface. Prevents tool explosion while maintaining full functionality. Follows
-        FastMCP 2.14+ best practices.
+        FastMCP 3.1 best practices.
 
         OPERATIONS:
         - preprocess: Deskew, denoise, grayscale, threshold, autocrop for OCR readiness. Requires: source_path.
@@ -290,7 +290,7 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
           Used by: convert, pdf_to_images.
 
         Returns:
-        FastMCP 2.14.1+ dialogic response: success, operation, result or error,
+        FastMCP 3.1 dialogic response: success, operation, result or error,
         recommendations, next_steps, recovery_options (on error), related_operations.
         Enables conversational back-and-forth between client and assistant.
         """
@@ -356,7 +356,7 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
         """
         PORTMANTEAU PATTERN RATIONALE:
         Consolidates 7 scanner hardware operations into a single interface. Prevents
-        tool explosion while maintaining full functionality. Follows FastMCP 2.14+
+        tool explosion while maintaining full functionality. Follows FastMCP 3.1
         best practices. Windows WIA only.
 
         OPERATIONS:
@@ -385,7 +385,7 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
           scan_document, scan_batch.
 
         Returns:
-        FastMCP 2.14.1+ dialogic response: success, operation, result or error,
+        FastMCP 3.1 dialogic response: success, operation, result or error,
         recommendations, next_steps, recovery_options (on error), related_operations.
         Enables conversational back-and-forth between client and assistant.
         """
@@ -421,7 +421,7 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
         PORTMANTEAU PATTERN RATIONALE:
         Consolidates 8 batch processing, pipeline, and system management operations
         into a single interface. Prevents tool explosion while maintaining full
-        functionality. Follows FastMCP 2.14+ best practices.
+        functionality. Follows FastMCP 3.1 best practices.
 
         OPERATIONS:
         - process_batch_intelligent: Auto workflow per document. Requires: source_dir.
@@ -445,7 +445,7 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
           execute_pipeline (full config).
 
         Returns:
-        FastMCP 2.14.1+ dialogic response: success, operation, result or error,
+        FastMCP 3.1 dialogic response: success, operation, result or error,
         recommendations, next_steps, recovery_options (on error), related_operations.
         Enables conversational back-and-forth between client and assistant.
         """
@@ -472,7 +472,7 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
         """
         PORTMANTEAU PATTERN RATIONALE:
         Single help tool for contextual documentation. Prevents separate help tools
-        per domain. Follows FastMCP 2.14+ best practices.
+        per domain. Follows FastMCP 3.1 best practices.
 
         LEVELS:
         - basic: Quick start, essential tools, common workflows.
@@ -493,7 +493,7 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
         """
         PORTMANTEAU PATTERN RATIONALE:
         Single status tool for system diagnostics. Prevents separate status tools per
-        component. Follows FastMCP 2.14+ best practices.
+        component. Follows FastMCP 3.1 best practices.
 
         LEVELS:
         - basic: Backend availability, overall health, quick status.
@@ -503,7 +503,7 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
         - level (str): Detail depth. Default: basic. Must be one of LEVELS above.
 
         Returns:
-        FastMCP 2.14.1+ dialogic response: success, operation, result or error,
+        FastMCP 3.1 dialogic response: success, operation, result or error,
         recommendations, next_steps, recovery_options (on error), related_operations.
         Enables conversational back-and-forth between client and assistant.
         """

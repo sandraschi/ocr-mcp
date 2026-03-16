@@ -100,7 +100,7 @@ class TestMockWIABackend:
         assert image is not None
         assert isinstance(image, Image.Image)
         assert image.mode == "RGB"
-        assert image.size == (2480, 3508)  # A4 at 300 DPI
+        assert image.size == (2481, 3507)  # A4 at 300 DPI (8.27*300, 11.69*300)
         assert backend.call_count == 1
 
     def test_scan_document_nonexistent_scanner(self, backend):

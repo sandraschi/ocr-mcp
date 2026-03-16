@@ -20,7 +20,7 @@ OCR-MCP is a comprehensive FastMCP document processing server with 8+ OCR backen
 - **Backend registry pattern**: Clean registry for 8 backends with module paths; easy to add new engines.
 - **Portmanteau tools**: `document_processing`, `image_management`, `scanner_operations`, `workflow_management` consolidate operations; reduces tool sprawl.
 - **Structured error handling**: `ErrorHandler` with `OCRError`, error codes, recovery options, severity levels.
-- **Sampling integration**: FastMCP 2.14.3 `OCRSamplingHandler` for AI-orchestrated document workflows (SEP-1577).
+- **Sampling integration**: FastMCP 3.1 `OCRSamplingHandler` for AI-orchestrated document workflows (SEP-1577).
 - **Modular backends**: Tesseract, EasyOCR, DeepSeek, Florence-2, DOTS, PP-OCRv5, Qwen-Layered, Mistral OCR; clear base class `OCRBackend`.
 
 ### Tooling & Standards
@@ -132,7 +132,7 @@ OCR-MCP is a comprehensive FastMCP document processing server with 8+ OCR backen
 
 - **backend/app.py** (~760 lines): Consider splitting into routers (upload, job, scanner, pipeline, export).
 - **Backend interface inconsistency**: Some backends use `process_document(source_path=..., ocr_mode=...)`, others `process_image(image_path, mode)`. BackendManager handles both; consider standardizing on one.
-- **requirements.txt vs pyproject.toml**: Both exist; requirements.txt has different version ranges (e.g. `fastmcp>=2.13.0,<2.14.0` vs pyproject `>=2.14.3,<3.0.0`). Align or remove redundant requirements.txt.
+- **requirements.txt vs pyproject.toml**: Align or remove redundant requirements.txt; pyproject uses `fastmcp[server]>=3.1`.
 - **Root-level test files**: `test_*.py` at repo root (e.g. `test_backend_manager.py`, `test_gpu.py`) – move under `tests/` or document as ad-hoc scripts.
 
 ---

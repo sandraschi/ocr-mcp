@@ -49,7 +49,7 @@ async def handle_scanner_op(
     - **kwargs: save_path, save_directory, brightness, contrast, count, use_adf, duplex.
 
     Returns:
-    FastMCP 2.14.1+ dialogic response: success, operation, result or error,
+    FastMCP 3.1 dialogic response: success, operation, result or error,
     recommendations, next_steps, recovery_options (on error), related_operations.
     """
     # Map parameters if necessary

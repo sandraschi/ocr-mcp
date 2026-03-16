@@ -1,8 +1,8 @@
 # OCR-MCP AI Models Documentation
 
-*Last updated: 2026-02-27*
+*Last updated: 2026-03*
 
-This document describes all OCR backends in the system: what they are, how accurate they are, when to use them, and how to install them.
+This document lists every OCR backend used by **OCR-MCP** (both the [web app](README.md#-installation) and the [MCP server](README.md#-installation)): what they are, accuracy/benchmarks, when to use them, and how to install or enable them. Backend names here match the `backend` parameter in tools and the web UI dropdown.
 
 ---
 

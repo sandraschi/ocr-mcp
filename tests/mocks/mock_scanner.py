@@ -105,9 +105,9 @@ class MockWIABackend:
         dpi = settings.get("dpi", 300)
         color_mode = settings.get("color_mode", "Color")
 
-        # A4 at requested DPI
-        width = int(8.27 * dpi)  # A4 width in inches
-        height = int(11.69 * dpi)  # A4 height in inches
+        # A4 at requested DPI (round for consistent dimensions)
+        width = round(8.27 * dpi)  # A4 width in inches
+        height = round(11.69 * dpi)  # A4 height in inches
 
         if color_mode == "Color":
             mode = "RGB"
@@ -124,12 +124,13 @@ class MockWIABackend:
 
         # Add some mock text-like content (simplified)
         if color_mode != "BlackWhite":
-            # Draw some lines to simulate text
+            # Draw some lines to simulate text (fill must match mode: int for L, tuple for RGB)
             from PIL import ImageDraw
 
             draw = ImageDraw.Draw(image)
+            fill = (0, 0, 0) if mode == "RGB" else 0
             for y in range(100, height, 50):
-                draw.line([(50, y), (width - 50, y)], fill=(0, 0, 0), width=2)
+                draw.line([(50, y), (width - 50, y)], fill=fill, width=2)
 
         return image
 

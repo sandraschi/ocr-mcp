@@ -1,6 +1,8 @@
 # OCR-MCP Testing Suite
 
-Comprehensive testing framework for OCR-MCP with multiple testing strategies and CI/CD integration.
+Test layout and how to run tests for [OCR-MCP](../README.md). CI runs on every push/PR via [.github/workflows/ci.yml](../.github/workflows/ci.yml) (uv, ruff, pytest).
+
+**Quick run:** from repo root: `just test` or `uv run pytest`.
 
 ## 🏗️ Testing Architecture
 
@@ -30,11 +32,13 @@ tests/
 
 ### Run All Tests
 ```bash
-# Using the advanced test runner
-python tests/run_tests.py all
+# From repo root (recommended)
+just test
+# or
+uv run pytest
 
-# Or using pytest directly
-pytest
+# Optional: advanced test runner (if available)
+python tests/run_tests.py all
 ```
 
 ### Run Specific Test Types
@@ -286,24 +290,9 @@ class TestOCRFeature:
         pass
 ```
 
-### CI/CD Integration
-```yaml
-# .github/workflows/test.yml
-name: Tests
-on: [push, pull_request]
+### CI/CD
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Run tests
-        run: python tests/run_tests.py all --coverage
-      - name: Upload coverage
-        uses: codecov/codecov-action@v2
-        with:
-          file: reports/coverage/coverage.xml
-```
+Tests run in [.github/workflows/ci.yml](../.github/workflows/ci.yml) on push/PR to `main`/`master`: uv, Python 3.12, `uv sync --all-extras`, ruff check/format, then `uv run pytest`. No separate test workflow; add coverage upload there if desired.
 
 ## 📊 Test Reporting
 
@@ -395,10 +384,11 @@ PYTHONPATH=src pytest
 
 ### Import Errors
 ```bash
-# Ensure proper Python path
+# Ensure proper Python path (Bash/Unix)
 export PYTHONPATH=src:$PYTHONPATH
 pytest tests/
 ```
+On Windows PowerShell: `$env:PYTHONPATH = "src"; pytest tests/`. When using `uv run pytest` from repo root you usually don't need to set PYTHONPATH.
 
 ### GPU/CPU Issues
 ```bash

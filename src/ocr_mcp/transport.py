@@ -1,5 +1,5 @@
 """
-FastMCP 2.14.4+ Dual Transport Configuration
+FastMCP 3.1 Dual Transport Configuration
 
 Standard module for all MCP servers in d:/Dev/repos.
 Provides unified transport configuration for STDIO, HTTP Streamable, and legacy SSE modes.
@@ -71,7 +71,7 @@ def create_argument_parser(server_name: str) -> argparse.ArgumentParser:
         Configured ArgumentParser instance.
     """
     parser = argparse.ArgumentParser(
-        description=f"{server_name} - FastMCP 2.14.4+ Server",
+        description=f"{server_name} - FastMCP 3.1 Server",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=f"""
 Environment Variables:
@@ -97,7 +97,7 @@ Examples:
         "--stdio", action="store_true", help="Run in STDIO (JSON-RPC) mode (default)"
     )
     transport_group.add_argument(
-        "--http", action="store_true", help="Run in HTTP Streamable mode (FastMCP 2.14.4+)"
+        "--http", action="store_true", help="Run in HTTP Streamable mode (FastMCP 3.1)"
     )
     transport_group.add_argument(
         "--sse", action="store_true", help="Run in SSE mode (deprecated, use --http)"

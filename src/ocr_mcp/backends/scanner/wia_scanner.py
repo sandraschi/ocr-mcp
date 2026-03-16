@@ -455,22 +455,10 @@ class WIABackend:
             return False
 
         try:
-            # Get the scan item (usually the flatbed or feeder)
-            # WIA 2.0 uses Items collection
-            items = getattr(device, "Items", None)
-            if not items or items.Count == 0:
-                logger.error(f"No scan items available for scanner {device_id}")
+            item = self._get_scan_item(device, device_id, settings.use_adf)
+            if not item:
+                logger.error(f"No scan item available for scanner {device_id}")
                 return False
-
-            # WIA collections are often 1-based in comtypes/WIA 2.0
-            try:
-                item = items[1]
-            except Exception:
-                try:
-                    item = items[0]
-                except Exception:
-                    logger.error(f"Could not access scan item for scanner {device_id}")
-                    return False
 
             properties = item.Properties
 
@@ -595,24 +583,72 @@ class WIABackend:
             logger.error(f"Failed to get fresh connection for {device_id}: {e}")
         return None
 
+    def _get_scan_item(self, device, device_id: str, use_adf: bool):
+        """
+        Return the WIA scan item (flatbed or feeder) for the given device.
+        When use_adf is True and the device has multiple items, selects the feeder;
+        otherwise selects the flatbed. Many WIA drivers expose flatbed as first item,
+        feeder as second.
+        """
+        items = getattr(device, "Items", None)
+        if not items or items.Count == 0:
+            return None
+        count = getattr(items, "Count", None) or len(items)
+        if count == 1:
+            try:
+                return items[0]
+            except Exception:
+                try:
+                    return items[1]
+                except Exception:
+                    return None
+        # Multiple items: try category if available, else use conventional order
+        try:
+            for i in range(count):
+                try:
+                    it = items[i]
+                except Exception:
+                    try:
+                        it = items[i + 1]
+                    except Exception:
+                        continue
+                props = getattr(it, "Properties", None)
+                if not props:
+                    continue
+                cat = self._get_property_value(props, "Item Category")
+                if not cat:
+                    cat = self._get_property_value(props, "Category")
+                cat_str = str(cat).lower() if cat else ""
+                if use_adf and ("feeder" in cat_str or "adf" in cat_str):
+                    logger.debug(f"Selected feeder item by category for {device_id}")
+                    return it
+                if not use_adf and ("flatbed" in cat_str or "platen" in cat_str):
+                    logger.debug(f"Selected flatbed item by category for {device_id}")
+                    return it
+        except Exception as e:
+            logger.debug(f"Category-based item selection failed: {e}")
+        # Fallback: conventional index (0 = flatbed, 1 = feeder for many drivers)
+        for idx in ([1, 0] if use_adf else [0, 1]):
+            try:
+                item = items[idx]
+                logger.debug(f"Using scan item index {idx} (use_adf={use_adf}) for {device_id}")
+                return item
+            except Exception:
+                try:
+                    item = items[idx + 1]
+                    logger.debug(f"Using scan item index {idx + 1} (use_adf={use_adf}) for {device_id}")
+                    return item
+                except Exception:
+                    continue
+        return None
+
     def _configure_scan_robust(self, device, device_id: str, settings: ScanSettings) -> bool:
         """Configure scan with robust error handling for Canon scanners."""
         try:
-            # Get scan item
-            items = getattr(device, "Items", None)
-            if not items or items.Count == 0:
-                logger.error(f"No scan items available for scanner {device_id}")
+            item = self._get_scan_item(device, device_id, settings.use_adf)
+            if not item:
+                logger.error(f"No scan item available for scanner {device_id}")
                 return False
-
-            # WIA collections are often 1-based
-            try:
-                item = items[1]
-            except Exception:
-                try:
-                    item = items[0]
-                except Exception:
-                    logger.error(f"Could not access scan item for scanner {device_id}")
-                    return False
             properties = item.Properties
 
             # Configure with error handling for each property

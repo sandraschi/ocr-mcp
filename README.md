@@ -316,13 +316,15 @@ See [AI_MODELS.md](AI_MODELS.md) for details and benchmarks.
 
 **Prerequisites:** Python 3.12+, [uv](https://docs.astral.sh/uv/) (recommended). GPU optional for SOTA models.
 
+**Fastest path (if you have [just](https://github.com/casey/just)):** clone repo, then `just install` and `just run`. See [docs/JUSTFILE.md](docs/JUSTFILE.md) for all recipes.
+
 ### From repo (recommended)
 
 ```powershell
 # Clone (or open repo)
 cd D:\Dev\repos\ocr-mcp
 
-# Install deps
+# Install deps (or: just install)
 uv sync
 
 # Run MCP server (stdio)
@@ -713,6 +715,7 @@ See [OCR-MCP_MASTER_PLAN.md](OCR-MCP_MASTER_PLAN.md) for detailed roadmap.
 
 - [AI_MODELS.md](AI_MODELS.md) – backends, benchmarks
 - [OCR-MCP_MASTER_PLAN.md](OCR-MCP_MASTER_PLAN.md) – architecture, roadmap
+- [docs/JUSTFILE.md](docs/JUSTFILE.md) – just recipes (install, run, test, webapp, etc.)
 - [tests/README.md](tests/README.md) – testing
 
 ### 🛠️ Development Resources
@@ -754,9 +757,9 @@ result = await calibre_ocr(
 - **Book Digitization**: High-quality OCR for scanned books
 - **Accessibility**: Convert images to readable text for screen readers
 
-## 📈 Roadmap
+## 📈 Roadmap & TODO
 
-### ✅ Completed Milestones
+### ✅ Completed
 - [x] FastMCP 3.1 Core Infrastructure
 - [x] GOT-OCR2.0 Multi-mode Integration
 - [x] Robust WIA 2.0 Hardware Integration (Canon LiDE 400 verified)
@@ -764,43 +767,25 @@ result = await calibre_ocr(
 - [x] Mistral OCR 3 (OCR-2512) SOTA Backend Implementation
 - [x] Multi-format Pipeline (PDF, CBZ, Scanned Docs)
 
-### Immediate (Next 2-4 weeks)
-- [ ] Performance Benchmarking Suite
-- [ ] Advanced Image Preprocessing (Deskew/Enhance)
-- [ ] TWAIN Backend Support
-- [ ] Multi-language Model Fine-tuning
-
-### Medium-term (2-3 months)
-- [ ] Advanced Layout Intelligence (Panel analysis for Manga)
-- [ ] Batch processing concurrency optimizations
-- [ ] Cloud deployment (Docker/Kubernetes)
-- [ ] Mobile scanning workflow integration
+### Planned / TODO
+- [ ] **More OCR models** — Continuously add new engines as they ship (many from Chinese vendors: Paddle, DeepSeek, Qwen, etc.); keep backend table in [AI_MODELS.md](AI_MODELS.md) current.
+- [ ] **Document RAG** — Vectorize OCR output; optional embedding + vector store for semantic search over scanned/imported docs.
+- [ ] **Document deposit / organizer / viewer** — Persistent doc store: ingest, tag, organize, and a simple viewer (web or MCP tools) for “my OCR library”.
+- [ ] **Advanced memory MCP** — Integrate with memory MCP servers so agents can read/write OCR results and summaries into long-term memory.
+- [ ] **Streaming & large docs** — Chunked processing and streaming responses for very long documents to avoid timeouts and OOM.
+- [ ] **Observability** — Metrics (e.g. Prometheus) and tracing (e.g. OpenTelemetry) for pipelines and backends.
+- [ ] **Benchmark dashboard** — Track accuracy/latency across backends and datasets; optional CI or periodic runs.
+- [ ] **TWAIN backend** — Scanner support via TWAIN in addition to WIA (broader device support).
+- [ ] **Docker / cloud deploy** — Image and optional Helm or Compose for easy deployment.
 
 ## 🤝 Contributing
 
 ### Development Setup
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-username/ocr-mcp.git
-   cd ocr-mcp
-   ```
-
-2. **Install Poetry** (if not already installed)
-   ```bash
-   pip install poetry
-   ```
-
-3. **Install dependencies**
-   ```bash
-   poetry install
-   ```
-
-4. **Set up development environment** (recommended)
-   ```bash
-   poetry run ocr-mcp-setup-dev
-   # This installs pre-commit hooks and sets up the environment
-   ```
+1. **Clone the repo:** `git clone https://github.com/sandraschi/ocr-mcp.git` then `cd ocr-mcp`
+2. **Install [uv](https://docs.astral.sh/uv/) and Python 3.12+**
+3. **Install deps:** `uv sync --all-extras`
+4. **Optional:** Install pre-commit and run `pre-commit install`; run manually with `pre-commit run --all-files`
 
 ### 📦 Packaging & Distribution
 
@@ -816,7 +801,7 @@ mcpb pack . dist/ocr-mcp.mcpb
 #### Discovery & listings
 - **Glama.ai**: Use the [glama.json](glama.json) snippet in your MCP client config; includes FastMCP 3.1, sampling, agentic, prompts. [Submit/update](https://glama.ai/mcp/servers) on Glama for discovery.
 - **LLM discoverability**: [llms.txt](llms.txt) at repo root gives LLMs and crawlers a short sitemap (README, CHANGELOG, AI models, install, listings).
-- **Justfile (just)**: [justfile](justfile) follows the [justfiles standard](https://github.com/casey/just). Run `just` to list recipes; `just run`, `just test`, `just webapp`, `just install`, `just pack`, etc.
+- **Justfile (just)**: [docs/JUSTFILE.md](docs/JUSTFILE.md) — technical reference. Run `just` to list recipes; fastest install: `just install` then `just run`.
 
 ---
 
@@ -836,10 +821,7 @@ This project uses pre-commit hooks to maintain code quality. The following tools
 - **Detect-secrets**: Secret detection
 - **Markdownlint**: Markdown linter
 
-To manually run all checks:
-```bash
-poetry run pre-commit run --all-files
-```
+To run all checks: `pre-commit run --all-files` (or `uv run pre-commit run --all-files` if installed in project).
 
 OCR-MCP welcomes contributions! Areas of particular interest:
 
