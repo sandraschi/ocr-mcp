@@ -170,7 +170,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Indentation errors and logic flow in `webapp/backend/app.py` `/api/scan` endpoint.
 - Redundant backend re-initialization that caused resource churn and COM instability.
-- Port conflict resolution and documentation (Standardized on port 8765).
+- Port conflict resolution and documentation (standardized on 10858 frontend / 10859 backend).
 
 ## [0.1.1] - 2025-12-23
 
