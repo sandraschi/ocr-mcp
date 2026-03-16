@@ -1,23 +1,25 @@
-# OCR-MCP: Professional Document Processing Suite
+# OCR-MCP
 
-[![Version](https://img.shields.io/badge/Version-0.2.0--alpha-blue)](https://github.com/your-username/ocr-mcp/releases)
+**Two ways to use it:** a **web app** for humans (drag‑and‑drop OCR, scanner, batch) and a **FastMCP 3.1 MCP server** for agentic IDE clients—Claude, Cursor, Windsurf—so agents can run OCR, preprocessing, and workflows as tools. Both use the same 10+ OCR engines, WIA scanner (Windows), and pipelines; one repo.
+
+**GitHub topics** (repo → About → Topics): `ocr`, `mcp`, `fastmcp`, `document-processing`, `scanner`, `wia`, `pdf`, `computer-vision`, `model-context-protocol`, `llm`
+
+[![Version](https://img.shields.io/badge/Version-0.2.0--alpha-blue)](https://github.com/sandraschi/ocr-mcp/releases)
 [![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)](https://python.org)
-[![FastMCP](https://img.shields.io/badge/FastMCP-2.14.5%2B-0066CC)](https://github.com/jlowin/fastmcp)
+[![FastMCP](https://img.shields.io/badge/FastMCP-3.1-0066CC)](https://github.com/jlowin/fastmcp)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 [![OCR Engines](https://img.shields.io/badge/OCR%20Engines-10%2B-orange)](README#-ai-models--ocr-engines)
 [![Scanner](https://img.shields.io/badge/Scanner-WIA%20%28Windows%29-0078D4?logo=windows)](README#-scanner-integration)
-[![Web UI](https://img.shields.io/badge/Web%20UI-React-61DAFB?logo=react&logoColor=black)](README#-professional-web-interface)
+[![Web UI](https://img.shields.io/badge/Web%20UI-React-61DAFB?logo=react&logoColor=black)](README#-web-interface)
 [![Status](https://img.shields.io/badge/Status-Alpha-green)](OCR-MCP_MASTER_PLAN.md)
-
-**Complete document processing solution with 7 state-of-the-art OCR engines, intelligent preprocessing, document analysis, quality assessment, workflow automation, and professional web interface.**
 
 ## 📋 Table of Contents
 
 - [🎯 What is OCR-MCP?](#-what-is-ocr-mcp)
-- [✨ Complete Feature Suite](#-complete-feature-suite)
+- [✨ Feature summary](#-feature-summary)
 - [🚀 Quick Start](#-quick-start)
 - [🛠️ Installation](#-installation)
-- [🌐 Professional Web Interface](#-professional-web-interface)
+- [🌐 Web Interface](#-web-interface)
 - [📖 Usage Examples](#-usage-examples)
 - [🔧 Configuration](#-configuration)
 - [🧠 AI Models & OCR Engines](#-ai-models--ocr-engines)
@@ -27,7 +29,7 @@
 - [📄 License](#-license)
 - [🔍 Document Analysis](#-document-analysis)
 - [📊 Quality Assessment](#-quality-assessment)
-- [🔄 Intelligent Workflows](#-intelligent-workflows)
+- [🔄 Workflows](#-workflows)
 - [🔄 Format Conversion](#-format-conversion)
 - [📷 Scanner Integration](#-scanner-integration)
 - [📈 Performance & Benchmarks](#-performance--benchmarks)
@@ -36,13 +38,14 @@
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
 
-## 🎯 What is OCR-MCP?
+## What is OCR-MCP?
 
-OCR-MCP is a **complete document processing suite** built on FastMCP, providing enterprise-grade OCR capabilities with intelligent automation, professional web interface, and comprehensive document understanding tools.
+- **Web app** — React + FastAPI UI for people: upload or scan documents, pick OCR engine, get text/PDF/JSON. Ports 10858 (frontend) and 10859 (backend).
+- **MCP server** — FastMCP 3.1 server for IDEs: Claude Desktop, Cursor, Windsurf, etc. Exposes OCR, preprocessing, scanner control, and workflows as tools. Sampling and agentic workflow (SEP-1577) supported.
 
-### 🚀 Complete Document Processing Suite (Integrated)
+**Agentic workflows:** Example prompt: *"Scan and analyze the document, then show me a formatted analysis."* The IDE agent chains MCP tools: e.g. list scanner → scan → OCR (chosen backend) → layout/analysis → then formats and returns the analysis doc.
 
-OCR-MCP provides a full document processing ecosystem:
+### Features
 
 **📥 Input Sources**: Direct scanner control, file upload, batch processing
 **🖼️ Preprocessing**: Deskew, enhance, crop, rotate, noise reduction
@@ -51,13 +54,11 @@ OCR-MCP provides a full document processing ecosystem:
 **🔄 Workflows**: Custom pipelines, intelligent routing, batch automation
 **📄 Output**: Multiple formats (text, HTML, PDF, JSON, searchable PDFs)
 
-### 🤖 Intelligent Automation
+### Automation
 
-- **Auto-Backend Selection**: Automatically chooses best OCR engine per document
-- **Quality-Gated Processing**: Multiple attempts with quality thresholds
-- **Document Classification**: Auto-detects document types (invoices, forms, etc.)
-- **Workflow Orchestration**: Custom processing pipelines with conditional logic
-- **Batch Optimization**: Concurrent processing with intelligent resource management
+- **Auto-backend selection** per document
+- **Quality-gated processing** with retries
+- **Pipelines** and batch runs
 
 #### Primary OCR Engines
 
@@ -130,7 +131,7 @@ OCR-MCP automatically selects the best backend based on:
 
 #### Advanced Document Pre-processing
 
-**Qwen-Image-Layered Integration** revolutionizes OCR through intelligent image decomposition:
+**Qwen-Image-Layered** (optional) for image decomposition:
 
 - **Layer Separation**: Decompose documents into independent RGBA layers (text, background, images, graphics)
 - **Selective OCR**: Process text layers independently for improved accuracy on complex documents
@@ -161,11 +162,11 @@ While basic Tesseract OCR runs on any CPU, advanced SOTA models have specific re
 > [!IMPORTANT]
 > **GPU Usage**: SOTA models behave significantly better with CUDA acceleration. CPU fallback is available for most models but performance will be 10-50x slower.
 
-## ✨ Complete Feature Suite
+## ✨ Feature summary
 
-### 🎯 Core OCR Capabilities
-- **7 State-of-the-Art OCR Engines**: Mistral OCR, PaddleOCR-VL-1.5, DeepSeek-OCR-2, olmOCR-2, Qwen2.5-VL, GOT-OCR 2.0, DOTS.OCR (+ PP-OCRv5, EasyOCR, Tesseract legacy)
-- **Intelligent Backend Selection**: Auto-chooses optimal engine per document type
+### Core OCR
+- **10+ backends**: Mistral OCR, PaddleOCR-VL-1.5, DeepSeek-OCR-2, olmOCR-2, Qwen2.5-VL, GOT-OCR 2.0, DOTS.OCR (+ PP-OCRv5, EasyOCR, Tesseract legacy)
+- **Auto backend selection** per document
 - **Multiple Processing Modes**: Text, formatted, layout preservation, fine-grained extraction
 - **Multi-language Support**: 80+ languages across all backends
 
@@ -197,36 +198,34 @@ While basic Tesseract OCR runs on any CPU, advanced SOTA models have specific re
 - **Error Recovery**: Automatic retry with fallback strategies
 - **Resource Optimization**: Intelligent load balancing
 
-### 🔄 Professional Format Conversion
+### 🔄 Format conversion
 - **PDF Processing**: Extract images, create searchable PDFs
 - **Image Conversion**: Format conversion with quality control
 - **Document Assembly**: Combine images into PDFs
 - **Searchable PDFs**: OCR text embedded as invisible layers
 - **Multi-format Export**: Text, HTML, JSON, XML, Word
 
-### 📷 Complete Scanner Integration
+### 📷 Scanner
 - **WIA Support**: Direct Windows scanner control
 - **Device Discovery**: Auto-detect connected scanners
 - **Advanced Settings**: DPI, color modes, paper sizes, brightness/contrast
 - **Batch Scanning**: ADF support with page separation
 - **Preview Mode**: Positioning and cropping verification
 
-#### 🌐 Professional Web Interface
+#### Web interface
 
 The OCR-MCP web interface is accessible at:
 - **URL**: `http://localhost:8765`
 - **Dashboard**: Real-time monitoring of all OCR and scanner operations
 - **Scanner Control**: Direct hardware acquisition with live preview
 - **Batch Processing**: Parallel document processing with progress tracking
-- **Hardware Backend**: Robust WIA 2.0 implementation with global singleton management for device stability.
+- **Scanner**: WIA 2.0 (Windows).
 
 ## 🏗️ Architecture
 
 ### AI Models & OCR Engines
 
-OCR-MCP integrates **8 state-of-the-art AI models** for comprehensive document processing:
-
-#### Primary AI Models (10 Backends)
+#### Backends (10+)
 🐼 **[PaddleOCR-VL-1.5](https://huggingface.co/PaddlePaddle/PaddleOCR-VL-1.5)** - Jan 2026 SOTA, 94.5% OmniDocBench, 0.9B params
 🔬 **[DeepSeek-OCR-2](https://huggingface.co/deepseek-ai/DeepSeek-OCR-2)** - Visual Causal Flow, Jan 2026, 3B params
 🎓 **[olmOCR-2](https://huggingface.co/allenai/olmOCR-2-7B-1025)** - Academic PDFs, math equations, Oct 2025, 7B
@@ -258,7 +257,7 @@ OCR-MCP integrates **8 state-of-the-art AI models** for comprehensive document p
 
 *\* PaddleOCR-VL-1.5 requires `flash-attn` for 3.3GB; without it ~40GB (OOM on 24GB GPU)*
 
-📖 **[Complete AI Models Documentation](AI_MODELS.md)** - Detailed information about all integrated AI models, performance benchmarks, and technical specifications.
+See [AI_MODELS.md](AI_MODELS.md) for details and benchmarks.
 
 ### Portmanteau Tool Ecosystem (2026 SOTA)
 
@@ -293,7 +292,7 @@ OCR-MCP integrates **8 state-of-the-art AI models** for comprehensive document p
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Professional Web Interface               │
+│                         Web Interface                       │
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────┐  ┌────────────┐  ┌────────────┐  ┌──────────┐  │
 │  │ Single  │  │   Batch    │  │  Image     │  │   Doc    │  │
@@ -313,28 +312,36 @@ OCR-MCP integrates **8 state-of-the-art AI models** for comprehensive document p
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## 🚀 Quick Start
-
-### Prerequisites
-
-- **Python 3.11+**
-- **GPU recommended** (for GOT-OCR2.0 and other ML models)
-- **8GB+ VRAM** for optimal performance
-
 ## 🚀 Installation
 
-### Prerequisites
-- [uv](https://docs.astral.sh/uv/) installed (RECOMMENDED)
-- Python 3.12+
+**Prerequisites:** Python 3.12+, [uv](https://docs.astral.sh/uv/) (recommended). GPU optional for SOTA models.
 
-### 📦 Quick Start
-Run immediately via `uvx`:
-```bash
-uvx ocr-mcp
+### From repo (recommended)
+
+```powershell
+# Clone (or open repo)
+cd D:\Dev\repos\ocr-mcp
+
+# Install deps
+uv sync
+
+# Run MCP server (stdio)
+just run
+# or: uv run ocr-mcp
 ```
 
-### 🎯 Claude Desktop Integration
-Add to your `claude_desktop_config.json`:
+### One-liner (no clone)
+
+```powershell
+uvx ocr-mcp
+```
+Requires [ocr-mcp on PyPI](https://pypi.org/project/ocr-mcp/) or `uvx --from . ocr-mcp` from repo root.
+
+### Claude Desktop / MCP clients
+
+Add to `claude_desktop_config.json` (or your client’s MCP config):
+
+**With uv (from repo):**
 ```json
 "mcpServers": {
   "ocr-mcp": {
@@ -343,101 +350,48 @@ Add to your `claude_desktop_config.json`:
   }
 }
 ```
-### MCP Configuration
 
-Add to your `claude_desktop_config.json`:
-
+**With Python (after `uv sync` or `pip install -e .`):**
 ```json
-{
-  "mcpServers": {
-    "ocr-mcp": {
-      "command": "python",
-      "args": ["-m", "ocr_mcp.server"],
-      "env": {
-        "OCR_CACHE_DIR": "/path/to/model/cache",
-        "OCR_DEVICE": "cuda"
-      }
-    }
+"ocr-mcp": {
+  "command": "python",
+  "args": ["-m", "ocr_mcp.server"],
+  "env": {
+    "OCR_CACHE_DIR": "C:/path/to/cache",
+    "OCR_DEVICE": "cuda"
   }
 }
 ```
 
-### WebApp Mode
+Replace `D:/Dev/repos/ocr-mcp` with your repo path. Optional env: `OCR_CACHE_DIR`, `OCR_DEVICE` (cuda/cpu/auto).
 
-OCR-MCP includes a full-featured web interface for document processing. The webapp can connect to a separately running OCR-MCP server instance.
+### Web UI
 
-#### Option 1: Run Webapp with Auto-Starting MCP Server (Recommended)
-```bash
-# Run the web application (automatically starts MCP server)
-poetry run ocr-mcp-webapp
+React + FastAPI app in `web_sota/`. Frontend 10858, backend 10859.
 
-# Or use the script directly
-python scripts/run_webapp.py
+```powershell
+just webapp
 ```
+Opens backend + Vite; then open http://localhost:10858. Or from `web_sota/`: `npm install`; start backend (from project root: `uv run uvicorn backend.app:app --port 10859`), then `npm run dev -- --port 10858`.
 
-#### Option 2: Run MCP Server and Webapp Separately
-If the automatic MCP server startup doesn't work, run them separately:
+## 🌐 Web Interface
 
-**Terminal 1 - Start MCP Server:**
-```bash
-python -m src.ocr_mcp.server
-```
+React + FastAPI app: upload, preprocess, OCR, batch, scanner. Run with `just webapp` or see [Installation](#-installation).
 
-**Terminal 2 - Start Webapp:**
-```bash
-python scripts/run_webapp.py
-```
+### Overview
 
-The web interface provides:
-- **📤 Drag & drop file upload** - Support for PDF, images, CBZ
-- **🔄 Real-time processing** - Live status updates and progress
-- **📷 Scanner integration** - Direct scanner control via web interface
-- **📊 Batch processing** - Process multiple documents simultaneously
-- **🎨 OCR backend selection** - Choose from 5 different OCR engines
-- **📋 Results visualization** - Text, JSON, and HTML output formats
-
-**Access the webapp at:** http://localhost:15550
-
-## 🌐 Professional Web Interface
-
-OCR-MCP features a **comprehensive professional web interface** designed for enterprise document processing workflows.
-
-### 🎨 Interface Overview
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  🔍 OCR-MCP Professional Document Processing Suite         │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─ Input ─┬─ Processing ─┬─ Analysis ─┬─ Quality ─┬─ Output ┐ │
-│  │         │              │            │           │         │ │
-│  │ Upload  │ Preprocess   │ Structure   │ Assess    │ Export  │ │
-│  │ Batch   │ Enhance      │ Tables      │ Compare   │ Convert │ │
-│  │ Scanner │ Deskew       │ Forms       │ Validate  │ Search- │ │
-│  │         │ Rotate       │ Metadata    │ Monitor   │ able PDF│ │
-│  └─────────┴──────────────┴────────────┴───────────┴─────────┘ │
-├─────────────────────────────────────────────────────────────┤
-│  Workflow Dashboard | Quality Metrics | Progress Tracking    │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 🚀 Key Features
-
-- **📊 Workflow-Based Processing**: Step-by-step guidance through complex document processing
-- **🎯 Intelligent Automation**: Auto-selection of optimal tools and settings
-- **📈 Real-Time Analytics**: Live quality metrics, confidence scores, processing times
-- **🔄 Batch Orchestration**: Concurrent processing with detailed progress monitoring
-- **🎨 Visual Results**: Multiple output viewers (text, structured data, analysis)
-- **⚙️ Advanced Configuration**: Fine-grained control over all processing parameters
-- **📱 Responsive Design**: Works on desktop, tablet, and mobile devices
+- Upload (drag-drop), preprocessing, OCR with backend choice, results (text/JSON/HTML)
+- Batch processing with progress
+- Scanner control (WIA)
+- Pipelines and quality checks
 
 ### 📱 Interface Sections
 
-#### 📤 **Single Document Processing**
-**4-Step Intelligent Workflow:**
-1. **Upload**: Drag-drop with format validation and preview
-2. **Preprocessing**: Visual before/after with deskew, enhance, crop tools
-3. **OCR Processing**: Backend selection with advanced options
-4. **Results & Analysis**: Multi-format output with quality metrics
+#### Single document
+1. Upload (drag-drop)
+2. Preprocess (deskew, enhance, crop)
+3. OCR (pick backend)
+4. Results (text, JSON, HTML, PDF)
 
 **Features:**
 - Real-time processing status with progress bars
@@ -729,7 +683,7 @@ backends:
 - ✅ **Planning**: Complete master plan and architecture
 - ✅ **Phase 1**: Core infrastructure (Completed)
 - ✅ **Phase 2**: Multi-backend OCR support (Completed)
-- ✅ **Phase 3**: Professional web interface (Completed)
+- ✅ **Phase 3**: Web interface (done)
 - ✅ **Phase 4**: Advanced document processing (Completed)
 - ✅ **Phase 5**: Scanner integration (Completed)
 - 🟡 **Phase 6**: Production deployment and optimization (Alpha Release)
@@ -737,7 +691,7 @@ backends:
 - 🔄 **Phase 8**: Production release preparation (Future)
 
 ### ✅ **Completed Features**
-- **FastMCP 2.14.3 Integration**: State-of-the-art MCP server with conversational features
+- **FastMCP 3.1 Integration**: State-of-the-art MCP server with conversational features
 - **10 OCR Backends**: PaddleOCR-VL-1.5, DeepSeek-OCR-2, olmOCR-2, Mistral OCR, DeepSeek-OCR, DOTS.OCR, Qwen2.5-VL, GOT-OCR 2.0, EasyOCR, Tesseract
 - **Professional React Webapp**: Complete TypeScript frontend with modern UI/UX
 - **Intelligent Backend Selection**: Automatic model routing based on document analysis
@@ -755,30 +709,16 @@ See [OCR-MCP_MASTER_PLAN.md](OCR-MCP_MASTER_PLAN.md) for detailed roadmap.
 
 ## 📚 Documentation
 
-### 📖 Complete Documentation Suite
+### Docs
 
-- **[AI_MODELS.md](AI_MODELS.md)** - Comprehensive documentation of all 8 AI models used in OCR-MCP
-  - Detailed model specifications and capabilities
-  - Performance benchmarks and accuracy comparisons
-  - Technical implementation details and integration guides
-  - Model selection algorithms and optimization strategies
-
-- **[OCR-MCP_MASTER_PLAN.md](OCR-MCP_MASTER_PLAN.md)** - Technical master plan and architecture
-  - System design and component architecture
-  - Implementation roadmap and milestones
-  - Technical specifications and requirements
-  - Future development plans
-
-- **[tests/README.md](tests/README.md)** - Testing framework documentation
-  - Test organization and execution
-  - Performance benchmarking procedures
-  - Security testing methodologies
-  - CI/CD integration guides
+- [AI_MODELS.md](AI_MODELS.md) – backends, benchmarks
+- [OCR-MCP_MASTER_PLAN.md](OCR-MCP_MASTER_PLAN.md) – architecture, roadmap
+- [tests/README.md](tests/README.md) – testing
 
 ### 🛠️ Development Resources
 
-- **API Documentation**: http://localhost:15550/docs (when server is running)
-- **Health Monitoring**: http://localhost:15550/api/health
+- **API Documentation**: http://localhost:10859/docs (when backend is running)
+- **Health Monitoring**: http://localhost:10859/api/health
 - **Interactive API Explorer**: Full Swagger UI with live testing
 
 ### 📋 Quick Reference
@@ -788,8 +728,8 @@ See [OCR-MCP_MASTER_PLAN.md](OCR-MCP_MASTER_PLAN.md) for detailed roadmap.
 | AI Models Guide | Model specifications & benchmarks | [AI_MODELS.md](AI_MODELS.md) |
 | Technical Architecture | System design & roadmap | [OCR-MCP_MASTER_PLAN.md](OCR-MCP_MASTER_PLAN.md) |
 | Testing Framework | Test execution & validation | [tests/README.md](tests/README.md) |
-| API Documentation | Interactive API explorer | http://localhost:15550/docs |
-| Health Monitoring | System status & diagnostics | http://localhost:15550/api/health |
+| API Documentation | Interactive API explorer | http://localhost:10859/docs |
+| Health Monitoring | System status & diagnostics | http://localhost:10859/api/health |
 
 ## 🤝 Integration with Existing MCP Servers
 
@@ -817,10 +757,10 @@ result = await calibre_ocr(
 ## 📈 Roadmap
 
 ### ✅ Completed Milestones
-- [x] FastMCP 2.13+ Core Infrastructure
+- [x] FastMCP 3.1 Core Infrastructure
 - [x] GOT-OCR2.0 Multi-mode Integration
 - [x] Robust WIA 2.0 Hardware Integration (Canon LiDE 400 verified)
-- [x] Professional React/Next.js Web Interface
+- [x] React web interface
 - [x] Mistral OCR 3 (OCR-2512) SOTA Backend Implementation
 - [x] Multi-format Pipeline (PDF, CBZ, Scanned Docs)
 
@@ -873,19 +813,18 @@ To generate a `.mcpb` distribution bundle with complete source code and automate
 mcpb pack . dist/ocr-mcp.mcpb
 ```
 
+#### Discovery & listings
+- **Glama.ai**: Use the [glama.json](glama.json) snippet in your MCP client config; includes FastMCP 3.1, sampling, agentic, prompts. [Submit/update](https://glama.ai/mcp/servers) on Glama for discovery.
+- **LLM discoverability**: [llms.txt](llms.txt) at repo root gives LLMs and crawlers a short sitemap (README, CHANGELOG, AI models, install, listings).
+- **Justfile (just)**: [justfile](justfile) follows the [justfiles standard](https://github.com/casey/just). Run `just` to list recipes; `just run`, `just test`, `just webapp`, `just install`, `just pack`, etc.
+
 ---
 
 ## 🛠️ Development
 
-5. **Run tests**
-   ```bash
-   poetry run pytest
-   ```
-
-6. **Start developing!**
-   - Pre-commit hooks will automatically format and lint your code
-   - Run `poetry run pre-commit run --all-files` to check everything
-   - Use `poetry run python scripts/run_webapp.py` to start the webapp
+5. **Run tests:** `just test` or `uv run pytest`
+6. **Lint/format:** `just lint`, `just format`
+7. **Web UI:** `just webapp` or see Web UI above
 
 ### Pre-commit Hooks
 
@@ -917,11 +856,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 ## 🙏 Acknowledgments
 
 - **GOT-OCR2.0 Team** (UCAS): Revolutionary OCR model that inspired this project
-- **FastMCP Community**: Excellent framework for MCP server development
-- **Open Source OCR Community**: Tesseract, EasyOCR, PaddleOCR, and others
 
 ---
 
-**OCR-MCP**: Democratizing state-of-the-art document understanding for the MCP ecosystem! 🌟
-
-See [OCR-MCP_MASTER_PLAN.md](OCR-MCP_MASTER_PLAN.md) for technical details and implementation roadmap.
+See [OCR-MCP_MASTER_PLAN.md](OCR-MCP_MASTER_PLAN.md) for architecture and roadmap.
