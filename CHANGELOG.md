@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - 2026-03-19
 
 ### Fixed
-- **`.gitignore`** — ignore **`node_modules/`** (and `**/node_modules/`). Removed **`frontend/node_modules`** from Git tracking (~5k files); they remain on disk — run **`npm install`** under `frontend/` when needed. (Previously a bad commit had pushed Vite cache paths under `frontend/node_modules`; history still contains them until a history rewrite.)
+- **`.gitignore`** — ignore **`node_modules/`** (and `**/node_modules/`). Removed **`frontend/node_modules`** from Git tracking (~5k files); they remain on disk — run **`npm install`** under `frontend/`. **History on GitHub was rewritten** with `git filter-repo --path frontend/node_modules --invert-paths` and **`git push --force`** so those blobs are no longer on `origin`. Anyone who cloned before that must **re-clone** or reset hard to `origin/master` (forks: coordinate with upstream).
 
 ### Added
 - **`POST /api/settings/mistral/test`** — Validates Mistral API key via **`GET {base}/models`**; optional JSON overrides for unsaved form key/URL. **`web_sota` Settings** — **Test API key** button.
