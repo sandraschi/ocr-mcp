@@ -10,7 +10,7 @@ import tempfile
 
 import pytest
 
-from src.ocr_mcp.core.error_handler import ErrorHandler
+from ocr_mcp.core.error_handler import ErrorHandler
 
 
 class TestInputValidation:

@@ -13,14 +13,32 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-# Single-thread executor for WIA: COM is thread-affine; one STA thread for all scanner ops.
-_wia_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="wia_sta")
-
+import httpx
 import uvicorn
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from PIL import Image
+from pydantic import BaseModel
+
+
+class MistralSettingsUpdate(BaseModel):
+    """``api_key``: omit to leave unchanged; send empty string to clear."""
+
+    api_key: str | None = None
+    base_url: str | None = None
+
+
+class MistralTestRequest(BaseModel):
+    """Optional overrides for a one-off test (unsaved key in the form)."""
+
+    api_key: str | None = None
+    base_url: str | None = None
+
+
+# Single-thread executor for WIA: COM is thread-affine; one STA thread for all scanner ops.
+_wia_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="wia_sta")
 
 # Module-level singleton variables for FastAPI dependencies
 FILE_DEPENDENCY = File()
@@ -94,13 +112,21 @@ processing_jobs: dict[str, dict[str, Any]] = {}
 backend_manager = None
 scanner_manager = None
 
+# Pip auto-install for torch/transformers/Paddle runs inside run_ocr_startup_bootstrap when
+# OCR_AUTO_INSTALL_DEPS=1 (see ocr_mcp.utils.startup_bootstrap).
+
 try:
     from ocr_mcp.backends.scanner.scanner_manager import ScannerManager
     from ocr_mcp.backends.scanner.wia_scanner import ScanSettings
     from ocr_mcp.core.backend_manager import BackendManager
     from ocr_mcp.core.config import OCRConfig
+    from ocr_mcp.utils.startup_bootstrap import run_ocr_startup_bootstrap
 
     config = OCRConfig()
+    try:
+        run_ocr_startup_bootstrap(config)
+    except Exception as boot_e:
+        logger.debug("OCR startup bootstrap: %s", boot_e)
     backend_manager = BackendManager(config)
 
     # Initialize Scanner Manager
@@ -108,7 +134,10 @@ try:
 
     logger.info("Global BackendManager and ScannerManager initialized")
 except Exception as e:
-    logger.error(f"Failed to initialize global managers: {e}")
+    import traceback
+
+    logger.error("Failed to initialize global managers: %s", e)
+    traceback.print_exc()
 
 
 @app.on_event("startup")
@@ -124,7 +153,7 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown"""
-    for job_id, job in list(processing_jobs.items()):
+    for _jid, job in list(processing_jobs.items()):
         for key in ("file_path", "file_paths"):
             paths = job.get(key)
             if paths is None:
@@ -288,13 +317,37 @@ async def get_backends():
     if demo_mode:
         return {
             "backends": [
-                {"name": "paddleocr-vl", "available": True, "description": "Baidu PaddleOCR-VL-1.5 — Jan 2026 SOTA, 94.5% OmniDocBench"},
-                {"name": "deepseek-ocr2", "available": True, "description": "DeepSeek-OCR-2 — Jan 2026, Visual Causal Flow"},
-                {"name": "olmocr-2", "available": True, "description": "Allen AI olmOCR-2 — academic PDFs, math, multi-column"},
-                {"name": "mistral-ocr", "available": True, "description": "Mistral OCR API — 94.9% accuracy"},
+                {
+                    "name": "paddleocr-vl",
+                    "available": True,
+                    "description": "Baidu PaddleOCR-VL-1.5 — Jan 2026 SOTA, 94.5% OmniDocBench",
+                },
+                {
+                    "name": "deepseek-ocr2",
+                    "available": True,
+                    "description": "DeepSeek-OCR-2 — Jan 2026, Visual Causal Flow",
+                },
+                {
+                    "name": "olmocr-2",
+                    "available": True,
+                    "description": "Allen AI olmOCR-2 — academic PDFs, math, multi-column",
+                },
+                {
+                    "name": "mistral-ocr",
+                    "available": True,
+                    "description": "Mistral OCR API — 94.9% accuracy",
+                },
                 {"name": "got-ocr", "available": True, "description": "GOT-OCR2.0 — fast, lean"},
-                {"name": "qwen-layered", "available": True, "description": "Qwen2.5-VL — complex layouts"},
-                {"name": "tesseract", "available": True, "description": "Tesseract OCR — CPU backstop"},
+                {
+                    "name": "qwen-layered",
+                    "available": True,
+                    "description": "Qwen2.5-VL — complex layouts",
+                },
+                {
+                    "name": "tesseract",
+                    "available": True,
+                    "description": "Tesseract OCR — CPU backstop",
+                },
             ],
             "default_backend": "paddleocr-vl",
         }
@@ -305,24 +358,154 @@ async def get_backends():
             detail="Backend manager not initialized.",
         )
     try:
-        available_backends = backend_manager.get_available_backends()
         backend_info = []
-        for name in available_backends:
+        for name in sorted(backend_manager.backend_registry.keys()):
+            meta = backend_manager.backend_registry[name]
+            desc = meta.get("description", f"{name} OCR backend")
             backend = backend_manager.get_backend(name)
-            if backend:
-                backend_info.append(
-                    {
-                        "name": name,
-                        "available": True,
-                        "description": backend.get_capabilities().get(
-                            "description", f"{name} OCR backend"
-                        ),
-                    }
-                )
+            available = bool(backend and backend.is_available())
+            if backend and hasattr(backend, "get_capabilities"):
+                try:
+                    caps = backend.get_capabilities()
+                    if isinstance(caps, dict) and caps.get("description"):
+                        desc = caps["description"]
+                except Exception:
+                    pass
+            backend_info.append(
+                {
+                    "name": name,
+                    "available": available,
+                    "description": desc,
+                }
+            )
         return {"backends": backend_info}
     except Exception as e:
         logger.error(f"Failed to get backends: {e}")
         raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.get("/api/settings/mistral")
+async def get_mistral_settings():
+    """Return Mistral OCR API status (never expose full API key)."""
+    if demo_mode or not backend_manager:
+        return {
+            "key_configured": False,
+            "base_url": "https://api.mistral.ai/v1",
+            "key_hint": None,
+        }
+    key = config.mistral_api_key
+    hint = None
+    if key and len(key) >= 4:
+        hint = f"...{key[-4:]}"
+    return {
+        "key_configured": bool(key),
+        "base_url": config.mistral_base_url,
+        "key_hint": hint,
+    }
+
+
+@app.post("/api/settings/mistral")
+async def post_mistral_settings(body: MistralSettingsUpdate):
+    """Update Mistral API key and/or base URL; reload mistral-ocr backend."""
+    if demo_mode:
+        raise HTTPException(status_code=400, detail="Demo mode: settings not persisted")
+    if not backend_manager:
+        raise HTTPException(status_code=503, detail="Backend manager not initialized")
+
+    updates = body.model_dump(exclude_unset=True)
+    if "api_key" in updates:
+        raw = updates["api_key"]
+        config.mistral_api_key = (raw.strip() or None) if isinstance(raw, str) else None
+        if config.mistral_api_key:
+            os.environ["MISTRAL_API_KEY"] = config.mistral_api_key
+        else:
+            os.environ.pop("MISTRAL_API_KEY", None)
+    if "base_url" in updates and isinstance(updates["base_url"], str):
+        bu = updates["base_url"].strip()
+        if bu:
+            config.mistral_base_url = bu
+
+    backend_manager.invalidate_backend("mistral-ocr")
+
+    key = config.mistral_api_key
+    hint = f"...{key[-4:]}" if key and len(key) >= 4 else None
+    return {
+        "success": True,
+        "key_configured": bool(key),
+        "base_url": config.mistral_base_url,
+        "key_hint": hint,
+    }
+
+
+@app.post("/api/settings/mistral/test")
+async def test_mistral_api_key(body: MistralTestRequest = MistralTestRequest()):
+    """Validate Mistral API key via GET ``/models`` (lightweight, same as backend probe)."""
+    if demo_mode:
+        raise HTTPException(status_code=400, detail="Demo mode: API test unavailable")
+    if not backend_manager:
+        raise HTTPException(status_code=503, detail="Backend manager not initialized")
+
+    raw_key = body.api_key.strip() if isinstance(body.api_key, str) else ""
+    key = raw_key or (config.mistral_api_key or "")
+    if not key:
+        raise HTTPException(
+            status_code=400,
+            detail="No API key to test: paste a key or save one first",
+        )
+
+    raw_base = body.base_url.strip() if isinstance(body.base_url, str) else ""
+    base = (raw_base or config.mistral_base_url or "https://api.mistral.ai/v1").rstrip("/")
+    url = f"{base}/models"
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get(
+                url,
+                headers={"Authorization": f"Bearer {key}"},
+            )
+    except httpx.TimeoutException:
+        return {
+            "valid": False,
+            "message": "Request timed out — check base URL and network",
+            "http_status": None,
+        }
+    except httpx.RequestError as e:
+        return {
+            "valid": False,
+            "message": f"Connection failed: {e!s}",
+            "http_status": None,
+        }
+
+    if response.status_code == 200:
+        return {
+            "valid": True,
+            "message": "API key accepted (models list reachable)",
+            "http_status": 200,
+        }
+    if response.status_code == 401:
+        return {
+            "valid": False,
+            "message": "Invalid or unauthorized API key",
+            "http_status": 401,
+        }
+    if response.status_code == 403:
+        return {
+            "valid": False,
+            "message": "Forbidden — key may lack required scope",
+            "http_status": 403,
+        }
+    if response.status_code == 429:
+        return {
+            "valid": False,
+            "message": "Rate limited — try again shortly",
+            "http_status": 429,
+        }
+    snippet = (response.text or "")[:200].replace("\n", " ")
+    return {
+        "valid": False,
+        "message": f"Unexpected response ({response.status_code}){': ' + snippet if snippet else ''}",
+        "http_status": response.status_code,
+    }
 
 
 @app.post("/api/optimize")
@@ -520,7 +703,9 @@ async def execute_pipeline(
         }
 
         # Process in background
-        background_tasks.add_task(execute_pipeline_background, job_id, pipeline_id, temp_file_path, backend)
+        background_tasks.add_task(
+            execute_pipeline_background, job_id, pipeline_id, temp_file_path, backend
+        )
 
         return {"job_id": job_id, "status": "processing"}
 
@@ -729,7 +914,16 @@ async def optimize_background(
         best_result = None
         best_quality = 0.0
 
-        backends = ["auto", "paddleocr-vl", "deepseek-ocr2", "olmocr-2", "mistral-ocr", "got-ocr", "qwen-layered", "tesseract"]
+        backends = [
+            "auto",
+            "paddleocr-vl",
+            "deepseek-ocr2",
+            "olmocr-2",
+            "mistral-ocr",
+            "got-ocr",
+            "qwen-layered",
+            "tesseract",
+        ]
         modes = ["auto", "text", "format"]
 
         for attempt in range(max_attempts):
@@ -832,7 +1026,9 @@ async def convert_background(
             pass
 
 
-async def execute_pipeline_background(job_id: str, pipeline_id: str, file_path: str, backend: str = "auto"):
+async def execute_pipeline_background(
+    job_id: str, pipeline_id: str, file_path: str, backend: str = "auto"
+):
     """Execute processing pipeline in background"""
     try:
         # Define pipeline steps
@@ -975,7 +1171,10 @@ async def get_scanners():
             lambda: scanner_manager.discover_scanners(True),
         )
         if not scanners:
-            return {"scanners": [], "error": "No scanners found. Check USB connection and WIA drivers."}
+            return {
+                "scanners": [],
+                "error": "No scanners found. Check USB connection and WIA drivers.",
+            }
 
         scanner_list = [
             {
@@ -1110,6 +1309,82 @@ async def ocr_scanned_document(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
+@app.post("/api/ocr_selection")
+async def ocr_selection(
+    background_tasks: BackgroundTasks,
+    filename: str = Form(...),
+    x: int = Form(...),
+    y: int = Form(...),
+    width: int = Form(...),
+    height: int = Form(...),
+    ocr_mode: str = Form("text"),
+    backend: str = Form("auto"),
+):
+    """Process a specific selected region of a scanned document with OCR"""
+    try:
+        scans_dir = project_root / "scans"
+        file_path = scans_dir / filename
+
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail=f"Scanned file {filename} not found")
+
+        # Create a new job ID
+        _prune_old_jobs()
+        job_id = f"scan_selection_{uuid.uuid4().hex[:12]}"
+
+        # Create the cropped temporary file
+        try:
+            with Image.open(file_path) as img:
+                # Ensure crop coordinates are within bounds
+                left = max(0, x)
+                top = max(0, y)
+                right = min(img.width, x + width)
+                bottom = min(img.height, y + height)
+
+                if right <= left or bottom <= top:
+                    raise ValueError("Invalid crop dimensions")
+
+                cropped_img = img.crop((left, top, right, bottom))
+
+                # Save crop to scans folder so it could be served or deleted later (using tempname)
+                crop_filename = f"crop_{job_id}.png"
+                crop_path = scans_dir / crop_filename
+                cropped_img.save(crop_path, format="PNG")
+        except Exception as crop_error:
+            logger.error("Failed to crop image for OCR: %s", crop_error)
+            raise HTTPException(
+                status_code=400, detail=f"Failed to crop image: {crop_error}"
+            ) from crop_error
+
+        # Store job info
+        processing_jobs[job_id] = {
+            "status": "processing",
+            "filename": crop_filename,
+            "file_path": str(crop_path),
+            "ocr_mode": ocr_mode,
+            "backend": backend,
+            "result": None,
+            "error": None,
+        }
+
+        # Process in background (process_scanned_background uses the new crop file)
+        if backend_manager and backend_manager.get_available_backends():
+            background_tasks.add_task(
+                process_scanned_background, job_id, str(crop_path), ocr_mode, backend
+            )
+        else:
+            # demo mode
+            background_tasks.add_task(
+                process_file_demo, job_id, str(crop_path), crop_filename, ocr_mode, backend
+            )
+
+        return {"job_id": job_id, "status": "processing"}
+
+    except Exception as e:
+        logger.error(f"Failed to start OCR for selection: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
 async def process_scanned_background(job_id: str, file_path: str, ocr_mode: str, backend: str):
     """Process scanned file in background without deleting original"""
     try:
@@ -1173,9 +1448,10 @@ else:
 
 def main():
     """Entry point for running the webapp"""
+    host = os.getenv("WEBAPP_HOST", "0.0.0.0")
     port = int(os.getenv("WEBAPP_PORT", "10859"))
     reload = os.getenv("RELOAD", "false").lower() == "true"
-    uvicorn.run("backend.app:app", host="0.0.0.0", port=port, reload=reload)
+    uvicorn.run("backend.app:app", host=host, port=port, reload=reload)
 
 
 if __name__ == "__main__":

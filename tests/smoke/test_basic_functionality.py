@@ -16,10 +16,9 @@ class TestBasicFunctionality:
     def test_imports_work(self):
         """Test that all core modules can be imported."""
         try:
-            from src.ocr_mcp.core.backend_manager import BackendManager
-            from src.ocr_mcp.core.config import OCRConfig
-            from src.ocr_mcp.core.error_handler import ErrorHandler
-            from src.ocr_mcp.tools.ocr_tools import register_sota_tools
+            from ocr_mcp.core.backend_manager import BackendManager
+            from ocr_mcp.core.config import OCRConfig
+            from ocr_mcp.tools.ocr_tools import register_sota_tools
 
             # All imports successful
             assert True
@@ -32,8 +31,15 @@ class TestBasicFunctionality:
         assert isinstance(config.cache_dir, Path)
         assert config.device in ["auto", "cpu", "cuda"]
         assert config.default_backend in [
-            "auto", "deepseek-ocr", "florence-2", "tesseract", "got-ocr",
-            "dots-ocr", "pp-ocrv5", "qwen-image-layered", "easyocr",
+            "auto",
+            "deepseek-ocr",
+            "florence-2",
+            "tesseract",
+            "got-ocr",
+            "dots-ocr",
+            "pp-ocrv5",
+            "qwen-image-layered",
+            "easyocr",
         ]
 
     def test_backend_manager_creation(self, backend_manager):
@@ -57,7 +63,7 @@ class TestBasicFunctionality:
 
     def test_file_validation_works(self):
         """Test that file path validation works."""
-        from src.ocr_mcp.core.error_handler import ErrorHandler
+        from ocr_mcp.core.error_handler import ErrorHandler
 
         # Test with current file (should exist)
         current_file = Path(__file__)
@@ -91,7 +97,7 @@ class TestBasicFunctionality:
 
     def test_error_handler(self):
         """Test that error handler works."""
-        from src.ocr_mcp.core.error_handler import ErrorHandler
+        from ocr_mcp.core.error_handler import ErrorHandler
 
         # Test creating a structured error
         error = ErrorHandler.create_error("PARAMETERS_INVALID", details={"test": "data"})
@@ -132,7 +138,7 @@ class TestBasicFunctionality:
 
     def test_data_validator(self, data_validator):
         """Test that data validator works."""
-        from src.ocr_mcp.core.error_handler import ErrorHandler
+        from ocr_mcp.core.error_handler import ErrorHandler
 
         # Test valid file path
         current_file = Path(__file__)
@@ -158,7 +164,9 @@ class TestBasicFunctionality:
             assert "available" in capabilities
 
     @pytest.mark.asyncio
-    @pytest.mark.skip(reason="Async event loop can fail on Windows; run with uv run pytest -p no:asyncio to avoid")
+    @pytest.mark.skip(
+        reason="Async event loop can fail on Windows; run with uv run pytest -p no:asyncio to avoid"
+    )
     async def test_basic_ocr_processing(self, backend_manager, sample_image_path):
         """Test basic OCR processing workflow."""
         result = await backend_manager.process_with_backend(

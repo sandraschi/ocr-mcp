@@ -8,6 +8,8 @@ OCR-MCP uses **FastMCP 3.1** with **sampling** and **SEP-1577** (sampling with t
 - **Agentic tool use.** The server calls list_scanner → scan → OCR (chosen backend) → layout/analysis → formatting in one go.
 - **Prompts for the LLM:** `quality-assessment-guide`, `scanner-workflow`, `batch-processing-guide`, `agentic-workflow-instructions`, plus `process-instructions`.
 
+**See also:** [TECHNICAL.md](TECHNICAL.md) (MCP vs web architecture, tool list), in-app **Help** at `/help` when running `web_sota` ([source](../web_sota/src/pages/help.tsx)).
+
 ## SEP-1577 (agentic document workflow)
 
 The **`agentic_document_workflow`** tool takes a natural-language workflow prompt and runs it autonomously:

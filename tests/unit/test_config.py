@@ -5,8 +5,6 @@ Unit tests for OCR-MCP configuration module.
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 from ocr_mcp.core.config import OCRConfig
 
 

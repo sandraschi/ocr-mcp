@@ -628,7 +628,7 @@ class WIABackend:
         except Exception as e:
             logger.debug(f"Category-based item selection failed: {e}")
         # Fallback: conventional index (0 = flatbed, 1 = feeder for many drivers)
-        for idx in ([1, 0] if use_adf else [0, 1]):
+        for idx in [1, 0] if use_adf else [0, 1]:
             try:
                 item = items[idx]
                 logger.debug(f"Using scan item index {idx} (use_adf={use_adf}) for {device_id}")
@@ -636,7 +636,9 @@ class WIABackend:
             except Exception:
                 try:
                     item = items[idx + 1]
-                    logger.debug(f"Using scan item index {idx + 1} (use_adf={use_adf}) for {device_id}")
+                    logger.debug(
+                        f"Using scan item index {idx + 1} (use_adf={use_adf}) for {device_id}"
+                    )
                     return item
                 except Exception:
                     continue
@@ -735,6 +737,7 @@ class WIABackend:
 
             # Convert WIA image to PIL Image
             import io
+
             from PIL import Image
 
             # WIA returns image data, convert to PIL

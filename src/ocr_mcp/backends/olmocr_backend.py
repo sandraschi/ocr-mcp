@@ -41,6 +41,7 @@ class OlmOCR2Backend(OCRBackend):
         self._device = None
 
         import importlib.util
+
         self._torch_ok = importlib.util.find_spec("torch") is not None
         self._transformers_ok = importlib.util.find_spec("transformers") is not None
 
@@ -172,20 +173,22 @@ class OlmOCR2Backend(OCRBackend):
 
     def get_capabilities(self) -> dict[str, Any]:
         caps = super().get_capabilities()
-        caps.update({
-            "name": "olmOCR-2",
-            "description": "Allen AI olmOCR-2 (Oct 2025) — best for academic PDFs, math, multi-column",
-            "modes": ["text", "format"],
-            "output_formats": ["text", "markdown", "latex"],
-            "gpu_support": True,
-            "model_size": "~14GB (7B params, bfloat16)",
-            "strengths": [
-                "82.4 on olmOCR-Bench",
-                "arXiv/scientific papers with math equations",
-                "Multi-column academic layouts",
-                "Complex tables in research documents",
-                "GRPO RL training for equation accuracy",
-            ],
-            "ideal_for": "Scientific papers, academic PDFs, documents with math",
-        })
+        caps.update(
+            {
+                "name": "olmOCR-2",
+                "description": "Allen AI olmOCR-2 (Oct 2025) — best for academic PDFs, math, multi-column",
+                "modes": ["text", "format"],
+                "output_formats": ["text", "markdown", "latex"],
+                "gpu_support": True,
+                "model_size": "~14GB (7B params, bfloat16)",
+                "strengths": [
+                    "82.4 on olmOCR-Bench",
+                    "arXiv/scientific papers with math equations",
+                    "Multi-column academic layouts",
+                    "Complex tables in research documents",
+                    "GRPO RL training for equation accuracy",
+                ],
+                "ideal_for": "Scientific papers, academic PDFs, documents with math",
+            }
+        )
         return caps

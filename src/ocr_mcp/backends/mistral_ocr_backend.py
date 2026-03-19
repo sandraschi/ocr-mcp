@@ -39,7 +39,7 @@ class MistralOCRBackend(OCRBackend):
                 logger.warning(f"Mistral OCR backend not available: {e}")
         else:
             self._available = False
-            logger.info("Mistral OCR backend not available: No API key configured")
+            logger.debug("Mistral OCR: no API key (set MISTRAL_API_KEY to enable)")
 
     def _test_api_connection(self) -> bool:
         """Test connection to Mistral API."""

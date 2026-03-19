@@ -3,6 +3,7 @@ Tesseract OCR Backend for OCR-MCP
 """
 
 import logging
+import sys
 from typing import Any
 
 from ..core.backend_manager import OCRBackend
@@ -17,17 +18,50 @@ class TesseractBackend(OCRBackend):
     def __init__(self, config: OCRConfig):
         super().__init__("tesseract", config)
 
-        # Check if Tesseract is available
+        self._probe_tesseract()
+
+    def _probe_tesseract(self) -> None:
+        """Detect binary; on Windows may trigger one silent install via tesseract_bootstrap."""
         try:
             import pytesseract
 
-            # Test if tesseract executable is available
+            if self.config.tesseract_cmd:
+                pytesseract.pytesseract.tesseract_cmd = self.config.tesseract_cmd
+
             pytesseract.get_tesseract_version()
             self._available = True
-            logger.info("Tesseract backend available")
+            logger.info(
+                "Tesseract backend available (cmd: %s)",
+                pytesseract.pytesseract.tesseract_cmd,
+            )
+        except Exception as first_err:
+            if sys.platform == "win32":
+                try:
+                    from ..utils.tesseract_bootstrap import ensure_tesseract_windows
+
+                    if ensure_tesseract_windows(self.config):
+                        self._probe_tesseract_after_bootstrap()
+                        return
+                except Exception as boot_e:
+                    logger.debug("Tesseract bootstrap retry: %s", boot_e)
+            self._available = False
+            logger.warning("Tesseract backend not available: %s", first_err)
+
+    def _probe_tesseract_after_bootstrap(self) -> None:
+        try:
+            import pytesseract
+
+            if self.config.tesseract_cmd:
+                pytesseract.pytesseract.tesseract_cmd = self.config.tesseract_cmd
+            pytesseract.get_tesseract_version()
+            self._available = True
+            logger.info(
+                "Tesseract backend available after bootstrap (cmd: %s)",
+                pytesseract.pytesseract.tesseract_cmd,
+            )
         except Exception as e:
             self._available = False
-            logger.warning(f"Tesseract backend not available: {e}")
+            logger.warning("Tesseract still not available after bootstrap: %s", e)
 
     async def process_image(
         self,

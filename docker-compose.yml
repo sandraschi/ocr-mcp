@@ -21,7 +21,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ./web_sota
       target: dev
     ports:
       - "10858:10858"
@@ -29,7 +29,7 @@ services:
       - NODE_ENV=development
       - VITE_API_BASE_URL=http://localhost:10859
     volumes:
-      - ./frontend:/app
+      - ./web_sota:/app
       - /app/node_modules
     depends_on:
       - backend

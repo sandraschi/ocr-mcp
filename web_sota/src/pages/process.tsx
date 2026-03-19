@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Cpu, RefreshCw, Play, CheckCircle2, AlertCircle, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { Cpu, RefreshCw, Play, CheckCircle2, AlertCircle, FileText, ChevronDown, ChevronUp, Activity } from "lucide-react";
+import { useScanStore } from '@/store';
 
 interface Pipeline {
     id: string;
@@ -32,6 +33,7 @@ interface PipelineCardProps {
 }
 
 function PipelineCard({ pipeline, backends }: PipelineCardProps) {
+    const setLastOcrJobId = useScanStore((s) => s.setLastOcrJobId);
     const [file, setFile] = useState<File | null>(null);
     const [backend, setBackend] = useState('auto');
     const [loading, setLoading] = useState(false);
@@ -94,6 +96,7 @@ function PipelineCard({ pipeline, backends }: PipelineCardProps) {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
             setJobId(data.job_id);
+            if (data.job_id) setLastOcrJobId(data.job_id);
             setJobStatus('processing');
             pollJob(data.job_id);
         } catch (err: unknown) {
@@ -224,6 +227,8 @@ function PipelineCard({ pipeline, backends }: PipelineCardProps) {
 }
 
 export function Process() {
+    const setLastOcrJobId = useScanStore((s) => s.setLastOcrJobId);
+    const lastOcrJobId = useScanStore((s) => s.lastOcrJobId);
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState<string | null>(null);
@@ -252,7 +257,8 @@ export function Process() {
             const response = await fetch('/api/optimize', { method: 'POST', body: formData });
             if (!response.ok) throw new Error('Optimization request failed');
             const data = await response.json();
-            setStatus(`Optimization job started — ID: ${data.job_id}`);
+            if (data.job_id) setLastOcrJobId(data.job_id);
+            setStatus('Optimization started — open Editor or Status to follow progress.');
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Unknown error');
         } finally {
@@ -313,8 +319,18 @@ export function Process() {
                         </div>
                     )}
                     {status && (
-                        <div className="flex items-center gap-2 text-emerald-400 bg-emerald-400/10 p-3 rounded-md border border-emerald-400/20 text-sm">
-                            <CheckCircle2 className="w-4 h-4" />{status}
+                        <div className="flex flex-wrap items-center gap-2 text-emerald-400 bg-emerald-400/10 p-3 rounded-md border border-emerald-400/20 text-sm">
+                            <CheckCircle2 className="w-4 h-4 shrink-0" />{status}
+                            {lastOcrJobId && (
+                                <>
+                                    <Button type="button" variant="outline" size="sm" className="border-emerald-500/50 text-emerald-300" onClick={() => window.location.assign('/editor')}>
+                                        <FileText className="w-4 h-4 mr-1" /> View text
+                                    </Button>
+                                    <Button type="button" variant="outline" size="sm" className="border-emerald-500/50 text-emerald-300" onClick={() => window.location.assign('/status')}>
+                                        <Activity className="w-4 h-4 mr-1" /> Activity
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     )}
 

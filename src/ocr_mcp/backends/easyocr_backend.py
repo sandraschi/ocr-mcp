@@ -45,9 +45,22 @@ class EasyOCRBackend(OCRBackend):
             model_dir = self.config.model_dir / "easyocr"
             model_dir.mkdir(parents=True, exist_ok=True)
 
+            logger.info(
+                "EasyOCR first use: may download models (~100MB+) into %s; this is one-time.",
+                model_dir,
+            )
+
+            use_gpu = False
+            try:
+                import torch
+
+                use_gpu = bool(torch.cuda.is_available())
+            except Exception:
+                pass
+
             self._reader = self._easyocr.Reader(
                 self.config.easyocr_languages,
-                gpu=True,
+                gpu=use_gpu,
                 verbose=False,
                 model_storage_directory=str(model_dir),
             )
@@ -104,7 +117,7 @@ class EasyOCRBackend(OCRBackend):
             confidence_sum = 0.0
             text_count = 0
 
-            for bbox, text, confidence in results:
+            for _bbox, text, confidence in results:
                 extracted_text.append(text)
                 confidence_sum += confidence
                 text_count += 1

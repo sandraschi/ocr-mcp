@@ -15,8 +15,8 @@
 
 ## What it does
 
-- **Web app** — React + FastAPI: upload or scan, pick engine, get text/PDF/JSON. Ports **10858** (frontend) and **10859** (backend).
-- **MCP server** — Tools for OCR, preprocessing, scanner, workflows. Sampling and agentic workflow (SEP-1577) supported.
+- **Web app** — React (`web_sota/`) + FastAPI (`backend/app.py`): upload or scan, pick engine, get text/PDF/JSON. Ports **10858** (Vite) and **10859** (API). In-app **Help** (`/help`) documents the web UI, the MCP server, and OCR backends.
+- **MCP server** — FastMCP 3.1 stdio: tools for OCR, preprocessing, scanner, workflows. Sampling and agentic workflow (SEP-1577) supported. Same Python env and engines as the web backend; Mistral key for agents is typically **`MISTRAL_API_KEY`** in the client config (web Settings only affect the FastAPI process).
 
 **Features:** 10+ backends (PaddleOCR-VL-1.5, DeepSeek-OCR-2, Mistral OCR, …) · Auto backend selection · Preprocessing (deskew, enhance, crop) · Layout & table extraction · Quality assessment · WIA scanner · Batch & pipelines · Multi-format export
 
@@ -24,10 +24,14 @@
 
 | Doc | Description |
 |-----|-------------|
-| [**Install**](docs/INSTALL.md) | Install, run MCP, Web UI (ports 10858/10859), client config |
+| [**Install**](docs/INSTALL.md) | Install, run MCP, Web UI (`start.ps1`, ports 10858/10859), PyYAML notes, client config |
+| [**Backend deps**](docs/BACKEND_DEPS.md) | Web FastAPI backend: same venv as `ocr-mcp`, `pyproject.toml`, PyTorch, `OCR_AUTO_INSTALL_DEPS` |
 | [**Technical**](docs/TECHNICAL.md) | Architecture, tools, config, development, packaging |
 | [**OCR models**](docs/OCR_MODELS.md) | Engines, capabilities, hardware (see also [AI_MODELS.md](AI_MODELS.md)) |
+| [**Backend requirements**](docs/OCR_BACKEND_REQUIREMENTS.md) | Per-model pip packages, system deps, env/config |
 | [**AI features**](docs/AI_FEATURES.md) | Sampling, SEP-1577, agentic workflows, prompts |
+| [**In-app Help**](web_sota/src/pages/help.tsx) | Source for `/help`: webapp vs MCP vs backends (mirrors INSTALL / TECHNICAL) |
+| [**SOTA Compliance**](../mcp-central-docs/standards/AGENT_PROTOCOLS.md) | 🚀 Verified SOTA v12.0 Architecture |
 
 Also: [JUSTFILE.md](docs/JUSTFILE.md) (just recipes) · [OCR-MCP_MASTER_PLAN.md](OCR-MCP_MASTER_PLAN.md) (roadmap) · [tests/README.md](tests/README.md) (testing)
 
@@ -38,7 +42,20 @@ uv sync
 just run
 ```
 
-Web UI: `just webapp` → http://localhost:10858
+**Web UI (recommended):** from repo root run `web_sota\start.ps1` (PowerShell). It clears ports **10858/10859**, runs `uv sync`, restores PyYAML if needed (see [docs/INSTALL.md](docs/INSTALL.md)), starts the FastAPI backend in a new window, starts Vite in another window, then opens **http://localhost:10858** in your browser.
+
+Or: `just webapp` if your [justfile](docs/JUSTFILE.md) wraps the same flow.
+
+**If the start script fails**, use two terminals from the **ocr-mcp** repo root:
+
+- **Terminal 1 (backend):**  
+  `$env:PYTHONPATH = (Get-Location).Path; uv run uvicorn backend.app:app --host 127.0.0.1 --port 10859`
+- **Terminal 2 (frontend):**  
+  `cd web_sota; npm run dev -- --port 10858 --host`
+
+Then open http://localhost:10858
+
+**Tests:** `uv sync --extra dev` then `uv run python -m pytest` or `python scripts/run_tests.py --suite quick`. See [tests/README.md](tests/README.md).
 
 ## License
 

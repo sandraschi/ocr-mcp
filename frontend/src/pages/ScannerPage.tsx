@@ -1,8 +1,10 @@
 import { useState, useCallback, useEffect } from 'react'
-import { Printer, Search, Camera, Settings, Play, Square, RotateCcw, ZoomIn, ZoomOut, Maximize, AlertCircle } from 'lucide-react'
+import { Printer, Search, Camera, Settings, Play, Square, AlertCircle, FileText } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { ScannerSettingsModal } from '../components/modals/ScannerSettingsModal'
 import { useScannerStore } from '../stores/scannerStore'
+import { ScanViewer } from '../components/ui/ScanViewer'
+import { apiService } from '../services/api'
 import { cn } from '../lib/utils'
 
 export function ScannerPage() {
@@ -14,8 +16,6 @@ export function ScannerPage() {
     scanDocument,
     selectedScannerId: activeScannerId,
     selectScanner: setActiveScanner,
-    scanResult,
-    resetScanResult
   } = useScannerStore()
 
   const [isScanning, setIsScanning] = useState(false)
@@ -31,6 +31,42 @@ export function ScannerPage() {
   const [scanProgress, setScanProgress] = useState(0)
   const [showSettings, setShowSettings] = useState(false)
   const [scanError, setScanError] = useState<string | null>(null)
+  
+  // OCR Selection State
+  const [selection, setSelection] = useState<any>(null)
+  const handleSetSelection = useCallback((sel: any) => setSelection(sel), []);
+  const [isProcessingSelection, setIsProcessingSelection] = useState(false)
+  
+  const handleSelectionProcess = async () => {
+    if (!selection || !previewImage) return;
+    
+    setIsProcessingSelection(true);
+    setScanError(null);
+    
+    try {
+        const filename = previewImage.split('/').pop();
+        if (!filename) throw new Error("Could not determine filename from preview image");
+
+        const formData = new FormData();
+        formData.append('filename', filename);
+        formData.append('x', selection.x.toString());
+        formData.append('y', selection.y.toString());
+        formData.append('width', selection.width.toString());
+        formData.append('height', selection.height.toString());
+        
+        // Use apiService instead of raw fetch
+        const data = await apiService.ocrSelection(formData);
+        
+        alert(`Selection queued for OCR processing.\nJob ID: ${data.job_id}`);
+        setSelection(null); // Clear selection after processing
+        
+    } catch (error) {
+        console.error("Failed to process selection:", error);
+        setScanError(`Failed to process selection: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+        setIsProcessingSelection(false);
+    }
+  }
 
   useEffect(() => {
     fetchScanners()
@@ -73,7 +109,7 @@ export function ScannerPage() {
 
       const lastResult = useScannerStore.getState().scanResult
       if (lastResult?.success) {
-        setPreviewImage(lastResult.image_path)
+        setPreviewImage(`${apiService.getApiBaseUrl()}${lastResult.image_path}`)
       }
     } catch (error) {
       console.error('Preview scan failed:', error)
@@ -103,7 +139,7 @@ export function ScannerPage() {
 
       const lastResult = useScannerStore.getState().scanResult
       if (lastResult?.success) {
-        setPreviewImage(lastResult.image_path)
+        setPreviewImage(`${apiService.getApiBaseUrl()}${lastResult.image_path}`)
         alert(`Scan completed successfully!\n\nScanned ${lastResult.image_info?.width}x${lastResult.image_info?.height} image`)
       }
     } catch (error) {
@@ -161,7 +197,7 @@ export function ScannerPage() {
                   <span className="font-medium">Scanner Discovery Error</span>
                 </div>
                 <p className="text-sm text-red-600 dark:text-red-400 mt-1">
-                  {scannerError instanceof Error ? scannerError.message : 'Failed to discover scanners'}
+                  {typeof scannerError === 'string' ? scannerError : 'Failed to discover scanners'}
                 </p>
               </div>
             )}
@@ -384,37 +420,27 @@ export function ScannerPage() {
 
         {/* Preview Area */}
         {previewImage && (
-          <div className="mt-8 glass rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
+          <div className="mt-8 glass rounded-lg p-6 flex flex-col h-[800px]">
+             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium">Scan Preview</h3>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="gap-1">
-                  <ZoomIn className="w-4 h-4" />
-                  Zoom In
-                </Button>
-                <Button variant="outline" size="sm" className="gap-1">
-                  <ZoomOut className="w-4 h-4" />
-                  Zoom Out
-                </Button>
-                <Button variant="outline" size="sm" className="gap-1">
-                  <Maximize className="w-4 h-4" />
-                  Fit
-                </Button>
-                <Button variant="outline" size="sm" className="gap-1">
-                  <RotateCcw className="w-4 h-4" />
-                  Rotate
-                </Button>
-              </div>
+              {selection && (
+                  <Button 
+                    onClick={handleSelectionProcess}
+                    disabled={isProcessingSelection}
+                    className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <FileText className="w-4 h-4" />
+                    {isProcessingSelection ? 'Processing...' : 'OCR Selection'}
+                  </Button>
+              )}
             </div>
 
-            <div className="bg-muted rounded-lg p-4 flex items-center justify-center min-h-[300px]">
-              <div className="text-center">
-                <Camera className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">Preview image would be displayed here</p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  In a real implementation, this would show the scanned image
-                </p>
-              </div>
+            <div className="flex-1 min-h-0 bg-muted/30 rounded-lg overflow-hidden border">
+              <ScanViewer 
+                imageUrl={previewImage} 
+                onSelectionChange={handleSetSelection}
+                isProcessing={isProcessingSelection}
+              />
             </div>
           </div>
         )}

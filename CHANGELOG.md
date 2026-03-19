@@ -5,6 +5,27 @@ All notable changes to OCR-MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-03-19
+
+### Added
+- **`POST /api/settings/mistral/test`** — Validates Mistral API key via **`GET {base}/models`**; optional JSON overrides for unsaved form key/URL. **`web_sota` Settings** — **Test API key** button.
+- **Help (`/help`)** — Reworked to cover **web application** (ports, proxy, routes, Settings semantics), **MCP server** (stdio, tools, env, Mistral vs web), and **OCR backends** table + doc links (`web_sota/src/pages/help.tsx`).
+- **`ocr_pip_install`** — Shared `ensure_ocr_pip_dependencies()` for **`OCR_AUTO_INSTALL_DEPS=1`** (torch/transformers stack + optional Paddle); invoked from **`run_ocr_startup_bootstrap`** so the **MCP server** gets the same auto-install as the web backend (removed duplicate logic from `backend/app.py`).
+- **`ml_stack_hints`** — One log line per process when CUDA is available but **flash-attn** is missing (VRAM hint + doc pointer).
+- **Startup bootstrap** — `ocr_mcp.utils.startup_bootstrap.run_ocr_startup_bootstrap(config)` runs after `OCRConfig()` in the FastAPI backend and MCP server: **PyYAML** dist-info repair (so `transformers` sees `pyyaml` version), **Tesseract** (Windows silent install), **Poppler** for pdf2image (Windows winget `oschwartz10612.Poppler`). Kill-switch: `OCR_AUTO_BOOTSTRAP=0`. Poppler: `OCR_AUTO_INSTALL_POPPLER=0`, env `POPPLER_PATH`; `OCRConfig.poppler_path` passed to `convert_from_path`.
+- **Windows Tesseract auto-install** — via bootstrap / `tesseract_bootstrap` (once per process). Opt out with `OCR_AUTO_INSTALL_TESSERACT=0`. `TesseractBackend` retries bootstrap if the first probe fails.
+- **Settings → Mistral OCR API** — `web_sota` settings page: API key (password field), base URL, save / remove key. Backend **`GET/POST /api/settings/mistral`** updates global `OCRConfig` and **`invalidate_backend("mistral-ocr")`**. **`GET /api/backends`** lists all registered backends with availability (not only available ones).
+
+### Changed
+- **EasyOCR** — use GPU only when `torch.cuda.is_available()`; log once before first reader init that models may download into cache.
+
+### Documentation
+- **README** — In-app Help pointer (`/help`); Mistral web vs MCP env in “What it does”; docs table links **`web_sota/src/pages/help.tsx`**.
+- **INSTALL** — Web routes, `/help`, Settings/Mistral/**test** API; MCP **`MISTRAL_API_KEY`** note; `web_sota/start.ps1` flow, PyYAML, `OCR_AUTO_INSTALL_DEPS`, tests pointer (unchanged parts retained).
+- **TECHNICAL** — Two-surface architecture (FastAPI vs FastMCP); selected REST routes (`/api/settings/mistral`, `/test`); dev steps numbering fix.
+- **OCR_BACKEND_REQUIREMENTS** — Mistral: `POST /api/settings/mistral/test` / UI **Test API key**.
+- **BACKEND_DEPS** — Frontend `/api` + `/static` proxy, Help source, Settings API summary; same venv / PyTorch notes as before.
+
 ## [Unreleased] - 2026-03-16
 
 ### Added

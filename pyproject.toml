@@ -65,6 +65,7 @@ dependencies = [
     "timm>=0.9.0",
     "einops>=0.7.0",
     "huggingface-hub>=0.17.0",
+    "pyyaml>=6.0",
     "scikit-image>=0.22.0",
     "pdf2image>=1.17.0",
     "watchfiles>=0.21.0",
@@ -137,6 +138,7 @@ where = ["src"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+extend-exclude = ["scripts/venv_fixes"]
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "UP"]

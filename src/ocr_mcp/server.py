@@ -8,7 +8,6 @@ Features:
 - Agentic workflow tool: AI-orchestrated multi-step document processing via sampling with tools.
 """
 
-import asyncio
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -146,8 +145,17 @@ def get_ocr_capabilities() -> str:
             pass
     if not backends:
         backends = [
-            "deepseek-ocr", "deepseek-ocr2", "paddleocr-vl", "olmocr-2", "pp-ocrv5",
-            "dots-ocr", "got-ocr", "qwen-layered", "tesseract", "easyocr", "auto",
+            "deepseek-ocr",
+            "deepseek-ocr2",
+            "paddleocr-vl",
+            "olmocr-2",
+            "pp-ocrv5",
+            "dots-ocr",
+            "got-ocr",
+            "qwen-layered",
+            "tesseract",
+            "easyocr",
+            "auto",
         ]
     return (
         "OCR-MCP 3.1 capabilities:\n"
@@ -246,6 +254,13 @@ def get_agentic_workflow_instructions_prompt() -> str:
 
 # Global instances - mutable runtime for lifespan injection
 config = OCRConfig()
+try:
+    from .utils.startup_bootstrap import run_ocr_startup_bootstrap
+
+    run_ocr_startup_bootstrap(config)
+except Exception as e:
+    logger.warning("OCR startup bootstrap: %s", e)
+
 _runtime = {"backend_manager": None, "config": config}
 
 # Register all tools - runtime dict is mutated in lifespan

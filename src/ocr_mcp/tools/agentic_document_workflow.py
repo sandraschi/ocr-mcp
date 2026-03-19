@@ -11,6 +11,7 @@ from fastmcp import Context
 
 logger = logging.getLogger(__name__)
 
+
 # Fallback response builders (no optional advanced_memory dependency)
 def build_success_response(**kwargs) -> dict:
     return {
@@ -101,7 +102,9 @@ def register_agentic_document_workflow(app):
                     error="No matching tools found",
                     error_code="TOOLS_NOT_FOUND",
                     message=f"None of available_tools matched registered tools. Registered: {list(name_to_tool.keys())}",
-                    recovery_options=["Use tool names from status() or document_processing, scanner_operations, etc."],
+                    recovery_options=[
+                        "Use tool names from status() or document_processing, scanner_operations, etc."
+                    ],
                     urgency="high",
                 )
 

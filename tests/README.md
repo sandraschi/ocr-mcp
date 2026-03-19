@@ -2,7 +2,7 @@
 
 Test layout and how to run tests for [OCR-MCP](../README.md). CI runs on every push/PR via [.github/workflows/ci.yml](../.github/workflows/ci.yml) (uv, ruff, pytest).
 
-**Quick run:** from repo root: `just test` or `uv run pytest`.
+**Quick run:** from repo root: `uv run pytest` or `python scripts/run_tests.py --suite quick`.
 
 ## 🏗️ Testing Architecture
 
@@ -11,21 +11,18 @@ tests/
 ├── conftest.py                 # Base test configuration and fixtures
 ├── conftest_advanced.py        # Advanced testing utilities
 ├── utils/
-│   ├── test_helpers.py         # Test data generators and utilities
-│   └── ...
-├── unit/                       # Unit tests
-├── integration/               # Integration tests
+│   └── test_helpers.py         # Test data generators and utilities
+├── unit/                       # Unit tests (config, backend_manager, backends, scanner)
+├── integration/               # Integration tests (MCP tools)
+├── smoke/                     # Basic functionality (imports, config, mocks)
+├── e2e/                       # End-to-end workflows
+├── benchmarks/                # Performance benchmarks
 ├── performance/               # Performance and load tests
-├── security/                  # Security and input validation tests
+├── security/                  # Input validation and security
 ├── fuzzing/                   # Fuzzing and property-based tests
-├── smoke/                     # Basic functionality tests
-├── regression/                # Regression tests
-├── e2e/                       # End-to-end tests
-├── acceptance/                # Acceptance tests
-├── property/                  # Property-based tests
 ├── fixtures/                  # Test data and assets
-├── mocks/                     # Mock objects and utilities
-└── run_tests.py              # Advanced test runner
+├── mocks/                     # Mock backends and scanner
+└── run_tests.py               # Alternate test runner (in tests/)
 ```
 
 ## 🚀 Quick Start
@@ -33,39 +30,44 @@ tests/
 ### Run All Tests
 ```bash
 # From repo root (recommended)
-just test
-# or
 uv run pytest
 
-# Optional: advanced test runner (if available)
-python tests/run_tests.py all
+# Or use the script (smoke → unit → integration → e2e → benchmarks)
+python scripts/run_tests.py --suite all
+
+# With coverage
+python scripts/run_tests.py --suite all --coverage
 ```
 
 ### Run Specific Test Types
 ```bash
+# Smoke tests (fast sanity check)
+python scripts/run_tests.py --suite smoke
+
 # Unit tests only
-python tests/run_tests.py unit
+python scripts/run_tests.py --suite unit
 
 # Integration tests
-python tests/run_tests.py integration
+python scripts/run_tests.py --suite integration
 
-# Performance tests
-python tests/run_tests.py performance
+# Quick subset (config, backend_manager, mcp_tools, smoke)
+python scripts/run_tests.py --suite quick
 
-# Security tests
-python tests/run_tests.py security
+# E2E, benchmarks
+python scripts/run_tests.py --suite e2e
+python scripts/run_tests.py --suite benchmarks
 
-# Fuzzing tests
-python tests/run_tests.py fuzzing
+# Direct pytest
+uv run pytest tests/unit/ -v
+uv run pytest tests/performance/ -v -m performance
+uv run pytest tests/security/ -v
+uv run pytest tests/fuzzing/ -v
 ```
 
 ### Run with Coverage
 ```bash
-# Generate coverage reports
-python tests/run_tests.py all --coverage
-
-# View HTML coverage report
-open reports/coverage/html/index.html
+python scripts/run_tests.py --suite all --coverage
+# HTML report: htmlcov/index.html
 ```
 
 ## 📊 Test Categories
@@ -106,12 +108,6 @@ Basic functionality verification.
 pytest -k smoke -v
 ```
 
-### 🔄 Regression Tests (`tests/regression/`)
-Ensure previously fixed bugs stay fixed.
-```bash
-pytest tests/regression/ -v
-```
-
 ### 🌐 End-to-End Tests (`tests/e2e/`)
 Full workflow testing from input to output.
 ```bash
@@ -125,20 +121,7 @@ pytest tests/e2e/ -v -m e2e
 from tests.utils.test_helpers import TestDataGenerator
 
 generator = TestDataGenerator()
-
-# Create realistic test images
-image = generator.create_test_image(
-    text="Sample OCR text",
-    width=800,
-    height=600
-)
-
-# Create complex document images
-complex_doc = generator.create_complex_document_image(
-    pages=3,
-    include_tables=True,
-    include_headers=True
-)
+image = generator.create_test_image(text="Sample OCR text", width=800, height=600)
 ```
 
 ### Performance Profiling
@@ -155,20 +138,8 @@ elapsed = profiler.stop("ocr_processing")
 stats = profiler.get_stats()
 ```
 
-### Mock Backend Factory
-```python
-from tests.utils.test_helpers import MockBackendFactory
-
-# Create complete backend suite
-backends = MockBackendFactory.create_backend_suite()
-
-# Create specific mock backend
-mock_backend = MockBackendFactory.create_mock_backend(
-    "deepseek-ocr",
-    available=True,
-    capabilities={"gpu_support": True, "accuracy": 0.92}
-)
-```
+### Mocks
+Use `tests.mocks.mock_backends` and fixtures in `conftest.py` (e.g. `mock_deepseek_backend`, `mock_scanner_manager`).
 
 ## 📈 Advanced Features
 
@@ -383,12 +354,7 @@ PYTHONPATH=src pytest
 ## 🚨 Common Issues
 
 ### Import Errors
-```bash
-# Ensure proper Python path (Bash/Unix)
-export PYTHONPATH=src:$PYTHONPATH
-pytest tests/
-```
-On Windows PowerShell: `$env:PYTHONPATH = "src"; pytest tests/`. When using `uv run pytest` from repo root you usually don't need to set PYTHONPATH.
+Run from repo root so `conftest.py` can add project root and `src` to `sys.path`. Use `uv run pytest tests/` — no need to set PYTHONPATH.
 
 ### GPU/CPU Issues
 ```bash

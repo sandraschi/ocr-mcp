@@ -98,7 +98,7 @@ class TestRunner:
         """Run unit tests."""
         logger.info("Running unit tests...")
 
-        cmd = ["python", "-m", "pytest", "tests/unit/", "-v"]
+        cmd = [sys.executable, "-m", "pytest", "tests/unit/", "-v"]
 
         if args.fail_fast:
             cmd.append("--tb=short")
@@ -123,7 +123,7 @@ class TestRunner:
         """Run integration tests."""
         logger.info("Running integration tests...")
 
-        cmd = ["python", "-m", "pytest", "tests/integration/", "-v"]
+        cmd = [sys.executable, "-m", "pytest", "tests/integration/", "-v"]
 
         if args.fail_fast:
             cmd.append("--tb=short")
@@ -147,7 +147,7 @@ class TestRunner:
         """Run end-to-end tests."""
         logger.info("Running end-to-end tests...")
 
-        cmd = ["python", "-m", "pytest", "tests/e2e/", "-v"]
+        cmd = [sys.executable, "-m", "pytest", "tests/e2e/", "-v"]
 
         if args.fail_fast:
             cmd.append("--tb=short")
@@ -171,7 +171,7 @@ class TestRunner:
         """Run benchmark tests."""
         logger.info("Running benchmark tests...")
 
-        cmd = ["python", "-m", "pytest", "tests/benchmarks/", "-v"]
+        cmd = [sys.executable, "-m", "pytest", "tests/benchmarks/", "-v"]
 
         if args.benchmark_only:
             # Skip accuracy tests, only run performance benchmarks
@@ -185,18 +185,33 @@ class TestRunner:
 
         return self.run_command(cmd)
 
+    def run_smoke_tests(self, args) -> bool:
+        """Run smoke tests (basic functionality)."""
+        logger.info("Running smoke tests...")
+        cmd = [sys.executable, "-m", "pytest", "tests/smoke/", "-v"]
+        if args.fail_fast:
+            cmd.extend(["--tb=short", "--fail-fast"])
+        if args.coverage:
+            cmd.extend(
+                ["--cov=src", "--cov-report=term-missing", f"--cov-report=html:{self.coverage_dir}"]
+            )
+        if args.junit:
+            cmd.extend(["--junitxml", str(self.reports_dir / "smoke-tests.xml")])
+        return self.run_command(cmd)
+
     def run_quick_tests(self, args) -> bool:
         """Run quick smoke tests for development."""
         logger.info("Running quick smoke tests...")
 
         # Run a subset of critical tests
         cmd = [
-            "python",
+            sys.executable,
             "-m",
             "pytest",
             "tests/unit/test_config.py",
             "tests/unit/test_backend_manager.py",
-            "tests/integration/test_ocr_tools.py",
+            "tests/integration/test_mcp_tools.py",
+            "tests/smoke/test_basic_functionality.py",
             "-v",
             "--tb=short",
         ]
@@ -216,6 +231,7 @@ class TestRunner:
 
         # Run tests in order
         test_suites = [
+            ("smoke", self.run_smoke_tests),
             ("unit", self.run_unit_tests),
             ("integration", self.run_integration_tests),
             ("e2e", self.run_e2e_tests),
@@ -237,7 +253,7 @@ class TestRunner:
         if args.coverage and success:
             logger.info("\nGenerating combined coverage report...")
             cmd = [
-                "python",
+                sys.executable,
                 "-m",
                 "coverage",
                 "html",
@@ -276,7 +292,7 @@ class TestRunner:
 
         parser.add_argument(
             "--suite",
-            choices=["unit", "integration", "e2e", "benchmarks", "quick", "all"],
+            choices=["unit", "integration", "e2e", "benchmarks", "smoke", "quick", "all"],
             default="all",
             help="Test suite to run (default: all)",
         )
@@ -334,6 +350,7 @@ class TestRunner:
             "integration": self.run_integration_tests,
             "e2e": self.run_e2e_tests,
             "benchmarks": self.run_benchmark_tests,
+            "smoke": self.run_smoke_tests,
             "quick": self.run_quick_tests,
             "all": self.run_all_tests,
         }

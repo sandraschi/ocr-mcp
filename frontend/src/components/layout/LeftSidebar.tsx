@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Upload, Layers, Printer, Search, BarChart3, Cog, Zap, FileText, Settings, Terminal } from 'lucide-react'
+import { Upload, Layers, Printer, Search, BarChart3, Cog, Zap, FileText, Settings, Terminal, Maximize } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
 
@@ -16,6 +16,7 @@ export function LeftSidebar({ isOpen, onOpenLogs }: LeftSidebarProps) {
     { id: '/upload', label: 'Single Document', icon: Upload, path: '/upload' },
     { id: '/batch', label: 'Batch Processing', icon: Layers, path: '/batch' },
     { id: '/scanner', label: 'Scanner Control', icon: Printer, path: '/scanner' },
+    { id: '/scanviewer', label: 'Scan Viewer', icon: Maximize, path: '/scanviewer' },
     { id: '/preprocessing', label: 'Image Preprocessing', icon: Zap, path: '/preprocessing' },
     { id: '/analysis', label: 'Document Analysis', icon: Search, path: '/analysis' },
     { id: '/quality', label: 'Quality Assessment', icon: BarChart3, path: '/quality' },

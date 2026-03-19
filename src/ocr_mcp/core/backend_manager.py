@@ -27,6 +27,7 @@ except (ImportError, AttributeError):
     DOCUMENT_PROCESSOR_AVAILABLE = False
     document_processor = None
 
+
 class MockOCRBackend:
     """Mock backend for failed OCR backends - provides graceful degradation"""
 
@@ -123,7 +124,7 @@ class BackendManager:
                 "module": "..backends.deepseek_backend",
                 "class": "DeepSeekOCRBackend",
                 "model_size": "~500MB+",
-                "description": "DeepSeek-OCR cloud API"
+                "description": "DeepSeek-OCR cloud API",
             },
             "paddleocr-vl": {
                 "module": "..backends.paddleocr_vl_backend",
@@ -147,44 +148,44 @@ class BackendManager:
                 "module": "..backends.dots_backend",
                 "class": "DOTSBackend",
                 "model_size": "~200MB",
-                "description": "DOTS.OCR specialized OCR model"
+                "description": "DOTS.OCR specialized OCR model",
             },
             "pp-ocrv5": {
                 "module": "..backends.ppocr_backend",
                 "class": "PPOCRBackend",
                 "model_size": "~100MB",
-                "description": "PaddlePaddle PP-OCRv5"
+                "description": "PaddlePaddle PP-OCRv5",
             },
             "qwen-layered": {
                 "module": "..backends.qwen_backend",
                 "class": "QwenLayeredBackend",
                 "model_size": "~2GB+",
-                "description": "Qwen-VL image layered processing"
+                "description": "Qwen-VL image layered processing",
             },
             "mistral-ocr": {
                 "module": "..backends.mistral_ocr_backend",
                 "class": "MistralOCRBackend",
                 "model_size": "~500MB",
-                "description": "Mistral OCR 3 cloud API"
+                "description": "Mistral OCR 3 cloud API",
             },
             "got-ocr": {
                 "module": "..backends.got_ocr_backend",
                 "class": "GOTOCRBackend",
                 "model_size": "~300MB",
-                "description": "GOT-OCR2.0 legacy backend"
+                "description": "GOT-OCR2.0 legacy backend",
             },
             "tesseract": {
                 "module": "..backends.tesseract_backend",
                 "class": "TesseractBackend",
                 "model_size": "~50MB",
-                "description": "Tesseract OCR engine"
+                "description": "Tesseract OCR engine",
             },
             "easyocr": {
                 "module": "..backends.easyocr_backend",
                 "class": "EasyOCRBackend",
                 "model_size": "~200MB",
-                "description": "EasyOCR with CRAFT detector"
-            }
+                "description": "EasyOCR with CRAFT detector",
+            },
         }
 
         # Initialize registry in backends dict (None means not loaded yet)
@@ -211,6 +212,7 @@ class BackendManager:
 
             # Dynamic import - only load when needed!
             import importlib
+
             module = importlib.import_module(module_path, __package__)
             backend_class = getattr(module, class_name)
 
@@ -247,6 +249,11 @@ class BackendManager:
 
         return self.backends[name]
 
+    def invalidate_backend(self, name: str) -> None:
+        """Drop cached backend so the next ``get_backend`` reloads (e.g. after API key change)."""
+        if name in self.backends:
+            self.backends[name] = None
+
     def select_backend(
         self, requested_backend: str = "auto", image_path: str | None = None
     ) -> OCRBackend | None:
@@ -272,17 +279,17 @@ class BackendManager:
 
             # Fallback to preference order if intelligent selection fails
             preference_order = [
-                "paddleocr-vl",   # Jan 2026 SOTA: 94.5% OmniDocBench, 0.9B, efficient
-                "mistral-ocr",    # Dec 2025 API: 74% win rate, 94.9% accuracy
+                "paddleocr-vl",  # Jan 2026 SOTA: 94.5% OmniDocBench, 0.9B, efficient
+                "mistral-ocr",  # Dec 2025 API: 74% win rate, 94.9% accuracy
                 "deepseek-ocr2",  # Jan 2026: Visual Causal Flow, 3B
-                "olmocr-2",       # Oct 2025: 82.4 olmOCR-Bench, best for academic
-                "deepseek-ocr",   # Original DeepSeek-OCR API
-                "qwen-layered",   # Qwen2.5-VL: still solid
-                "got-ocr",        # GOT-OCR2.0: fast, lean
-                "dots-ocr",       # DOTS.OCR
-                "pp-ocrv5",       # PaddlePaddle classic pipeline
-                "easyocr",        # Legacy
-                "tesseract",      # Backstop — always last
+                "olmocr-2",  # Oct 2025: 82.4 olmOCR-Bench, best for academic
+                "deepseek-ocr",  # Original DeepSeek-OCR API
+                "qwen-layered",  # Qwen2.5-VL: still solid
+                "got-ocr",  # GOT-OCR2.0: fast, lean
+                "dots-ocr",  # DOTS.OCR
+                "pp-ocrv5",  # PaddlePaddle classic pipeline
+                "easyocr",  # Legacy
+                "tesseract",  # Backstop — always last
             ]
             for backend_name in preference_order:
                 backend = self.get_backend(backend_name)

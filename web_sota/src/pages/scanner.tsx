@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, AlertCircle, RefreshCw, Scan, ScanLine, Cpu } from "lucide-react";
+import { CheckCircle2, AlertCircle, RefreshCw, Scan, ScanLine, Cpu, FileText } from "lucide-react";
+import { ScanViewer } from '@/components/ui/ScanViewer';
+import { useScanStore } from '@/store';
 
 interface ScannerInfo {
     device_id: string;
@@ -23,11 +25,21 @@ export function Scanner() {
     const [selectedBackend, setSelectedBackend] = useState<string>(
         () => localStorage.getItem(DEFAULT_BACKEND_KEY) || 'auto'
     );
+    const { lastScan, setLastScan, lastOcrJobId, setLastOcrJobId } = useScanStore();
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
     const [status, setStatus] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [imageUrl, setImageUrl] = useState<string | null>(null);
+    const [isProcessingSelection, setIsProcessingSelection] = useState(false);
+
+    // Derived values from store
+    const imageUrl = lastScan.imageUrl;
+    const selection = lastScan.selection;
+    const lastScanFilename = lastScan.filename;
+
+    const setImageUrl = useCallback((url: string | null) => setLastScan({ imageUrl: url }), [setLastScan]);
+    const setSelection = useCallback((sel: { x: number; y: number; width: number; height: number; imgWidth: number; imgHeight: number } | null) => setLastScan({ selection: sel }), [setLastScan]);
+    const setLastScanFilename = useCallback((name: string | null) => setLastScan({ filename: name }), [setLastScan]);
 
     const fetchScanners = async () => {
         setFetching(true);
@@ -60,7 +72,6 @@ export function Scanner() {
     }, []);
 
     const [ocrLoading, setOcrLoading] = useState(false);
-    const [lastScanFilename, setLastScanFilename] = useState<string | null>(null);
 
     const handleScan = async () => {
         if (!selectedScanner) return;
@@ -120,8 +131,8 @@ export function Scanner() {
 
             const data = await response.json();
             if (data.job_id) {
-                setStatus(`OCR job started! Job ID: ${data.job_id}`);
-                // Optional: Redirect to status or editor
+                setLastOcrJobId(data.job_id);
+                setStatus('OCR running — open View text or Activity when ready.');
             } else {
                 throw new Error(data.error || 'Failed to start OCR');
             }
@@ -129,6 +140,45 @@ export function Scanner() {
             setError(err instanceof Error ? err.message : 'Unknown error');
         } finally {
             setOcrLoading(false);
+        }
+    };
+
+    const handleSelectionProcess = async () => {
+        if (!selection || !lastScanFilename) return;
+        
+        setIsProcessingSelection(true);
+        setError(null);
+        setStatus(null);
+        
+        try {
+            const formData = new FormData();
+            formData.append('filename', lastScanFilename);
+            formData.append('x', selection.x.toString());
+            formData.append('y', selection.y.toString());
+            formData.append('width', selection.width.toString());
+            formData.append('height', selection.height.toString());
+            formData.append('backend', selectedBackend);
+            
+            const response = await fetch('/api/ocr_selection', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Failed to process selection');
+            }
+
+            const data = await response.json();
+            if (data.job_id) setLastOcrJobId(data.job_id);
+            setStatus('Selection sent for OCR — open View text or Activity when ready.');
+            setSelection(null);
+            
+        } catch (err: unknown) {
+            console.error("Failed to process selection:", err);
+            setError(`Failed to process selection: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        } finally {
+            setIsProcessingSelection(false);
         }
     };
 
@@ -201,26 +251,66 @@ export function Scanner() {
                     )}
 
                     {status && (
-                        <div className="flex items-center gap-2 text-emerald-400 bg-emerald-400/10 p-3 rounded-md border border-emerald-400/20">
-                            <CheckCircle2 className="w-4 h-4" />
+                        <div className="flex flex-wrap items-center gap-2 text-emerald-400 bg-emerald-400/10 p-3 rounded-md border border-emerald-400/20">
+                            <CheckCircle2 className="w-4 h-4 shrink-0" />
                             <span className="text-sm">{status}</span>
+                            {lastOcrJobId && (
+                                <>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="ml-2 border-emerald-500/50 text-emerald-300 hover:bg-emerald-500/20"
+                                        onClick={() => window.location.assign('/editor')}
+                                    >
+                                        <FileText className="w-4 h-4 mr-1" />
+                                        View text
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="border-emerald-500/50 text-emerald-300 hover:bg-emerald-500/20"
+                                        onClick={() => window.location.assign('/status')}
+                                    >
+                                        Activity
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     )}
 
                     {imageUrl && (
                         <div className="mt-6 space-y-4">
-                            <div className="border border-slate-700 rounded-md p-2 bg-slate-950/50">
-                                <img src={imageUrl} alt="Scanned document" className="max-w-full h-auto rounded" />
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-medium text-slate-100">Scan Preview</h3>
+                                {selection && (
+                                    <Button 
+                                        onClick={handleSelectionProcess}
+                                        disabled={isProcessingSelection}
+                                        className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                                    >
+                                        <FileText className="w-4 h-4" />
+                                        {isProcessingSelection ? 'Processing...' : 'OCR Selection'}
+                                    </Button>
+                                )}
                             </div>
 
-                            <div className="flex justify-end">
+                            <p className="text-xs text-slate-500 mb-1">Tip: click &quot;Select Area&quot; above, then drag on the image to select a region for OCR.</p>
+                            <div className="h-[600px] border border-slate-700 rounded-md bg-slate-950/50 overflow-hidden">
+                                <ScanViewer 
+                                    imageUrl={imageUrl} 
+                                    onSelectionChange={setSelection}
+                                    isProcessing={isProcessingSelection}
+                                />
+                            </div>
+
+                            <div className="flex justify-end mt-4">
                                 <Button
                                     onClick={handleOCR}
                                     disabled={ocrLoading}
                                     className="bg-purple-600 hover:bg-purple-700 text-white"
                                 >
                                     {ocrLoading ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Cpu className="w-4 h-4 mr-2" />}
-                                    OCR this Scan
+                                    OCR Full Scan
                                 </Button>
                             </div>
                         </div>

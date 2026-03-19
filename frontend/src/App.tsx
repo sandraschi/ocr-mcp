@@ -13,6 +13,7 @@ import { SettingsPage } from '@pages/SettingsPage'
 import { PreprocessingPage } from '@pages/PreprocessingPage'
 import { ConversionPage } from '@pages/ConversionPage'
 import { ExportPage } from '@pages/ExportPage'
+import { ScanViewerPage } from '@pages/ScanViewerPage'
 import { usePerformanceMonitor } from '@hooks/usePerformanceMonitor'
 import { Topbar } from './components/layout/Topbar'
 import { LeftSidebar } from './components/layout/LeftSidebar'
@@ -78,6 +79,7 @@ function App() {
                     <Route path="/upload" element={<UploadPage />} />
                     <Route path="/batch" element={<BatchPage />} />
                     <Route path="/scanner" element={<ScannerPage />} />
+                    <Route path="/scanviewer" element={<ScanViewerPage />} />
                     <Route path="/preprocessing" element={<PreprocessingPage />} />
                     <Route path="/analysis" element={<AnalysisPage />} />
                     <Route path="/quality" element={<QualityPage />} />

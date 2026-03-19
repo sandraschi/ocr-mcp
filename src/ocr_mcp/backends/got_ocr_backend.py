@@ -1,6 +1,5 @@
 import logging
 import time
-from pathlib import Path
 from typing import Any
 
 from ..core.backend_manager import OCRBackend
@@ -42,8 +41,8 @@ class GOTOCRBackend(OCRBackend):
             raise RuntimeError("GOT-OCR dependencies not available")
 
         try:
-            from transformers import AutoModelForCausalLM, AutoTokenizer
             import torch
+            from transformers import AutoModelForCausalLM, AutoTokenizer
 
             logger.info(f"Loading GOT-OCR2.0 model from {self.model_name}...")
             start_time = time.time()

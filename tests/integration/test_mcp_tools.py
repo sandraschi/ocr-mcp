@@ -11,9 +11,9 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from fastmcp import FastMCP
 
-from src.ocr_mcp.core.backend_manager import BackendManager
-from src.ocr_mcp.core.config import OCRConfig
-from src.ocr_mcp.tools.ocr_tools import register_sota_tools
+from ocr_mcp.core.backend_manager import BackendManager
+from ocr_mcp.core.config import OCRConfig
+from ocr_mcp.tools.ocr_tools import register_sota_tools
 from tests.mocks.mock_backends import MockDeepSeekBackend
 
 
@@ -197,7 +197,9 @@ class TestMCPToolsIntegration:
         tools = await registered_app.get_tools()
         workflow_tool = next(t for t in tools if t.name == "workflow_management")
 
-        result = await (workflow_tool.fn if hasattr(workflow_tool, "fn") else workflow_tool)(operation="ocr_health_check")
+        result = await (workflow_tool.fn if hasattr(workflow_tool, "fn") else workflow_tool)(
+            operation="ocr_health_check"
+        )
 
         assert "status" in result
         assert "ocr_backends" in result
@@ -223,7 +225,9 @@ class TestMCPToolsIntegration:
         tools = await registered_app.get_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")
 
-        result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(operation="list_scanners")
+        result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
+            operation="list_scanners"
+        )
 
         assert isinstance(result, dict)
         assert "scanners" in result
@@ -308,7 +312,9 @@ class TestMCPToolsIntegration:
         tools = await registered_app.get_tools()
         preview_tool = next(t for t in tools if t.name == "preview_scan")
 
-        result = await (preview_tool.fn if hasattr(preview_tool, "fn") else preview_tool)(device_id="wia:test_scanner_1", dpi=75, save_path=None)
+        result = await (preview_tool.fn if hasattr(preview_tool, "fn") else preview_tool)(
+            device_id="wia:test_scanner_1", dpi=75, save_path=None
+        )
 
         # Result should be image data or file path
         assert result is not None
@@ -368,7 +374,9 @@ class TestToolErrorHandling:
         tools = await fastmcp_app.get_tools()
         process_tool = next(t for t in tools if t.name == "process_document")
 
-        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(source_path=str(unsupported_file), backend="auto")
+        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
+            source_path=str(unsupported_file), backend="auto"
+        )
 
         assert result["success"] is False
         assert "unsupported" in result["error"].lower()
@@ -383,7 +391,9 @@ class TestToolErrorHandling:
         tools = await fastmcp_app.get_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")
 
-        result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(operation="scanner_properties", device_id="invalid:device")
+        result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
+            operation="scanner_properties", device_id="invalid:device"
+        )
 
         # Should handle gracefully
         assert isinstance(result, dict)

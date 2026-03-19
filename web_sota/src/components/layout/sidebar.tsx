@@ -12,7 +12,8 @@ import {
     Cpu,
     FileEdit,
     Activity,
-    HelpCircle
+    HelpCircle,
+    Scan
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -27,9 +28,10 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         { href: '/', label: 'Overview', icon: LayoutDashboard },
         { href: '/import', label: 'Import', icon: Upload },
         { href: '/scanner', label: 'Scanner', icon: ScanLine },
+        { href: '/scan-viewer', label: 'Scan Viewer', icon: Scan },
         { href: '/process', label: 'Pipelines', icon: Cpu },
-        { href: '/editor', label: 'Editor', icon: FileEdit },
-        { href: '/status', label: 'Status', icon: Activity },
+        { href: '/editor', label: 'OCR text', icon: FileEdit },
+        { href: '/status', label: 'Activity', icon: Activity },
         { href: '/chat', label: 'AI Command', icon: Bot },
         { href: '/help', label: 'Help', icon: HelpCircle },
         { href: '/settings', label: 'Settings', icon: Settings },

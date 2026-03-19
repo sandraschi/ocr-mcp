@@ -14,9 +14,7 @@ from pathlib import Path
 def run_command(command: list[str], cwd: Path = None) -> bool:
     """Run a command and return success status."""
     try:
-        subprocess.run(
-            command, cwd=cwd or Path.cwd(), capture_output=True, text=True, check=True
-        )
+        subprocess.run(command, cwd=cwd or Path.cwd(), capture_output=True, text=True, check=True)
         print(f"[OK] {' '.join(command)}")
         return True
     except subprocess.CalledProcessError as e:
@@ -75,6 +73,7 @@ def main():
 
     try:
         import ocr_mcp  # noqa: F401 - Import test only
+
         print("Core imports work")
     except ImportError as e:
         print(f"Import test failed: {e}")

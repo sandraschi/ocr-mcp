@@ -287,7 +287,7 @@ class TestBackendManager:
         for i, name in enumerate(manager.backends):
             mock_b = Mock()
             mock_b.name = name
-            mock_b.is_available.return_value = (i % 2 == 0)
+            mock_b.is_available.return_value = i % 2 == 0
             if i % 2 == 0:
                 available_count += 1
             manager.backends[name] = mock_b

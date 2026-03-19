@@ -14,8 +14,8 @@ import psutil
 import pytest
 from PIL import Image, ImageDraw, ImageFont
 
-from src.ocr_mcp.core.backend_manager import BackendManager
-from src.ocr_mcp.core.config import OCRConfig
+from ocr_mcp.core.backend_manager import BackendManager
+from ocr_mcp.core.config import OCRConfig
 
 
 class TestOCRPerformance:
@@ -409,7 +409,7 @@ class TestSystemPerformance:
         """Benchmark backend manager initialization time."""
 
         def init_backend_manager():
-            from src.ocr_mcp.core.backend_manager import BackendManager
+            from ocr_mcp.core.backend_manager import BackendManager
 
             return BackendManager(config)
 
@@ -428,15 +428,15 @@ class TestSystemPerformance:
 
         def register_tools():
             from fastmcp import FastMCP
-            from src.ocr_mcp.tools.scanner_tools import register_scanner_tools
 
-            from src.ocr_mcp.core.backend_manager import BackendManager
-            from src.ocr_mcp.tools.ocr_tools import register_ocr_tools
+            from ocr_mcp.core.backend_manager import BackendManager
+            from ocr_mcp.tools.ocr_tools import register_sota_tools
+            from ocr_mcp.tools.scanner_tools import register_scanner_tools
 
             app = FastMCP("benchmark-ocr-mcp")
             manager = BackendManager(config)
 
-            register_ocr_tools(app, manager, config)
+            register_sota_tools(app, manager, config)
             register_scanner_tools(app, manager, config)
 
             return app
@@ -451,15 +451,15 @@ class TestSystemPerformance:
 
         async def start_server():
             from fastmcp import FastMCP
-            from src.ocr_mcp.tools.scanner_tools import register_scanner_tools
 
-            from src.ocr_mcp.core.backend_manager import BackendManager
-            from src.ocr_mcp.tools.ocr_tools import register_ocr_tools
+            from ocr_mcp.core.backend_manager import BackendManager
+            from ocr_mcp.tools.ocr_tools import register_sota_tools
+            from ocr_mcp.tools.scanner_tools import register_scanner_tools
 
             app = FastMCP("benchmark-server")
             manager = BackendManager(config)
 
-            register_ocr_tools(app, manager, config)
+            register_sota_tools(app, manager, config)
             register_scanner_tools(app, manager, config)
 
             # Simulate getting tools (startup operation)

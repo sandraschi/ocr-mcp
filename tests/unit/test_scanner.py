@@ -247,7 +247,7 @@ class TestScannerIntegration:
 
     def test_backend_manager_integration(self, config):
         """Test that backend manager properly integrates scanner manager."""
-        from src.ocr_mcp.core.backend_manager import BackendManager
+        from ocr_mcp.core.backend_manager import BackendManager
 
         manager = BackendManager(config)
 

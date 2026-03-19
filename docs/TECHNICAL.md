@@ -1,28 +1,29 @@
 # Technical architecture
 
-## WebApp architecture
+OCR-MCP has **two entrypoints** that share **`OCRConfig`**, **`BackendManager`**, and the same **OCR backends**:
+
+| Surface | Process | Transport | Typical use |
+|---------|---------|-----------|-------------|
+| **Web** | Uvicorn + `backend.app:app` | HTTP **10859**; browser **10858** (Vite proxies `/api`) | Humans: upload, scan, editor, settings |
+| **MCP** | `ocr-mcp` / `python -m ocr_mcp.server` | **stdio** to the IDE | Agents: portmanteau tools, resources, prompts, sampling |
+
+They are **not** the same OS process: web **Settings → Mistral** updates only the FastAPI worker; MCP clients must set **`MISTRAL_API_KEY`** (etc.) in their MCP config `env` if agents need **mistral-ocr**.
+
+## Web app architecture (high level)
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                         Web Interface                       │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────┐  ┌────────────┐  ┌────────────┐  ┌──────────┐  │
-│  │ Single  │  │   Batch    │  │  Image     │  │   Doc    │  │
-│  │ Upload  │  │ Processing │  │  Preproc   │  │ Analysis │  │
-│  └─────────┘  └────────────┘  └────────────┘  └──────────┘  │
-│  ┌─────────┐  ┌────────────┐  ┌────────────┐  ┌──────────┐  │
-│  │ Quality │  │ Workflows  │  │ Conversion │  │ Scanner  │  │
-│  │ Assess  │  │ & Pipelines│  │ & Export   │  │ Control  │  │
-│  └─────────┘  └────────────┘  └────────────┘  └──────────┘  │
-├─────────────────────────────────────────────────────────────┤
-│                 FastMCP Server (20+ Tools)                  │
-├─────────────────────────────────────────────────────────────┤
-│   OCR Engines ┌──┬──┬──┬──┬──┬──┬──┐  Document Processing   │
-│               │M │D │F │D │P │Q │E │  Image Analysis        │
-│               │3 │S │2 │O │P │I │O │  Quality Assessment    │
-│               └──┴──┴──┴──┴──┴──┴──┘  Workflow Automation   │
-└─────────────────────────────────────────────────────────────┘
+  Browser (Vite :10858)  ──proxy /api──►  FastAPI (:10859)  ──►  BackendManager  ──►  OCR backends
 ```
+
+React routes live under **`web_sota/src`** (e.g. Import, Scanner, Editor, Settings, **`/help`**). User-facing documentation for all three surfaces is maintained in **`web_sota/src/pages/help.tsx`** (kept in sync with **INSTALL.md** / this file).
+
+## MCP server architecture (high level)
+
+```
+  IDE (Cursor, Claude, …)  ◄──stdio──►  FastMCP (`src/ocr_mcp/server.py`)  ──►  BackendManager  ──►  same OCR backends
+```
+
+Portmanteau tools and resources are registered in **`ocr_mcp.tools`** and **`server.py`** (see below).
 
 ## Portmanteau tool ecosystem
 
@@ -62,6 +63,23 @@
 - **`OCR_MAX_MEMORY`**: Maximum GPU memory usage in GB
 - **`OCR_DEFAULT_BACKEND`**: Default OCR backend (`got-ocr`, `tesseract`, etc.)
 - **`OCR_BATCH_SIZE`**: Default batch processing size
+- **`OCR_AUTO_BOOTSTRAP`**: If `1` (default), after `OCRConfig()` the process runs PyYAML dist-info repair, Tesseract (Windows), Poppler (Windows), and one-shot ML hints (e.g. missing flash-attn on CUDA). Set `0` to skip those (pip block below still applies).
+- **`OCR_AUTO_INSTALL_DEPS`**: If `1`, after bootstrap the process may pip/uv install torch, transformers, optional Paddle, etc., and restart — see `ocr_mcp.utils.ocr_pip_install`.
+- **`OCR_AUTO_INSTALL_TESSERACT`**: Windows only — if `1` (default), bootstrap tries silent Tesseract install (winget / choco / scoop). Set `0` to disable.
+- **`OCR_AUTO_INSTALL_POPPLER`**: Windows only — if `1` (default), bootstrap may run `winget install oschwartz10612.Poppler` when `pdftoppm` is missing. Set `0` to only detect PATH / `POPPLER_PATH`.
+- **`TESSERACT_CMD`**: Full path to `tesseract` executable when not on `PATH`
+- **`POPPLER_PATH`**: Folder containing `pdftoppm` / `pdftoppm.exe` (passed to pdf2image)
+- **`MISTRAL_API_KEY`** / **`MISTRAL_BASE_URL`**: Enable **mistral-ocr** for the **current process** (MCP stdio or env before Uvicorn). Web UI can also set key/base URL at runtime via **`POST /api/settings/mistral`** (FastAPI only).
+
+### Web REST API (selected)
+
+Implemented in **`backend/app.py`**. Examples:
+
+- **`GET /api/backends`** — all registered backends with `available` + description
+- **`GET|POST /api/settings/mistral`** — read/update Mistral credentials in-process
+- **`POST /api/settings/mistral/test`** — validate key with **`GET {mistral_base_url}/models`** (optional body overrides for unsaved form values)
+
+Full list: run the backend and open **`/docs`**.
 
 ### Backend-specific settings
 
@@ -94,11 +112,13 @@ See [OCR-MCP_MASTER_PLAN.md](../OCR-MCP_MASTER_PLAN.md) for roadmap.
 
 1. **Clone:** `git clone https://github.com/sandraschi/ocr-mcp.git` then `cd ocr-mcp`
 2. **Install [uv](https://docs.astral.sh/uv/) and Python 3.12+**
-3. **Deps:** `uv sync --all-extras`
-4. **Optional:** `pre-commit install`; run with `pre-commit run --all-files`
-5. **Tests:** `just test` or `uv run pytest`
-6. **Lint/format:** `just lint`, `just format`
-7. **Web UI:** `just webapp`
+3. **Deps:** `uv sync` (add `--all-extras` or `--extra webapp` / `--extra ml` as needed)
+4. **Dev (pytest, ruff, etc.):** `uv sync --extra dev`
+5. **Optional:** `pre-commit install`; run with `pre-commit run --all-files`
+6. **Tests:** `uv run python -m pytest` or `python scripts/run_tests.py --suite quick` — see [tests/README.md](../tests/README.md)
+7. **Lint/format:** `uv run ruff check src backend tests scripts` and `uv run ruff format …` (or `just lint` / `just format` if defined)
+8. **Webapp:** `web_sota\start.ps1` from repo root — see [INSTALL.md](INSTALL.md)  
+9. **Web UI (alternate):** `just webapp` if defined in your justfile
 
 ### Packaging
 

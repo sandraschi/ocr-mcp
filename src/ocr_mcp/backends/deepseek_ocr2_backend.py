@@ -32,6 +32,7 @@ class DeepSeekOCR2Backend(OCRBackend):
         self._device = None
 
         import importlib.util
+
         self._torch_ok = importlib.util.find_spec("torch") is not None
         self._transformers_ok = importlib.util.find_spec("transformers") is not None
         self._einops_ok = importlib.util.find_spec("einops") is not None
@@ -39,7 +40,9 @@ class DeepSeekOCR2Backend(OCRBackend):
         if self._torch_ok and self._transformers_ok:
             self._available = True
             if not self._einops_ok:
-                logger.warning("DeepSeek-OCR-2: einops not installed, may fail at runtime. pip install einops addict easydict")
+                logger.warning(
+                    "DeepSeek-OCR-2: einops not installed, may fail at runtime. pip install einops addict easydict"
+                )
         else:
             self._available = False
             logger.warning("DeepSeek-OCR-2: torch or transformers not available")
@@ -154,19 +157,21 @@ class DeepSeekOCR2Backend(OCRBackend):
 
     def get_capabilities(self) -> dict[str, Any]:
         caps = super().get_capabilities()
-        caps.update({
-            "name": "DeepSeek-OCR-2",
-            "description": "DeepSeek-OCR-2 — Jan 2026, Visual Causal Flow architecture",
-            "modes": ["text", "format", "ocr"],
-            "output_formats": ["text", "markdown"],
-            "gpu_support": True,
-            "model_size": "~6GB (3B params)",
-            "strengths": [
-                "Visual Causal Flow for context-aware extraction",
-                "Strong on mixed text/layout documents",
-                "DeepSeek quality applied to OCR specialization",
-                "Markdown output with layout preservation",
-            ],
-            "install_note": "pip install einops addict easydict flash-attn==2.7.3 --no-build-isolation",
-        })
+        caps.update(
+            {
+                "name": "DeepSeek-OCR-2",
+                "description": "DeepSeek-OCR-2 — Jan 2026, Visual Causal Flow architecture",
+                "modes": ["text", "format", "ocr"],
+                "output_formats": ["text", "markdown"],
+                "gpu_support": True,
+                "model_size": "~6GB (3B params)",
+                "strengths": [
+                    "Visual Causal Flow for context-aware extraction",
+                    "Strong on mixed text/layout documents",
+                    "DeepSeek quality applied to OCR specialization",
+                    "Markdown output with layout preservation",
+                ],
+                "install_note": "pip install einops addict easydict flash-attn==2.7.3 --no-build-isolation",
+            }
+        )
         return caps

@@ -271,6 +271,15 @@ class ApiService {
     const response = await apiClient.get('/api/logs', { params: filters })
     return response.data
   }
+
+  async ocrSelection(formData: FormData): Promise<any> {
+    const response = await apiClient.post('/api/ocr_selection', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    return response.data
+  }
 }
 
 export const apiService = new ApiService()

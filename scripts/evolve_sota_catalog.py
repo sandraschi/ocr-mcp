@@ -1,5 +1,3 @@
-import os
-import re
 from pathlib import Path
 
 # The standardized APPS_CATALOG content

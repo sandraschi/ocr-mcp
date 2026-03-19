@@ -98,12 +98,17 @@ async def convert_pdf_to_images(
 
         os.makedirs(output_directory, exist_ok=True)
 
+        poppler_path = None
+        if config and getattr(config, "poppler_path", None):
+            poppler_path = config.poppler_path
+
         images = convert_from_path(
             pdf_path,
             dpi=dpi,
             first_page=first_page,
             last_page=last_page,
             fmt=format.lower(),
+            poppler_path=poppler_path,
         )
 
         saved_files = []

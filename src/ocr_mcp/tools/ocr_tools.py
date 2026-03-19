@@ -16,7 +16,6 @@ PORTMANTEAU TOOLS:
 import logging
 from typing import Any
 
-from ..core.backend_manager import BackendManager
 from ..core.config import OCRConfig
 from ..core.error_handler import ErrorHandler
 from . import (

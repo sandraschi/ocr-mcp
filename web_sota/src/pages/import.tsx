@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import { Upload, CheckCircle2, AlertCircle, RefreshCw, FileText, Activity } from "lucide-react";
+import { useScanStore } from '@/store';
 
 export function Import() {
+    const setLastOcrJobId = useScanStore((s) => s.setLastOcrJobId);
+    const lastOcrJobId = useScanStore((s) => s.lastOcrJobId);
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState<string | null>(null);
@@ -37,7 +40,8 @@ export function Import() {
             if (!response.ok) throw new Error('Upload failed');
 
             const data = await response.json();
-            setStatus(`Upload successful! Job ID: ${data.job_id}`);
+            if (data.job_id) setLastOcrJobId(data.job_id);
+            setStatus('Upload queued — open Editor or Status to follow progress.');
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Unknown error');
         } finally {
@@ -72,9 +76,19 @@ export function Import() {
                     )}
 
                     {status && (
-                        <div className="flex items-center gap-2 text-emerald-400 bg-emerald-400/10 p-3 rounded-md border border-emerald-400/20">
-                            <CheckCircle2 className="w-4 h-4" />
+                        <div className="flex flex-wrap items-center gap-2 text-emerald-400 bg-emerald-400/10 p-3 rounded-md border border-emerald-400/20">
+                            <CheckCircle2 className="w-4 h-4 shrink-0" />
                             <span className="text-sm">{status}</span>
+                            {lastOcrJobId && (
+                                <>
+                                    <Button type="button" variant="outline" size="sm" className="border-emerald-500/50 text-emerald-300" onClick={() => window.location.assign('/editor')}>
+                                        <FileText className="w-4 h-4 mr-1" /> View text
+                                    </Button>
+                                    <Button type="button" variant="outline" size="sm" className="border-emerald-500/50 text-emerald-300" onClick={() => window.location.assign('/status')}>
+                                        <Activity className="w-4 h-4 mr-1" /> Activity
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     )}
 

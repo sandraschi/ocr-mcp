@@ -21,7 +21,9 @@ class OCRConfig(BaseModel):
     # Cache and model directories (platform-aware: use home cache unless OCR_MODEL_DIR set)
     cache_dir: Path = Field(default_factory=lambda: Path.home() / ".cache" / "ocr-mcp")
     model_dir: Path = Field(default_factory=lambda: Path.home() / ".cache" / "ocr-mcp" / "models")
-    model_cache_dir: Path = Field(default_factory=lambda: Path.home() / ".cache" / "ocr-mcp" / "models")
+    model_cache_dir: Path = Field(
+        default_factory=lambda: Path.home() / ".cache" / "ocr-mcp" / "models"
+    )
 
     # Device configuration
     device: str = Field(default="auto")  # "auto", "cuda", "cpu"
@@ -37,6 +39,9 @@ class OCRConfig(BaseModel):
     # Backend-specific settings
     got_ocr_model_size: str = Field(default="base")  # "base" or "large"
     tesseract_languages: str = Field(default="eng")
+    tesseract_cmd: str | None = Field(default=None)
+    # Directory containing pdftoppm (pdf2image); set by POPPLER_PATH or poppler_bootstrap
+    poppler_path: str | None = Field(default=None)
     easyocr_languages: list = Field(default_factory=lambda: ["en"])
 
     # Mistral OCR API settings
@@ -57,8 +62,12 @@ class OCRConfig(BaseModel):
         default_model_dir = str(default_cache_dir / "models")
         model_dir_env = os.getenv("OCR_MODEL_DIR")
         data.setdefault("cache_dir", Path(os.getenv("OCR_CACHE_DIR", str(default_cache_dir))))
-        data.setdefault("model_dir", Path(model_dir_env) if model_dir_env else Path(default_model_dir))
-        data.setdefault("model_cache_dir", Path(model_dir_env) if model_dir_env else Path(default_model_dir))
+        data.setdefault(
+            "model_dir", Path(model_dir_env) if model_dir_env else Path(default_model_dir)
+        )
+        data.setdefault(
+            "model_cache_dir", Path(model_dir_env) if model_dir_env else Path(default_model_dir)
+        )
         data.setdefault("device", os.getenv("OCR_DEVICE", "auto"))
         data.setdefault(
             "max_memory_gb",
@@ -89,6 +98,28 @@ class OCRConfig(BaseModel):
             else None,
         )
         data.setdefault("watch_folder_interval", int(os.getenv("OCR_WATCH_FOLDER_INTERVAL", 10)))
+
+        # Tesseract specific path detection
+        tesseract_env = os.getenv("TESSERACT_CMD")
+        if not tesseract_env:
+            # Check common Windows paths if on Windows
+            import sys
+
+            if sys.platform == "win32":
+                common_paths = [
+                    r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+                    r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+                ]
+                for p in common_paths:
+                    if os.path.exists(p):
+                        tesseract_env = p
+                        break
+
+        data.setdefault("tesseract_cmd", tesseract_env)
+
+        poppler_env = os.getenv("POPPLER_PATH")
+        if poppler_env:
+            data.setdefault("poppler_path", poppler_env)
 
         super().__init__(**data)
 

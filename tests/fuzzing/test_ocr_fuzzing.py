@@ -13,7 +13,7 @@ import pytest
 from hypothesis import Verbosity, given, settings
 from hypothesis import strategies as st
 
-from src.ocr_mcp.core.error_handler import ErrorHandler
+from ocr_mcp.core.error_handler import ErrorHandler
 from tests.utils.test_helpers import TestDataGenerator
 
 

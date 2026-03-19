@@ -12,7 +12,7 @@ interface ScannerState {
 
     fetchScanners: () => Promise<void>;
     selectScanner: (id: string) => void;
-    scanDocument: (settings: ScanSettings) => Promise<void>;
+    scanDocument: (settings: ScanSettings) => Promise<ScanResult | null>;
     resetScanResult: () => void;
 }
 
@@ -54,11 +54,11 @@ export const useScannerStore = create<ScannerState>((set, get) => ({
         set({ selectedScannerId: id });
     },
 
-    scanDocument: async (settings: ScanSettings) => {
+    scanDocument: async (settings: ScanSettings): Promise<ScanResult | null> => {
         const { selectedScannerId } = get();
         if (!selectedScannerId) {
             set({ error: 'No scanner selected' });
-            return;
+            return null;
         }
 
         set({ scanning: true, error: null, scanResult: null, lastScanSettings: settings });
@@ -70,9 +70,11 @@ export const useScannerStore = create<ScannerState>((set, get) => ({
             }
 
             set({ scanResult: result });
+            return result;
         } catch (error: any) {
             console.error('Scan failed:', error);
             set({ error: error.message || 'Scan failed' });
+            return null;
         } finally {
             set({ scanning: false });
         }

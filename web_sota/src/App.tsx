@@ -9,6 +9,7 @@ import { Status } from '@/pages/status';
 import { Help } from '@/pages/help';
 import { Chat } from '@/pages/chat';
 import { Settings } from '@/pages/settings';
+import { ScanViewerPage } from '@/pages/scan-viewer';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="/chat" element={<Chat />} />
           <Route path="/help" element={<Help />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/scan-viewer" element={<ScanViewerPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AppLayout>

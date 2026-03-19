@@ -8,17 +8,20 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
+    git \
     libgl1 \
     libglib2.0-0 \
+    tesseract-ocr \
+    libtesseract-dev \
+    poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy dependency definitions first to leverage layer caching
 COPY pyproject.toml .
-COPY requirements.txt .
 COPY README.md .
 
-# Install dependencies - this layer will be cached unless requirements.txt changes
-RUN pip install --no-cache-dir -r requirements.txt
+# Install dependencies
+RUN pip install --no-cache-dir .
 
 # Copy source code after dependencies are installed
 COPY src/ src/

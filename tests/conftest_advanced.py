@@ -13,8 +13,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from src.ocr_mcp.core.backend_manager import BackendManager
-from src.ocr_mcp.core.config import OCRConfig
+from ocr_mcp.core.backend_manager import BackendManager
+from ocr_mcp.core.config import OCRConfig
 
 # Import our enhanced test utilities
 from .utils.test_helpers import (

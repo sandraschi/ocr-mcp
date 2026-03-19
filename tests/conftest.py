@@ -36,18 +36,13 @@ from tests.utils.test_helpers import (
 
 # Ensure test environment marker (optional; tests can skip if not set)
 def pytest_configure(config):
-    import os
     if "OCR_TESTING" not in os.environ:
         os.environ["OCR_TESTING"] = "true"
+    if "OCR_MCP_TESTING" not in os.environ:
+        os.environ["OCR_MCP_TESTING"] = "1"
 
 
-# Test Configuration
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create an instance of the default event loop for the test session."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
+# Test Configuration (pytest-asyncio mode=auto manages event loop; no custom event_loop needed)
 
 
 @pytest.fixture(scope="session")
@@ -66,9 +61,12 @@ def test_assets_dir():
 @pytest.fixture(scope="session")
 def config():
     """Provide OCR configuration for testing."""
+    cache = Path(tempfile.mkdtemp(prefix="ocr_test_"))
     return OCRConfig(
-        cache_dir=Path(tempfile.mkdtemp(prefix="ocr_test_")),
-        device="cpu",  # Use CPU for consistent testing
+        cache_dir=cache,
+        model_dir=cache / "models",
+        model_cache_dir=cache / "models",
+        device="cpu",
         default_backend="got-ocr",
     )
 
@@ -608,7 +606,9 @@ def data_validator():
 
 
 @pytest.fixture
-def test_context(test_data_generator, performance_profiler, file_manager, async_helper, data_validator):
+def test_context(
+    test_data_generator, performance_profiler, file_manager, async_helper, data_validator
+):
     """Comprehensive test context for integration-style tests."""
     return {
         "data_generator": test_data_generator,

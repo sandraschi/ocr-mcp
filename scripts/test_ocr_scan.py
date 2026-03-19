@@ -1,7 +1,7 @@
+import asyncio
+import logging
 import os
 import sys
-import logging
-import asyncio
 from pathlib import Path
 
 # Add src to python path
