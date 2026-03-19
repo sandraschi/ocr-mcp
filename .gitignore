@@ -129,6 +129,10 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Node.js / frontend (never commit dependencies or Vite pre-bundles)
+node_modules/
+**/node_modules/
+
 # OCR-MCP specific
 # Cache directories
 .cache/
