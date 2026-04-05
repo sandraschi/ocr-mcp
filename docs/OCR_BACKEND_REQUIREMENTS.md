@@ -16,6 +16,7 @@ Per-backend pip packages, system deps, and config. For **how the web FastAPI bac
 | `TESSERACT_CMD` | — | Full path to `tesseract` |
 | `POPPLER_PATH` | — | Folder containing `pdftoppm` / `pdftoppm.exe` |
 | `MISTRAL_API_KEY` | — | Enables **mistral-ocr** |
+| `OCR_CORPUS_DIR` | — | Optional folder for **corpus_management** SQLite (`corpus.db`); default `{OCR_CACHE_DIR}/corpus` |
 
 | Backend | Typical install | Auto pip (`OCR_AUTO_INSTALL_DEPS=1`) | Bootstrap / notes |
 |---------|-----------------|----------------------------------------|-------------------|

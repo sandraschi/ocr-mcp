@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 OCR-MCP Server: Revolutionary Document Understanding Server (FastMCP 3.1).
 
@@ -9,6 +37,7 @@ Features:
 """
 
 import logging
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -22,6 +51,14 @@ from .tools.ocr_tools import register_sota_tools
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Local-first: always use server sampling (Ollama/OpenAI-compatible on localhost/LAN).
+# Set OCR_SAMPLING_USE_CLIENT_LLM=1 to prefer the MCP host LLM when it supports sampling.
+_USE_CLIENT_SAMPLING = os.getenv("OCR_SAMPLING_USE_CLIENT_LLM", "").lower() in (
+    "1",
+    "true",
+    "yes",
+)
 
 
 @asynccontextmanager
@@ -64,7 +101,7 @@ app = FastMCP(
     instructions="""You are OCR-MCP, a revolutionary document understanding server providing state-of-the-art OCR capabilities with FastMCP 3.1 conversational features and AI-powered sampling integration.
 
 CORE CAPABILITIES:
-- Multiple OCR backends: DeepSeek-OCR, Florence-2, PP-OCRv5, DOTS.OCR, GOT-OCR, Tesseract, EasyOCR
+- Multiple OCR backends: PaddleOCR-VL, DeepSeek-OCR, Mistral OCR, PP-OCRv5, DOTS.OCR, GOT-OCR, Tesseract, EasyOCR
 - Document processing: PDF, CBZ/CBR archives, images (PNG, JPG, TIFF, BMP, WebP)
 - Scanner integration: Direct WIA control for Windows flatbed scanners
 - Image preprocessing: Deskew, enhance, rotate, crop, quality pipeline
@@ -82,17 +119,17 @@ CONVERSATIONAL FEATURES (FastMCP 3.1):
 - Persistent state: Cross-session memory and user preferences
 
 SAMPLING INTEGRATION (FastMCP 3.1):
-- AI-powered document analysis and processing decisions
-- Autonomous OCR backend selection based on document characteristics
-- Intelligent workflow orchestration without client round-trips
-- Quality assessment and error recovery strategies
-- SEP-1577 compliant agentic document processing
+- Default: server-side OpenAI-compatible LLM at OCR_SAMPLING_BASE_URL (Ollama: http://127.0.0.1:11434/v1), no API key on localhost/LAN.
+- Optional: OCR_SAMPLING_USE_CLIENT_LLM=1 lets a capable MCP host (e.g. Cursor) run sampling instead.
+- Cloud: OCR_SAMPLING_API_KEY or OCR_SAMPLING_USE_OPENAI_KEY=1 plus a cloud base URL.
+- agentic_document_workflow uses context.sample_step with tool execution (local or client, per above).
 
 PORTMANTEAU TOOLS:
 - document_processing: OCR, analysis, quality assessment operations
 - image_management: Image preprocessing and conversion operations
 - scanner_operations: Scanner hardware control operations
 - workflow_management: Batch processing, pipelines, system operations
+- corpus_management: Local SQLite document index (register, search, attach OCR)
 - agentic_document_workflow: AI-orchestrated multi-document processing (SEP-1577)
 
 USAGE PATTERNS:
@@ -107,14 +144,14 @@ USAGE PATTERNS:
 
 BACKEND SELECTION:
 - DeepSeek-OCR: Best for complex documents, mathematical formulas
-- Florence-2: Microsoft vision model, excellent layout understanding
+- PaddleOCR-VL: Strong VL document OCR (tables, charts; florence alias → paddleocr-vl)
 - PP-OCRv5: Industrial-grade OCR, fast and reliable
 - Tesseract: Classic OCR, good fallback option
 
 Always provide conversational responses with actionable recommendations, confidence scores, and next steps.""",
     lifespan=server_lifespan,  # FastMCP 3.1 lifespan management
-    sampling_handler=sampling_handler,  # AI sampling integration
-    sampling_handler_behavior="always",  # Always use sampling when available
+    sampling_handler=sampling_handler,  # Default: local Ollama / OpenAI-compatible HTTP
+    sampling_handler_behavior="fallback" if _USE_CLIENT_SAMPLING else "always",
     strict_input_validation=True,  # Production safety
     tasks=False,  # Background task support (disabled for compatibility)
     on_duplicate="replace",  # FastMCP 3.x: single policy for tools/resources/prompts
@@ -160,7 +197,7 @@ def get_ocr_capabilities() -> str:
     return (
         "OCR-MCP 3.1 capabilities:\n"
         "- Tools: document_processing, image_management, scanner_operations, "
-        "workflow_management, agentic_document_workflow\n"
+        "workflow_management, corpus_management, agentic_document_workflow\n"
         "- Sampling: ctx.sample() / ctx.sample_step() for agentic workflows (SEP-1577)\n"
         "- Prompts: process-instructions, quality-assessment-guide, scanner-workflow, "
         "batch-processing-guide, agentic-workflow-instructions\n"
@@ -192,9 +229,12 @@ def get_ocr_skills() -> str:
 - **process_batch_intelligent**: Batch process a folder with auto backend selection.
 - **create_processing_pipeline**: Define and run custom pipelines.
 
+## Corpus (local index v0)
+- **corpus_management**: `register` / `search` / `get` / `list_recent` / `attach_ocr_result` — SQLite under `OCR_CORPUS_DIR` or `{cache}/corpus`.
+
 ## Agentic workflow (SEP-1577, sampling with tools)
 - **agentic_document_workflow**: Give a natural-language workflow prompt and a list of tool names; the LLM uses ctx.sample_step() to call tools until the workflow is done.
-- Recommended tools to pass: document_processing, image_management, scanner_operations, workflow_management.
+- Recommended tools to pass: document_processing, image_management, scanner_operations, workflow_management, corpus_management.
 - Use for: "Scan and OCR the next page", "Process this folder and summarize", "Preprocess then run OCR with quality check".
 """
 
@@ -206,7 +246,7 @@ def get_process_instructions_prompt() -> str:
     return """You are helping a user construct OCR processing instructions for the ocr-mcp server.
 The user wants to process a document. Ask them for:
 1. The path to the document (file://...)
-2. The preferred backend (auto, deepseek-ocr, florence-2, etc.)
+2. The preferred backend (auto, paddleocr-vl, deepseek-ocr, mistral-ocr, tesseract, etc.)
 3. Any specific regions of interest [x1, y1, x2, y2]
 4. Whether they need format conversion (e.g., to searchable PDF)
 

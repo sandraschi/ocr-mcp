@@ -8,9 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - 2026-03-19
 
 ### Fixed
+
+- **`workflow_management`** — MCP layer incorrectly called `handle_workflow_op` with positional args; added **`handle_mcp_workflow`** + **`expand_source_dir_to_document_paths`** so `source_dir` (file or directory) maps to `document_paths` and optional `pipeline_config` keys pass through.
+- **Optimization hints** — Replaced stale **florence-2** backend recommendation with **paddleocr-vl** in `_workflow._calculate_optimal_settings` / recommendations; **execute_pipeline** uses `pipeline_config.get("name")` to avoid KeyError.
+- **Server instructions** — Prompt text lists PaddleOCR-VL / Mistral instead of Florence-only stack.
 - **`.gitignore`** — ignore **`node_modules/`** (and `**/node_modules/`). Removed **`frontend/node_modules`** from Git tracking (~5k files); they remain on disk — run **`npm install`** under `frontend/`. **History on GitHub was rewritten** with `git filter-repo --path frontend/node_modules --invert-paths` and **`git push --force`** so those blobs are no longer on `origin`. Anyone who cloned before that must **re-clone** or reset hard to `origin/master` (forks: coordinate with upstream).
 
 ### Added
+
+- **`corpus_management` MCP tool** — SQLite index (v0) under **`OCR_CORPUS_DIR`** or `{cache_dir}/corpus` (`corpus.db`). Operations: `register`, `get`, `search`, `list_recent`, `update_metadata`, `attach_ocr_result`. Module `ocr_mcp.corpus.store`.
+- **`docs/MCP_TOOLSET_MATRIX.md`** — Audit of portmanteau tools and operation implementation status.
 - **`POST /api/settings/mistral/test`** — Validates Mistral API key via **`GET {base}/models`**; optional JSON overrides for unsaved form key/URL. **`web_sota` Settings** — **Test API key** button.
 - **Help (`/help`)** — Reworked to cover **web application** (ports, proxy, routes, Settings semantics), **MCP server** (stdio, tools, env, Mistral vs web), and **OCR backends** table + doc links (`web_sota/src/pages/help.tsx`).
 - **`ocr_pip_install`** — Shared `ensure_ocr_pip_dependencies()` for **`OCR_AUTO_INSTALL_DEPS=1`** (torch/transformers stack + optional Paddle); invoked from **`run_ocr_startup_bootstrap`** so the **MCP server** gets the same auto-install as the web backend (removed duplicate logic from `backend/app.py`).
@@ -20,9 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Settings → Mistral OCR API** — `web_sota` settings page: API key (password field), base URL, save / remove key. Backend **`GET/POST /api/settings/mistral`** updates global `OCRConfig` and **`invalidate_backend("mistral-ocr")`**. **`GET /api/backends`** lists all registered backends with availability (not only available ones).
 
 ### Changed
+
 - **EasyOCR** — use GPU only when `torch.cuda.is_available()`; log once before first reader init that models may download into cache.
 
 ### Documentation
+
 - **README** — In-app Help pointer (`/help`); Mistral web vs MCP env in “What it does”; docs table links **`web_sota/src/pages/help.tsx`**.
 - **INSTALL** — Web routes, `/help`, Settings/Mistral/**test** API; MCP **`MISTRAL_API_KEY`** note; `web_sota/start.ps1` flow, PyYAML, `OCR_AUTO_INSTALL_DEPS`, tests pointer (unchanged parts retained).
 - **TECHNICAL** — Two-surface architecture (FastAPI vs FastMCP); selected REST routes (`/api/settings/mistral`, `/test`); dev steps numbering fix.
@@ -32,11 +41,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - 2026-03-16
 
 ### Added
+
 - **FastMCP 3.1 prompts**: `quality-assessment-guide`, `scanner-workflow`, `batch-processing-guide`, `agentic-workflow-instructions` (in addition to `process-instructions`).
 - **Resources**: `resource://ocr/capabilities` (backends + 3.1 features), `resource://ocr/skills` (LLM-oriented skills reference for document processing, scanning, workflows, agentic).
 - **Server docstring**: Documents sampling, agentic workflow tool, prompts, and skills in module header.
 
 ### Fixed
+
 - **WIA scanner discovery lost after first request**
   - Scanner was found on first `/api/scanners` call then reported 0 devices on later calls.
   - **Cause**: `_release_device()` called `pythoncom.CoUninitialize()`, tearing down COM for the whole executor thread; next discovery then ran in a broken COM state. Also, cleanup ran before re-enumerate so devices were released right before enumeration.
@@ -46,12 +57,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MCP server not starting in Cursor (FastMCP 3.x API)** — FastMCP 3.x removed `on_duplicate_tools`, `on_duplicate_resources`, `on_duplicate_prompts` and `include_fastmcp_meta`. Server now uses single `on_duplicate="replace"` and no longer passes removed kwargs, so it starts correctly in Cursor and other MCP clients.
 
 ### Changed
+
 - **Web backend** — WIA operations use a dedicated single-thread `ThreadPoolExecutor` instead of `asyncio.to_thread()` so every discovery/scan runs on the same STA thread and device list stays stable.
 - **FastMCP** — Upgraded from 2.14.x to **3.1**: dependency `fastmcp[server]>=3.1`, all docs and docstrings updated.
 
 ## [Unreleased] - 2026-02-27
 
 ### Added
+
 - **PaddleOCR-VL-1.5 backend** (`paddleocr_vl_backend.py`) — January 2026 SOTA
   - 94.5% accuracy on OmniDocBench v1.5 — top of all open-source benchmarks
   - 0.9B parameters (NaViT encoder + ERNIE-4.5-0.3B LM), ~1.8GB on disk
@@ -71,11 +84,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - HF: `allenai/olmOCR-2-7B-1025`
 
 ### Changed
+
 - **Auto backend priority order** updated to reflect 2026 SOTA reality:
   `paddleocr-vl → mistral-ocr → deepseek-ocr2 → olmocr-2 → deepseek-ocr → qwen-layered → got-ocr → dots-ocr → pp-ocrv5 → easyocr → tesseract`
 - **Backend alias map** extended with `paddleocr`, `paddle`, `deepseek2`, `olmocr`, `olm`, `paddleocr-vl-1.5`; `florence` alias now redirects to `paddleocr-vl`
 
 ### Removed
+
 - **Florence-2 backend** (`florence_backend.py`) — deleted
   - Florence-2 is a general-purpose vision foundation model (object detection, captioning, grounding), not an OCR specialist
   - The OCR task prompt it exposed produced inferior results; confidence score was hardcoded; structured output methods were stubs
@@ -83,6 +98,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Demo mode backend list** no longer references florence-2 or pp-ocrv5 as defaults
 
 ### Fixed
+
 - **Scanner bug: `"id"` → `"device_id"` in `/api/scanners` response**
   - Frontend `ScannerInfo` interface expected `device_id`; backend was returning `id`
   - `selectedScanner` was always `undefined`, FormData sent garbage device_id, scan never triggered
@@ -95,6 +111,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Previously hardcoded `"auto"` regardless of user selection
 
 ### Changed (webapp)
+
 - **`process.tsx` (Pipeline page) rewritten** — was non-functional placeholder
   - Each pipeline card now has file picker + OCR backend selector + Run Pipeline button
   - Polls `/api/job/{id}` until complete; shows extracted text inline in expandable result panel
@@ -106,6 +123,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - 2026-02-09
 
 ### Changed
+
 - Upgraded FastMCP to 3.1 (see 2026-03-16 section)
 - Removed lifespan storage usage (mcp_instance.storage not in FastMCP 3.x)
 - Portmanteau tool docstrings: 2026 SOTA format, no triple quotes within
@@ -116,6 +134,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🚀 **Major Improvements**
 
 #### **Development Environment Modernization**
+
 - **Streamlined Tooling**: Removed redundant Black and isort dependencies - Ruff now handles all linting, formatting, and import sorting
 - **Enhanced Ruff Configuration**: Configured Ruff for comprehensive code quality with import sorting and first-party package recognition
 - **Comprehensive Pre-commit Hooks**: Added 20+ quality checks including security scanning, complexity analysis, and secret detection
@@ -123,18 +142,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CI/CD Pipeline Enhancement**: Improved workflow with better error handling, security audits, and quality reports
 
 #### **Code Quality & Standards**
+
 - **Advanced Linting**: Integrated MyPy, Bandit, Pip-Audit, Radon, and Detect-Secrets
 - **Security Hardening**: Added comprehensive security scanning and vulnerability detection
 - **Documentation Generation**: Added pDoc for automatic API documentation generation
 - **Type Safety**: Enhanced type checking with proper dependency management
 
 #### **Infrastructure Improvements**
+
 - **Port Standardization**: Consolidated all ports to 15550 for consistent development experience
 - **Frontend-Backend Integration**: Fixed React app serving issues with proper static file handling
 - **Testing Framework**: Enhanced test suite with advanced fixtures, mock servers, and comprehensive coverage
 - **Build System**: Improved Poetry configuration with proper dependency grouping
 
 #### **Project Maturity**
+
 - **Professional Documentation**: Created dedicated `AI_MODELS.md` with detailed backend specifications
 - **Comprehensive README**: Added development setup guides, pre-commit documentation, and troubleshooting
 - **Changelog Management**: Established proper version tracking and release notes
@@ -143,23 +165,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🛠️ **Technical Enhancements**
 
 #### **Backend Improvements**
+
 - **Ruff Integration**: Single tool for linting, formatting, and import sorting
 - **Error Handling**: Improved exception chaining and bare except fixes
 - **Static File Serving**: Proper React SPA routing with catch-all handlers
 - **CORS Configuration**: Updated origins for localhost:15550
 
 #### **Frontend Updates**
+
 - **API Configuration**: Standardized backend URL to localhost:15550
 - **Build Process**: Fixed static file generation and distribution
 - **Settings Management**: Updated default backend URLs
 
 #### **Testing Infrastructure**
+
 - **Advanced Fixtures**: Enhanced pytest configuration with proper path handling
 - **Mock Servers**: Improved testing utilities with configurable ports
 - **Performance Testing**: Added benchmark framework and load testing capabilities
 - **Cross-Platform**: Windows-compatible test execution
 
 #### **CI/CD Pipeline**
+
 - **Multi-OS Testing**: Ubuntu and Windows CI with Python 3.9-3.11
 - **Quality Gates**: Security audits, complexity analysis, and coverage requirements
 - **Documentation Deployment**: Automated pDoc generation and GitHub Pages deployment
@@ -173,11 +199,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Dependencies**: Vulnerability scanning and license compliance
 
 ### 🔄 **Breaking Changes**
+
 - **Tooling Migration**: Black and isort removed in favor of Ruff
 - **Port Changes**: All services now use port 15550
 - **Import Structure**: Ruff import sorting may reorganize imports
 
 ### 🧪 **Testing & Validation**
+
 - **Unit Tests**: Comprehensive backend and frontend test coverage
 - **Integration Tests**: End-to-end workflow validation
 - **WebApp Tests**: Playwright-based UI testing with server readiness checks
@@ -186,12 +214,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.2] - 2026-01-01
 
 ### Added
+
 - **Singleton Backend Manager**: Refactored `BackendManager` in `app.py` to a global singleton, ensuring COM context stability.
 - **Robust WIA 2.0 Acquisition**: Implemented explicitly scoped `CoInitialize` calls and reconnection logic in `wia_scanner.py` for hardware stability.
 - **Hardware Stability**: Successfully resolved the `WIA_ERROR_BUSY` (0x8021006B) and acquisition failures for Canon LiDE 400 scanners.
 - **Professional Web Interface**: Finalized integration of the modern React-based UI with the stable backend.
 
 ### Fixed
+
 - Indentation errors and logic flow in `webapp/backend/app.py` `/api/scan` endpoint.
 - Redundant backend re-initialization that caused resource churn and COM instability.
 - Port conflict resolution and documentation (standardized on 10858 frontend / 10859 backend).
@@ -199,6 +229,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.1] - 2025-12-23
 
 ### Added
+
 - Complete implementation of all 6 advanced OCR backends:
   - Mistral OCR 3 (State-of-the-art API-based OCR, 74% win rate over OCR2)
   - DeepSeek-OCR (4.7M+ downloads)
@@ -215,11 +246,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Complete project documentation and usage guides
 
 ### Changed
+
 - Updated README with current backend matrix and tool ecosystem
 - Enhanced documentation with detailed backend descriptions
 - Improved error handling and user feedback throughout
 
 ### Fixed
+
 - Unicode encoding issues in Windows environment
 - Server startup problems with stdio mode
 - Logging configuration conflicts
@@ -233,6 +266,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Blocking webapp startup during MCP client initialization
 
 ### Tested
+
 - PP-OCRv5 backend successfully tested and verified working
 - All 5 OCR models automatically downloaded and initialized:
   - PP-LCNet_x1_0_doc_ori (document orientation detection)
@@ -245,6 +279,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Backend manager properly handles failed backends with mock implementations
 
 ### Added
+
 - MockOCRBackend class for graceful degradation of failed backends
 - Comprehensive backend fallback system preventing crashes
 - All 9 OCR backends now available in the system:

@@ -23,34 +23,43 @@ React routes live under **`web_sota/src`** (e.g. Import, Scanner, Editor, Settin
   IDE (Cursor, Claude, …)  ◄──stdio──►  FastMCP (`src/ocr_mcp/server.py`)  ──►  BackendManager  ──►  same OCR backends
 ```
 
-Portmanteau tools and resources are registered in **`ocr_mcp.tools`** and **`server.py`** (see below).
+Portmanteau tools and resources are registered in **`ocr_mcp.tools`** and **`server.py`** (see below). **Tool audit matrix:** [MCP_TOOLSET_MATRIX.md](MCP_TOOLSET_MATRIX.md).
 
 ## Portmanteau tool ecosystem
 
 ### Document Processing
+
 **`document_processing(operation, ...)`** — OCR, analysis, quality assessment  
+
 - process_document, process_batch, analyze_layout, extract_tables, detect_forms  
 - analyze_reading_order, classify_type, extract_metadata  
 - assess_quality, validate_accuracy, compare_backends, analyze_image_quality  
 
 ### Image Management
+
 **`image_management(operation, ...)`** — Preprocessing and format conversion  
+
 - preprocess (deskew, denoise, grayscale, threshold, autocrop)  
 - convert (PNG, JPG, TIFF, WebP)  
 - pdf_to_images, embed_text (searchable PDF)  
 
 ### Scanner Operations (WIA, Windows)
+
 **`scanner_operations(operation, ...)`** — Scanner hardware control  
+
 - list_scanners, scanner_properties, configure_scan  
 - scan_document, scan_batch, preview_scan, diagnostics  
 
 ### Workflow Management
+
 **`workflow_management(operation, ...)`** — Batch and pipeline orchestration  
+
 - process_batch_intelligent, create_processing_pipeline, execute_pipeline  
 - monitor_batch_progress, optimize_processing  
 - ocr_health_check, list_backends, manage_models  
 
 ### Help & Status
+
 **`help(level, topic?)`** — basic | intermediate | advanced  
 **`status(level)`** — basic | detailed  
 
@@ -70,6 +79,7 @@ Portmanteau tools and resources are registered in **`ocr_mcp.tools`** and **`ser
 - **`TESSERACT_CMD`**: Full path to `tesseract` executable when not on `PATH`
 - **`POPPLER_PATH`**: Folder containing `pdftoppm` / `pdftoppm.exe` (passed to pdf2image)
 - **`MISTRAL_API_KEY`** / **`MISTRAL_BASE_URL`**: Enable **mistral-ocr** for the **current process** (MCP stdio or env before Uvicorn). Web UI can also set key/base URL at runtime via **`POST /api/settings/mistral`** (FastAPI only).
+- **`OCR_CORPUS_DIR`**: Optional override for **corpus_management** SQLite store (default: `{OCR_CACHE_DIR or ~/.cache/ocr-mcp}/corpus`, file `corpus.db`). See [MCP_TOOLSET_MATRIX.md](MCP_TOOLSET_MATRIX.md).
 
 ### Web REST API (selected)
 

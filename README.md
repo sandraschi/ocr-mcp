@@ -1,6 +1,6 @@
 # OCR-MCP
 
-**Complete AI OCR webapp and MCP server.** A **web app** for people (drag‑and‑drop OCR, scanner, batch) and a **FastMCP 3.1 MCP server** for agentic IDEs—Claude, Cursor, Windsurf—so agents can run OCR, preprocessing, and workflows as tools. Same 10+ engines, WIA scanner (Windows), and pipelines; one repo.
+**Complete AI OCR webapp and MCP server.** A **web app** for people (draganddrop OCR, scanner, batch) and a **FastMCP 3.1 MCP server** for agentic IDEsClaude, Cursor, Windsurfso agents can run OCR, preprocessing, and workflows as tools. Same 10+ engines, WIA scanner (Windows), and pipelines; one repo.
 
 **Topics:** `ocr`, `mcp`, `fastmcp`, `document-processing`, `scanner`, `wia`, `pdf`, `computer-vision`, `model-context-protocol`, `llm`
 
@@ -15,10 +15,10 @@
 
 ## What it does
 
-- **Web app** — React (`web_sota/`) + FastAPI (`backend/app.py`): upload or scan, pick engine, get text/PDF/JSON. Ports **10858** (Vite) and **10859** (API). In-app **Help** (`/help`) documents the web UI, the MCP server, and OCR backends.
-- **MCP server** — FastMCP 3.1 stdio: tools for OCR, preprocessing, scanner, workflows. Sampling and agentic workflow (SEP-1577) supported. Same Python env and engines as the web backend; Mistral key for agents is typically **`MISTRAL_API_KEY`** in the client config (web Settings only affect the FastAPI process).
+- **Web app**  React (`web_sota/`) + FastAPI (`backend/app.py`): upload or scan, pick engine, get text/PDF/JSON. Ports **10858** (Vite) and **10859** (API). In-app **Help** (`/help`) documents the web UI, the MCP server, and OCR backends.
+- **MCP server**  FastMCP 3.1 stdio: tools for OCR, preprocessing, scanner, workflows. **Sampling defaults to local [Ollama](https://ollama.com)** (`http://127.0.0.1:11434/v1`, model `llama3.2`)  no cloud API key. Set **`OCR_SAMPLING_USE_CLIENT_LLM=1`** to use the host IDEs LLM instead. Mistral OCR uses **`MISTRAL_API_KEY`** when you call that backend. See [AI_FEATURES.md](docs/AI_FEATURES.md).
 
-**Features:** 10+ backends (PaddleOCR-VL-1.5, DeepSeek-OCR-2, Mistral OCR, …) · Auto backend selection · Preprocessing (deskew, enhance, crop) · Layout & table extraction · Quality assessment · WIA scanner · Batch & pipelines · Multi-format export
+**Features:** 10+ backends (PaddleOCR-VL-1.5, DeepSeek-OCR-2, Mistral OCR, )  Auto backend selection  Preprocessing (deskew, enhance, crop)  Layout & table extraction  Quality assessment  WIA scanner  Batch & pipelines  Multi-format export
 
 ## Docs
 
@@ -29,11 +29,22 @@
 | [**Technical**](docs/TECHNICAL.md) | Architecture, tools, config, development, packaging |
 | [**OCR models**](docs/OCR_MODELS.md) | Engines, capabilities, hardware (see also [AI_MODELS.md](AI_MODELS.md)) |
 | [**Backend requirements**](docs/OCR_BACKEND_REQUIREMENTS.md) | Per-model pip packages, system deps, env/config |
+| [**MCP toolset matrix**](docs/MCP_TOOLSET_MATRIX.md) | Portmanteau tools, operation status, corpus v0 |
 | [**AI features**](docs/AI_FEATURES.md) | Sampling, SEP-1577, agentic workflows, prompts |
 | [**In-app Help**](web_sota/src/pages/help.tsx) | Source for `/help`: webapp vs MCP vs backends (mirrors INSTALL / TECHNICAL) |
-| [**SOTA Compliance**](../mcp-central-docs/standards/AGENT_PROTOCOLS.md) | 🚀 Verified SOTA v12.0 Architecture |
+| [**SOTA Compliance**](../mcp-central-docs/standards/AGENT_PROTOCOLS.md) |  Verified SOTA v12.0 Architecture |
 
-Also: [JUSTFILE.md](docs/JUSTFILE.md) (just recipes) · [OCR-MCP_MASTER_PLAN.md](OCR-MCP_MASTER_PLAN.md) (roadmap) · [tests/README.md](tests/README.md) (testing)
+Also: [JUSTFILE.md](docs/JUSTFILE.md) (just recipes)  [OCR-MCP_MASTER_PLAN.md](OCR-MCP_MASTER_PLAN.md) (roadmap)  [tests/README.md](tests/README.md) (testing)
+
+## Install
+
+**Repository:** [github.com/sandraschi/ocr-mcp](https://github.com/sandraschi/ocr-mcp). Clone first  `uv sync` needs a project on disk:
+
+```powershell
+git clone https://github.com/sandraschi/ocr-mcp.git
+Set-Location ocr-mcp
+uv sync
+```
 
 ## Quick start
 
@@ -42,7 +53,7 @@ uv sync
 just run
 ```
 
-**Web UI (recommended):** from repo root run `web_sota\start.ps1` (PowerShell). It clears ports **10858/10859**, runs `uv sync`, restores PyYAML if needed (see [docs/INSTALL.md](docs/INSTALL.md)), starts the FastAPI backend in a new window, starts Vite in another window, then opens **http://localhost:10858** in your browser.
+**Web UI (recommended):** from repo root run `web_sota\start.ps1` (PowerShell). It clears ports **10858/10859**, runs `uv sync`, restores PyYAML if needed (see [docs/INSTALL.md](docs/INSTALL.md)), starts the FastAPI backend in a new window, starts Vite in another window, then opens **<http://localhost:10858>** in your browser.
 
 Or: `just webapp` if your [justfile](docs/JUSTFILE.md) wraps the same flow.
 
@@ -53,10 +64,10 @@ Or: `just webapp` if your [justfile](docs/JUSTFILE.md) wraps the same flow.
 - **Terminal 2 (frontend):**  
   `cd web_sota; npm run dev -- --port 10858 --host`
 
-Then open http://localhost:10858
+Then open <http://localhost:10858>
 
 **Tests:** `uv sync --extra dev` then `uv run python -m pytest` or `python scripts/run_tests.py --suite quick`. See [tests/README.md](tests/README.md).
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT  see [LICENSE](LICENSE).

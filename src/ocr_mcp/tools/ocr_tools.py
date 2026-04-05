@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 OCR Tools for OCR-MCP Server - PORTMANTEAU DESIGN
 
@@ -9,6 +37,7 @@ PORTMANTEAU TOOLS:
 - image_management: Image preprocessing and conversion operations
 - scanner_operations: Scanner hardware control operations
 - workflow_management: Batch processing, pipelines, system operations
+- corpus_management: Local SQLite document index (register, search, attach OCR)
 - ocr_help: Help and documentation
 - ocr_status: System health and status
 """
@@ -21,6 +50,7 @@ from ..core.error_handler import ErrorHandler
 from . import (
     _analysis,
     _conversion,
+    _corpus,
     _image,
     _processor,
     _quality,
@@ -103,8 +133,8 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
         Args:
         - operation (str, required): Operation to perform. Must be one of OPERATIONS above.
         - source_path (str | None): Path to document or directory. Required for most operations.
-        - backend (str): OCR backend. Default: auto. Valid: auto, deepseek-ocr, florence-2,
-          pp-ocrv5, tesseract, easyocr. Used by: process_document, process_batch.
+        - backend (str): OCR backend. Default: auto. Valid: auto, paddleocr-vl, deepseek-ocr,
+          pp-ocrv5, tesseract, easyocr, mistral-ocr, etc. Used by: process_document, process_batch.
         - ocr_mode (str): OCR mode. Default: auto. Used by: process_document, process_batch.
         - output_format (str): Output format. Default: text. Used by: process_document.
         - language (str | None): Language hint. Used by: process_document.
@@ -454,17 +484,68 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
                 "INTERNAL_ERROR", "OCR-MCP server not initialized. Please restart."
             ).to_dict()
         try:
-            return await _workflow.handle_workflow_op(
+            return await _workflow.handle_mcp_workflow(
                 operation,
                 workflow_name,
                 source_dir,
                 output_dir,
                 pipeline_config,
-                backend_manager=backend_manager,
-                config=config,
+                backend_manager,
             )
         except Exception as e:
             return ErrorHandler.handle_exception(e, context=f"workflow_management_{operation}")
+
+    @app.tool()
+    async def corpus_management(
+        operation: str,
+        source_path: str | None = None,
+        corpus_id: str | None = None,
+        title: str | None = None,
+        tags: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        query: str | None = None,
+        limit: int = 20,
+        ocr_text: str | None = None,
+        ocr_text_path: str | None = None,
+        backend: str | None = None,
+        metadata_patch: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """
+        PORTMANTEAU PATTERN RATIONALE:
+        Local **document corpus** (v0): SQLite index under ``OCR_CORPUS_DIR`` / default
+        ``{OCR_CACHE_DIR}/corpus``. Registers file paths, optional tags/metadata, and
+        optional OCR excerpts. Does not replace a full DMS; compose with other MCPs for taxonomy.
+
+        OPERATIONS:
+        - register: Index a file. Requires: source_path. Optional: title, tags (comma-separated),
+          metadata (dict).
+        - update_metadata: Patch title/tags/metadata. Requires: corpus_id.
+        - get: Full row by id. Requires: corpus_id.
+        - search: Substring match on title, path, excerpt, tags JSON. Requires: query.
+        - list_recent: Newest first. Optional: limit (default 20).
+        - attach_ocr_result: Set ocr_excerpt / ocr_text_path / backend. Requires: corpus_id
+          and ocr_text or ocr_text_path.
+
+        Returns:
+        Structured dict with success, result fields, or error (ErrorHandler envelope).
+        """
+        _, cfg = _resolve()
+        tag_list = [t.strip() for t in tags.split(",") if t.strip()] if tags and tags.strip() else None
+        return await _corpus.handle_corpus_op(
+            operation=operation,
+            config=cfg,
+            source_path=source_path,
+            corpus_id=corpus_id,
+            title=title,
+            tags=tag_list,
+            metadata=metadata,
+            query=query,
+            limit=limit,
+            ocr_text=ocr_text,
+            ocr_text_path=ocr_text_path,
+            backend=backend,
+            metadata_patch=metadata_patch,
+        )
 
     @app.tool()
     async def help(level: str = "basic", topic: str | None = None) -> str:

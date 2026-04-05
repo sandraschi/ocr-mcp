@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 Workflow Management Tools for OCR-MCP Server - PORTMANTEAU DESIGN
 
@@ -147,7 +175,7 @@ async def _process_pdf_document(
     except Exception as e:
         return {
             "success": False,
-            "error": f"PDF processing failed: {str(e)}",
+            "error": f"PDF processing failed: {e!s}",
             "workflow": "pdf_processing",
         }
 
@@ -177,14 +205,12 @@ async def _process_image_document(
     except Exception as e:
         return {
             "success": False,
-            "error": f"Image processing failed: {str(e)}",
+            "error": f"Image processing failed: {e!s}",
             "workflow": "image_processing",
         }
 
 
-async def _process_standard_document(
-    doc_path: str, quality_threshold: float, backend_manager: Any
-) -> dict[str, Any]:
+async def _process_standard_document(doc_path: str, quality_threshold: float, backend_manager: Any) -> dict[str, Any]:
     """Process document with standard OCR workflow."""
     try:
         ocr_result = await backend_manager.process_document(doc_path, output_format="markdown")
@@ -194,7 +220,7 @@ async def _process_standard_document(
     except Exception as e:
         return {
             "success": False,
-            "error": f"Standard processing failed: {str(e)}",
+            "error": f"Standard processing failed: {e!s}",
             "workflow": "standard",
         }
 
@@ -210,20 +236,14 @@ async def _apply_auto_workflow(
     workflow = analysis.get("recommended_workflow", "standard")
 
     if workflow == "pdf_processing":
-        return await _process_pdf_document(
-            doc_path, quality_threshold, save_intermediates, backend_manager
-        )
+        return await _process_pdf_document(doc_path, quality_threshold, save_intermediates, backend_manager)
     elif workflow == "image_processing":
-        return await _process_image_document(
-            doc_path, quality_threshold, save_intermediates, backend_manager
-        )
+        return await _process_image_document(doc_path, quality_threshold, save_intermediates, backend_manager)
     else:
         return await _process_standard_document(doc_path, quality_threshold, backend_manager)
 
 
-async def _apply_ocr_only_workflow(
-    doc_path: str, analysis: dict, backend_manager: Any
-) -> dict[str, Any]:
+async def _apply_ocr_only_workflow(doc_path: str, analysis: dict, backend_manager: Any) -> dict[str, Any]:
     """Apply OCR-only workflow (no preprocessing)."""
     try:
         ocr_result = await backend_manager.process_document(doc_path, output_format="markdown")
@@ -237,7 +257,7 @@ async def _apply_ocr_only_workflow(
     except Exception as e:
         return {
             "success": False,
-            "error": f"OCR-only workflow failed: {str(e)}",
+            "error": f"OCR-only workflow failed: {e!s}",
             "workflow": "ocr_only",
         }
 
@@ -328,11 +348,7 @@ def _calculate_optimal_settings(
         }
 
     avg_complexity = sum(
-        1
-        if a.get("estimated_complexity") == "high"
-        else 0.5
-        if a.get("estimated_complexity") == "medium"
-        else 0
+        1 if a.get("estimated_complexity") == "high" else 0.5 if a.get("estimated_complexity") == "medium" else 0
         for a in analysis_results
     ) / len(analysis_results)
 
@@ -340,7 +356,7 @@ def _calculate_optimal_settings(
         recommended_backend = "deepseek-ocr"  # Best for complex docs
         preprocessing = ["deskew", "enhance", "crop"]
     elif avg_complexity > 0.4:
-        recommended_backend = "florence-2"  # Good layout understanding
+        recommended_backend = "paddleocr-vl"  # VL layout (florence alias → paddleocr-vl)
         preprocessing = ["enhance", "crop"]
     else:
         recommended_backend = "easyocr"  # Fast for simple docs
@@ -368,9 +384,7 @@ def _generate_processing_recommendations(optimization: dict, analysis: list[dict
         recommendations.append("Use EasyOCR for fast processing of simple documents")
 
     if optimization["preprocessing_steps"]:
-        recommendations.append(
-            f"Apply preprocessing: {', '.join(optimization['preprocessing_steps'])}"
-        )
+        recommendations.append(f"Apply preprocessing: {', '.join(optimization['preprocessing_steps'])}")
 
     if optimization["estimated_time"] > 5.0:
         recommendations.append("Consider batch processing for better performance")
@@ -434,7 +448,7 @@ async def _handle_process_batch_intelligent(
                     "document_path": doc_path,
                     "document_index": i,
                     "success": False,
-                    "error": f"Processing failed: {str(e)}",
+                    "error": f"Processing failed: {e!s}",
                 }
             )
 
@@ -483,9 +497,7 @@ async def _handle_create_processing_pipeline(pipeline_name, steps, quality_gates
     }
 
 
-async def _handle_execute_pipeline(
-    pipeline_config, input_documents, execution_mode, backend_manager
-):
+async def _handle_execute_pipeline(pipeline_config, input_documents, execution_mode, backend_manager):
     """Execute pipeline steps on each document. Passes output of each step to the next."""
     steps = pipeline_config.get("steps", [])
     if not steps:
@@ -604,7 +616,7 @@ async def _handle_execute_pipeline(
     successful = sum(1 for r in results if r["success"])
     return {
         "success": True,
-        "pipeline_name": pipeline_config["name"],
+        "pipeline_name": pipeline_config.get("name", "pipeline"),
         "total_documents": len(input_documents),
         "successful": successful,
         "failed": len(input_documents) - successful,
@@ -657,6 +669,82 @@ async def _handle_manage_models(backend_manager, target_free_mb, max_idle_second
     """Handle model management."""
     # Placeholder for model management
     return create_success_response({"message": "Model management executed", "freed_memory_mb": 0})
+
+
+def expand_source_dir_to_document_paths(source_dir: str | None) -> list[str] | None:
+    """Turn MCP ``source_dir`` (file or directory) into a list of document paths."""
+    if not source_dir or not str(source_dir).strip():
+        return None
+    p = Path(source_dir).expanduser().resolve()
+    if not p.exists():
+        return []
+    exts = {
+        ".pdf",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".tiff",
+        ".tif",
+        ".webp",
+        ".bmp",
+        ".cbz",
+        ".cbr",
+    }
+    if p.is_file():
+        return [str(p)] if p.suffix.lower() in exts else []
+    if p.is_dir():
+        out: list[str] = []
+        for f in sorted(p.iterdir()):
+            if f.is_file() and f.suffix.lower() in exts:
+                out.append(str(f.resolve()))
+        return out
+    return []
+
+
+async def handle_mcp_workflow(
+    operation: str,
+    workflow_name: str | None,
+    source_dir: str | None,
+    output_dir: str | None,
+    pipeline_config: dict[str, Any] | None,
+    backend_manager: Any,
+) -> dict[str, Any]:
+    """
+    Adapter from MCP ``workflow_management`` (source_dir, pipeline_config blob) to
+    :func:`handle_workflow_op` keyword API.
+    """
+    pc = dict(pipeline_config) if pipeline_config else {}
+    document_paths = expand_source_dir_to_document_paths(source_dir)
+    steps = pc.get("steps")
+    pipeline_name = workflow_name or pc.get("pipeline_name")
+    input_documents = pc.get("input_documents")
+    if operation == "execute_pipeline" and not input_documents:
+        input_documents = document_paths
+
+    return await handle_workflow_op(
+        operation=operation,
+        backend_manager=backend_manager,
+        document_paths=document_paths,
+        workflow_type=str(pc.get("workflow_type", "auto")),
+        quality_threshold=float(pc.get("quality_threshold", 0.8)),
+        max_concurrent=int(pc.get("max_concurrent", 3)),
+        output_directory=output_dir,
+        save_intermediates=bool(pc.get("save_intermediates", False)),
+        pipeline_name=pipeline_name,
+        steps=steps if operation == "create_processing_pipeline" else None,
+        quality_gates=pc.get("quality_gates"),
+        error_handling=pc.get("error_handling"),
+        input_documents=input_documents,
+        execution_mode=str(pc.get("execution_mode", "sequential")),
+        batch_id=pc.get("batch_id"),
+        include_metrics=bool(pc.get("include_metrics", True)),
+        include_errors=bool(pc.get("include_errors", True)),
+        detailed=bool(pc.get("detailed", False)),
+        focus=pc.get("focus"),
+        target_free_mb=int(pc.get("target_free_mb", 1024)),
+        max_idle_seconds=int(pc.get("max_idle_seconds", 300)),
+        pipeline_config=pipeline_config if operation == "execute_pipeline" else None,
+    )
 
 
 # --- Main Portmanteau Tool Function ---
@@ -829,9 +917,7 @@ async def handle_workflow_op(
                     "PARAMETERS_INVALID",
                     message_override="pipeline_name and steps required for create_processing_pipeline operation",
                 ).to_dict()
-            return await _handle_create_processing_pipeline(
-                pipeline_name, steps, quality_gates, error_handling
-            )
+            return await _handle_create_processing_pipeline(pipeline_name, steps, quality_gates, error_handling)
 
         elif operation == "execute_pipeline":
             if not pipeline_config or not input_documents:
@@ -839,9 +925,7 @@ async def handle_workflow_op(
                     "PARAMETERS_INVALID",
                     message_override="pipeline_config and input_documents required for execute_pipeline operation",
                 ).to_dict()
-            return await _handle_execute_pipeline(
-                pipeline_config, input_documents, execution_mode, backend_manager
-            )
+            return await _handle_execute_pipeline(pipeline_config, input_documents, execution_mode, backend_manager)
 
         elif operation == "monitor_batch_progress":
             return await _handle_monitor_batch_progress(batch_id, include_metrics, include_errors)
