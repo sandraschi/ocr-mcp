@@ -98,57 +98,24 @@ sampling_handler = OCRSamplingHandler()
 # Initialize FastMCP server with 3.1
 app = FastMCP(
     name="ocr-mcp",
-    instructions="""You are OCR-MCP, a revolutionary document understanding server providing state-of-the-art OCR capabilities with FastMCP 3.1 conversational features and AI-powered sampling integration.
+    instructions="""OCR-MCP: High-fidelity document understanding and hardware control plane.
 
 CORE CAPABILITIES:
-- Multiple OCR backends: PaddleOCR-VL, DeepSeek-OCR, Mistral OCR, PP-OCRv5, DOTS.OCR, GOT-OCR, Tesseract, EasyOCR
-- Document processing: PDF, CBZ/CBR archives, images (PNG, JPG, TIFF, BMP, WebP)
-- Scanner integration: Direct WIA control for Windows flatbed scanners
-- Image preprocessing: Deskew, enhance, rotate, crop, quality pipeline
-- Document analysis: Layout detection, table extraction, form analysis, structure parsing
-- Quality assessment: OCR accuracy validation, confidence scoring, backend comparison
-- Format conversion: PDF↔images, searchable PDFs, format optimization
-- Intelligent workflows: Auto-routing, quality gates, batch processing, pipeline orchestration
-- Output formats: Text, HTML, Markdown, JSON, XML
+- OCR Engines: DeepSeek-OCR, PaddleOCR-VL, PP-OCRv5, Mistral OCR, GOT-OCR, Tesseract, EasyOCR.
+- Formats: PDF, CBZ/CBR, PNG, JPG, TIFF, WebP.
+- Hardware: Direct WIA scanner control (Windows).
+- Analysis: Layout parsing, table extraction, form detection, accuracy validation.
+- Agentic: Autonomous multi-step orchestration via sampling (SEP-1577).
 
-CONVERSATIONAL FEATURES (FastMCP 3.1):
-- Progressive disclosure: Multi-level detail with recommendations and next steps
-- Interactive clarification: Intelligent parameter collection and validation
-- Rich metadata: Pagination, search metadata, refinement suggestions
-- Error recovery: Contextual error handling with recovery options
-- Persistent state: Cross-session memory and user preferences
+OPERATIONAL TOOLS:
+- process_document: Primary OCR, layout analysis, and metadata extraction.
+- manage_image: Preprocessing (deskew/denoise), format conversion, PDF layering.
+- operate_scanner: Hardware acquisition and device configuration.
+- manage_workflow: Batch processing and system health monitoring.
+- manage_corpus: SQLite document indexing and full-text search.
+- execute_agentic_workflow: Goal-oriented autonomous orchestration.
 
-SAMPLING INTEGRATION (FastMCP 3.1):
-- Default: server-side OpenAI-compatible LLM at OCR_SAMPLING_BASE_URL (Ollama: http://127.0.0.1:11434/v1), no API key on localhost/LAN.
-- Optional: OCR_SAMPLING_USE_CLIENT_LLM=1 lets a capable MCP host (e.g. Cursor) run sampling instead.
-- Cloud: OCR_SAMPLING_API_KEY or OCR_SAMPLING_USE_OPENAI_KEY=1 plus a cloud base URL.
-- agentic_document_workflow uses context.sample_step with tool execution (local or client, per above).
-
-PORTMANTEAU TOOLS:
-- document_processing: OCR, analysis, quality assessment operations
-- image_management: Image preprocessing and conversion operations
-- scanner_operations: Scanner hardware control operations
-- workflow_management: Batch processing, pipelines, system operations
-- corpus_management: Local SQLite document index (register, search, attach OCR)
-- agentic_document_workflow: AI-orchestrated multi-document processing (SEP-1577)
-
-USAGE PATTERNS:
-1. Document OCR: document_processing(operation="process_document") - Auto-selects best backend
-2. Scanner control: scanner_operations(operation="list_scanners") - Hardware integration
-3. Image preprocessing: image_management(operation="preprocess") - Quality optimization
-4. Document analysis: document_processing(operation="analyze_layout") - Structure understanding
-5. Quality assessment: document_processing(operation="assess_quality") - Accuracy validation
-6. Batch workflows: workflow_management(operation="process_batch_intelligent") - Automated processing
-7. Custom pipelines: workflow_management(operation="create_processing_pipeline") - Workflow orchestration
-8. Agentic processing: agentic_document_workflow(operation="process_batch_intelligent") - AI-orchestrated workflows
-
-BACKEND SELECTION:
-- DeepSeek-OCR: Best for complex documents, mathematical formulas
-- PaddleOCR-VL: Strong VL document OCR (tables, charts; florence alias → paddleocr-vl)
-- PP-OCRv5: Industrial-grade OCR, fast and reliable
-- Tesseract: Classic OCR, good fallback option
-
-Always provide conversational responses with actionable recommendations, confidence scores, and next steps.""",
+Always provide technical, actionable responses including confidence scores and recovery paths.""",
     lifespan=server_lifespan,  # FastMCP 3.1 lifespan management
     sampling_handler=sampling_handler,  # Default: local Ollama / OpenAI-compatible HTTP
     sampling_handler_behavior="fallback" if _USE_CLIENT_SAMPLING else "always",
@@ -161,7 +128,7 @@ Always provide conversational responses with actionable recommendations, confide
 # Resources
 @app.resource("resource://ocr/logs")
 def get_ocr_logs() -> str:
-    """Get the latest OCR processing logs"""
+    """Retrieves current processing logs for diagnostics."""
     try:
         log_path = Path("ocr_processing.log")
         if log_path.exists():
@@ -173,7 +140,7 @@ def get_ocr_logs() -> str:
 
 @app.resource("resource://ocr/capabilities")
 def get_ocr_capabilities() -> str:
-    """List available OCR backends and server capabilities (FastMCP 3.1)."""
+    """Lists available OCR backends and supported FastMCP features."""
     backends = []
     if _runtime.get("backend_manager"):
         try:
@@ -181,115 +148,80 @@ def get_ocr_capabilities() -> str:
         except Exception:
             pass
     if not backends:
-        backends = [
-            "deepseek-ocr",
-            "deepseek-ocr2",
-            "paddleocr-vl",
-            "olmocr-2",
-            "pp-ocrv5",
-            "dots-ocr",
-            "got-ocr",
-            "qwen-layered",
-            "tesseract",
-            "easyocr",
-            "auto",
-        ]
+        backends = ["deepseek-ocr", "paddleocr-vl", "pp-ocrv5", "tesseract", "easyocr"]
+
     return (
-        "OCR-MCP 3.1 capabilities:\n"
-        "- Tools: document_processing, image_management, scanner_operations, "
-        "workflow_management, corpus_management, agentic_document_workflow\n"
-        "- Sampling: ctx.sample() / ctx.sample_step() for agentic workflows (SEP-1577)\n"
-        "- Prompts: process-instructions, quality-assessment-guide, scanner-workflow, "
-        "batch-processing-guide, agentic-workflow-instructions\n"
-        f"- Available backends (when server running): {', '.join(backends)}\n"
-        "- Resources: logs, capabilities, skills"
+        "OCR-MCP Capabilities:\n"
+        "- Tools: process_document, manage_image, operate_scanner, manage_workflow, manage_corpus, execute_agentic_workflow\n"
+        "- Features: SEP-1577 Sampling, Pydantic Structured Output, WIA Hardware Control\n"
+        f"- Active Backends: {', '.join(backends)}"
     )
 
 
 @app.resource("resource://ocr/skills")
 def get_ocr_skills() -> str:
-    """OCR-MCP skills reference for LLMs (FastMCP 3.1)."""
-    return """# OCR-MCP Skills (FastMCP 3.1)
+    """Standardized skills library for LLM orchestration."""
+    return """# OCR-MCP Operational Skills
 
-## Document processing
-- **process_document**: Run OCR on a file (PDF, image, CBZ). Use backend "auto" for best-fit or name a backend.
-- **analyze_layout**: Detect structure (tables, sections, forms).
-- **assess_quality**: Validate OCR output and confidence.
+## 1. Document Extraction
+- Use `process_document(operation='process_document')` for high-fidelity OCR.
+- Use `process_document(operation='extract_tables')` for structured data recovery.
+- If quality is low, run `manage_image(operation='preprocess')` first.
 
-## Image management
-- **preprocess**: Deskew, enhance, rotate, crop.
-- **convert**: Convert between image formats and PDF.
+## 2. Hardware Acquisition
+- Enumerate devices with `operate_scanner(operation='list_scanners')`.
+- Acquire pages using `operate_scanner(operation='scan_document')`.
 
-## Scanner operations (Windows WIA)
-- **list_scanners**: Discover connected scanners.
-- **scanner_properties** / **configure_scan**: Get/set DPI, color mode, paper size.
-- **scan_document**: Acquire from flatbed.
-
-## Workflow management
-- **process_batch_intelligent**: Batch process a folder with auto backend selection.
-- **create_processing_pipeline**: Define and run custom pipelines.
-
-## Corpus (local index v0)
-- **corpus_management**: `register` / `search` / `get` / `list_recent` / `attach_ocr_result` — SQLite under `OCR_CORPUS_DIR` or `{cache}/corpus`.
-
-## Agentic workflow (SEP-1577, sampling with tools)
-- **agentic_document_workflow**: Give a natural-language workflow prompt and a list of tool names; the LLM uses ctx.sample_step() to call tools until the workflow is done.
-- Recommended tools to pass: document_processing, image_management, scanner_operations, workflow_management, corpus_management.
-- Use for: "Scan and OCR the next page", "Process this folder and summarize", "Preprocess then run OCR with quality check".
+## 3. Autonomous Orchestration
+- Use `execute_agentic_workflow` for multi-step goals like "Find the scanner, scan 5 pages, and extract all invoice totals."
 """
 
 
 # Prompts
 @app.prompt("prompt://ocr/process-instructions")
 def get_process_instructions_prompt() -> str:
-    """Prompt for helping users construct OCR processing instructions"""
-    return """You are helping a user construct OCR processing instructions for the ocr-mcp server.
-The user wants to process a document. Ask them for:
-1. The path to the document (file://...)
-2. The preferred backend (auto, paddleocr-vl, deepseek-ocr, mistral-ocr, tesseract, etc.)
-3. Any specific regions of interest [x1, y1, x2, y2]
-4. Whether they need format conversion (e.g., to searchable PDF)
+    """Guide for configuring document processing tasks."""
+    return """Assist the user in defining a document processing task.
+Collect:
+1. Source path (local file://).
+2. Backend (deepseek-ocr for complexity, paddleocr-vl for tables).
+3. Operation (OCR, Layout, or Metadata).
 
-Then, help them call the `document_processing` tool with the appropriate `operation="process_document"`."""
+Construct a `process_document` call based on these inputs."""
 
 
 @app.prompt("prompt://ocr/quality-assessment-guide")
 def get_quality_assessment_guide_prompt() -> str:
-    """Prompt for OCR quality evaluation workflow."""
-    return """Guide the user through OCR quality assessment using the ocr-mcp server.
-1. Use document_processing(operation="process_document", ...) to get OCR output.
-2. Use document_processing(operation="assess_quality", ...) to validate confidence and suggest improvements.
-3. Optionally compare backends by running process_document with different backend values and assess_quality on each.
-4. Recommend preprocessing (image_management(operation="preprocess")) if quality is low (e.g. deskew, enhance)."""
+    """Workflow for evaluating and improving extraction quality."""
+    return """1. Run `process_document(operation='process_document')`.
+2. Evaluate with `process_document(operation='assess_quality')`.
+3. If scores are low, apply `manage_image(operation='preprocess', deskew=True, denoise=True)`.
+4. Re-run OCR and compare."""
 
 
 @app.prompt("prompt://ocr/scanner-workflow")
 def get_scanner_workflow_prompt() -> str:
-    """Prompt for scanner-based capture and OCR workflow."""
-    return """Guide the user through scanning and OCR with ocr-mcp (Windows WIA).
-1. Call scanner_operations(operation="list_scanners") to discover devices.
-2. Use scanner_operations(operation="scanner_properties", device_id="...") to check DPI and capabilities.
-3. Use scanner_operations(operation="scan_document", device_id="...", ...) to acquire an image.
-4. Then use document_processing(operation="process_document", source_path=<path to saved scan>) to run OCR, or workflow_management for batch scan+OCR."""
+    """Workflow for hardware-to-OCR pipelines."""
+    return """1. Locate hardware: `operate_scanner(operation='list_scanners')`.
+2. Configure: `operate_scanner(operation='configure_scan')`.
+3. Acquire: `operate_scanner(operation='scan_document')`.
+4. Extract: `process_document(operation='process_document', source_path=<scan_path>)`."""
 
 
 @app.prompt("prompt://ocr/batch-processing-guide")
 def get_batch_processing_guide_prompt() -> str:
-    """Prompt for batch document processing."""
-    return """Guide the user through batch document processing with ocr-mcp.
-1. Use workflow_management(operation="process_batch_intelligent", source_dir="...") to process a folder with automatic backend selection and quality handling.
-2. Or use workflow_management(operation="create_processing_pipeline", ...) to define a custom pipeline and run it on multiple files.
-3. For scan-and-OCR batches, combine scanner_operations(operation="scan_document") (or a scan loop) with process_batch_intelligent on the output folder."""
+    """Instructions for high-volume document batching."""
+    return """Use `manage_workflow(operation='process_batch_intelligent')` for automated directory processing.
+For custom logic, use `manage_workflow(operation='create_processing_pipeline')` to chain operations."""
 
 
 @app.prompt("prompt://ocr/agentic-workflow-instructions")
 def get_agentic_workflow_instructions_prompt() -> str:
-    """Prompt for using the agentic document workflow (FastMCP 3.1 sampling with tools)."""
-    return """Explain how to use the agentic_document_workflow tool (SEP-1577, FastMCP 3.1).
-1. The user provides a workflow_prompt (natural language) and available_tools (e.g. ["document_processing", "image_management", "scanner_operations", "workflow_management"]).
-2. The server uses ctx.sample_step() in a loop: the LLM chooses tool calls, tools run, results are fed back until the LLM returns a final answer or max_iterations is reached.
-3. Example: agentic_document_workflow(workflow_prompt="Scan the next page and run OCR, then summarize in one paragraph", available_tools=["scanner_operations", "document_processing"], max_iterations=5).
-4. Best for: multi-step document tasks without the client orchestrating each step."""
+    """Detailed guide for SEP-1577 autonomous execution."""
+    return """Explain `execute_agentic_workflow` (SEP-1577):
+- Provide a clear natural language goal (workflow_prompt).
+- Pass relevant tool names in `available_tools`.
+- The agent will autonomously loop, calling tools and analyzing results until the goal is achieved."""
 
 
 # Global instances - mutable runtime for lifespan injection
@@ -311,11 +243,11 @@ try:
     from .tools.agentic_document_workflow import register_agentic_document_workflow
 
     register_agentic_document_workflow(app)
-    logger.info("SEP-1577 agentic document workflow tool registered")
+    logger.info("SEP-1577 executive workflow tool registered")
 except ImportError as e:
-    logger.warning(f"SEP-1577 agentic document workflow tool not available: {e}")
+    logger.warning(f"SEP-1577 executive workflow tool not available: {e}")
 except Exception as e:
-    logger.error(f"Failed to register SEP-1577 agentic document workflow tool: {e}")
+    logger.error(f"Failed to register executive workflow tool: {e}")
 
 
 async def run_server():
