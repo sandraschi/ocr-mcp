@@ -23,7 +23,7 @@ uv sync
 $ensureYaml = Join-Path $ProjectRoot "scripts\ensure_pyyaml_init.py"
 if (Test-Path $ensureYaml) { uv run python $ensureYaml 2>$null }
 $yamlCheck = uv run python -c "import yaml; ok = hasattr(yaml,'dump'); print('OK' if ok else 'MISSING'); print(yaml.__file__)" 2>&1
-if ($yamlCheck -notmatch "OK") {
+if (($yamlCheck | Out-String) -notmatch "OK") {
     Write-Host "WARNING: PyYAML not usable in backend env. PaddleOCR-VL will fail. Fix: uv sync then restart backend." -ForegroundColor Yellow
 } else {
     Write-Host "PyYAML OK (backend env)" -ForegroundColor Green
