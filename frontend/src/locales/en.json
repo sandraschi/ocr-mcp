@@ -45,6 +45,7 @@
     "optimization": "Auto-Optimization",
     "conversion": "Format Conversion",
     "export": "Export & Download",
+    "backends": "Backends & Models",
     "settings": "Settings"
   },
   "pages": {

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Minus, Plus, Maximize, MousePointerSquare } from 'lucide-react';
 import { Button } from './Button';
 
@@ -74,10 +74,8 @@ export function ScanViewer({ imageUrl, onSelectionChange, isProcessing }: ScanVi
         const img = new Image();
         img.src = imageUrl;
         img.onload = () => {
-            const hRatio = container.width / img.width;
-            const vRatio = container.height / img.height;
-            // Use 0.95 to leave a small margin
-            const newScale = Math.min(hRatio, vRatio) * 0.95;
+            // Scale to full width: left edge ↔ left edge, right edge ↔ right edge
+            const newScale = container.width / img.width;
             setScale(newScale || 1);
             setPosition({ x: 0, y: 0 });
         }
@@ -260,11 +258,7 @@ export function ScanViewer({ imageUrl, onSelectionChange, isProcessing }: ScanVi
         <div
           style={{
             transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-            transformOrigin: '50% 50%', // Zoom from center of applied translation
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: '100%',
+            transformOrigin: '0 0',
             transition: isDragging || isSelecting ? 'none' : 'transform 0.1s ease-out',
           }}
         >

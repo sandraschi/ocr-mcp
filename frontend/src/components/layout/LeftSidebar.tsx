@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Upload, Layers, Printer, Search, BarChart3, Cog, Zap, FileText, Settings, Terminal, Maximize } from 'lucide-react'
+import { Upload, Layers, Printer, Search, BarChart3, Cog, Zap, FileText, Settings, Terminal, Maximize, Cpu } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
 
@@ -24,6 +24,7 @@ export function LeftSidebar({ isOpen, onOpenLogs }: LeftSidebarProps) {
     { id: '/optimization', label: 'Auto-Optimization', icon: Zap, path: '/optimization' },
     { id: '/conversion', label: 'Format Conversion', icon: FileText, path: '/conversion' },
     { id: '/export', label: 'Export & Download', icon: FileText, path: '/export' },
+    { id: '/backends', label: 'Backends & Models', icon: Cpu, path: '/backends' },
     { id: '/settings', label: 'Settings', icon: Settings, path: '/settings' },
   ]
 

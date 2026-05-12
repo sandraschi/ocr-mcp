@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:15550';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -269,6 +269,31 @@ class ApiService {
 
   async getSystemLogs(filters?: any): Promise<any[]> {
     const response = await apiClient.get('/api/logs', { params: filters })
+    return response.data
+  }
+
+  async getModelStatus(): Promise<any> {
+    const response = await apiClient.get('/api/models/status')
+    return response.data
+  }
+
+  async downloadModel(backendName: string): Promise<{ status: string; backend: string; job_id?: string }> {
+    const response = await apiClient.post(`/api/models/download/${encodeURIComponent(backendName)}`)
+    return response.data
+  }
+
+  async getDownloadProgress(backendName: string): Promise<{ status: string; progress?: number; error?: string }> {
+    const response = await apiClient.get(`/api/models/download/${encodeURIComponent(backendName)}/progress`)
+    return response.data
+  }
+
+  async probeBackend(backendName: string): Promise<any> {
+    const response = await apiClient.post('/api/backends/test', { backend: backendName })
+    return response.data
+  }
+
+  async restartBackend(): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.post('/api/restart')
     return response.data
   }
 

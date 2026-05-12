@@ -1,3 +1,14 @@
+Param([switch]$Headless)
+$SkipFrontend = $Headless
+
+# --- SOTA Headless Standard ---
+if ($Headless -and ($Host.UI.RawUI.WindowTitle -notmatch 'Hidden')) {
+    Start-Process pwsh -ArgumentList '-NoProfile', '-File', $PSCommandPath, '-Headless' -WindowStyle Hidden
+    exit
+}
+$WindowStyle = if ($Headless) { 'Hidden' } else { 'Normal' }
+# ------------------------------
+
 # ocr-mcp webapp: backend (10859) + Vite (10858). Run from ocr-mcp repo.
 $WebPort = 10858
 $BackendPort = 10859

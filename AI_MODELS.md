@@ -1,6 +1,6 @@
 # OCR-MCP AI Models Documentation
 
-*Last updated: 2026-03*
+*Last updated: 2026-05-12*
 
 This document lists every OCR backend used by **OCR-MCP** (both the [web app](README.md#-installation) and the [MCP server](README.md#-installation)): what they are, accuracy/benchmarks, when to use them, and how to install or enable them. Backend names here match the `backend` parameter in tools and the web UI dropdown.
 
@@ -11,6 +11,7 @@ This document lists every OCR backend used by **OCR-MCP** (both the [web app](RE
 | Backend | Status | Params | VRAM | Benchmark | Best For |
 |---------|--------|--------|------|-----------|----------|
 | **PaddleOCR-VL-1.5** | ✅ SOTA | 0.9B | 3.3GB* | 94.5% OmniDocBench v1.5 | General documents, tables, formulas, scans |
+| **MinerU2.5-Pro** | ✅ SOTA | 1.2B | ~4GB | SOTA multi-benchmark | Academic/technical docs, coarse-to-fine parsing |
 | **DeepSeek-OCR-2** | ✅ New | 3B | ~8GB | — (Jan 2026) | Structured markdown extraction |
 | **olmOCR-2** | ✅ New | 7B | ~16GB | 82.4 olmOCR-Bench | Academic PDFs, math, multi-column |
 | **Mistral OCR** | ✅ API | — | 0 | 94.9% claimed, 74% win rate | Cloud fallback, high accuracy |
@@ -25,7 +26,7 @@ This document lists every OCR backend used by **OCR-MCP** (both the [web app](RE
 *\* with `flash-attn` installed. Without it: ~40GB — do not run on GPU without flash-attn.*
 
 **Auto-selection priority** (highest to lowest):
-`paddleocr-vl → mistral-ocr → deepseek-ocr2 → olmocr-2 → deepseek-ocr → qwen-layered → got-ocr → dots-ocr → pp-ocrv5 → easyocr → tesseract`
+`paddleocr-vl → mistral-ocr → deepseek-ocr2 → mineru-2.5 → olmocr-2 → deepseek-ocr → qwen-layered → got-ocr → dots-ocr → pp-ocrv5 → easyocr → tesseract`
 
 ---
 
@@ -77,6 +78,36 @@ pip install flash-attn==2.7.3 --no-build-isolation
 **HF model:** `deepseek-ai/DeepSeek-OCR-2`
 **Backend name:** `deepseek-ocr2`
 **Aliases:** `deepseek2`, `deepseek-ocr-2`
+
+---
+
+### MinerU2.5-Pro
+
+**April 2026 — opendatalab coarse-to-fine document parsing VLM (62k+ GitHub stars).**
+
+Developed by Shanghai AI Laboratory's OpenDataLab team. Uses a two-stage approach that decouples global layout analysis from local content recognition: the first stage performs layout analysis on downsampled images to identify structural elements, and the second stage performs targeted content recognition on native-resolution crops. This makes it both efficient and highly accurate.
+
+**Key features:**
+- Coarse-to-fine two-stage parsing strategy: layout first, then content
+- 1.2B parameters, ~2.5GB VRAM — efficient for its accuracy class
+- SOTA on multiple parsing benchmarks at time of release
+- Excellent formula-to-LaTeX and table-to-HTML conversion
+- 109-language OCR support through associated detection models
+- Native PDF/DOCX/PPTX/XLSX support (via full mineru pipeline)
+- 62.7k GitHub stars, Apache 2.0-based license
+
+**Dependencies:**
+```
+pip install torch transformers
+```
+For full document pipeline (PDF/DOCX/PPTX/XLSX):
+```
+pip install mineru
+```
+
+**HF model:** `opendatalab/MinerU2.5-Pro-2604-1.2B`
+**Backend name:** `mineru-2.5`
+**Aliases:** `mineru`
 
 ---
 
@@ -192,16 +223,16 @@ Microsoft Florence-2 is a general vision foundation model (object detection, ima
 |-----------|-------------|
 | General document scanning | `paddleocr-vl` |
 | Tilted / folded / damaged document | `paddleocr-vl` (irregular box localization) |
-| Scientific paper / arXiv PDF | `olmocr-2` |
-| Document with math equations | `olmocr-2` |
-| Need clean markdown output | `deepseek-ocr2` or `paddleocr-vl` |
+| Scientific paper / arXiv PDF | `olmocr-2` or `mineru-2.5` |
+| Document with math equations | `olmocr-2` or `mineru-2.5` |
+| Need clean markdown output | `deepseek-ocr2` or `mineru-2.5` |
 | Table-heavy document | `paddleocr-vl` (tables) or `dots-ocr` |
-| Formula / LaTeX extraction | `paddleocr-vl` or `olmocr-2` |
+| Formula / LaTeX extraction | `paddleocr-vl` or `mineru-2.5` |
 | Chart or diagram description | `paddleocr-vl` (chart task) |
 | Chinese / CJK content | `paddleocr-vl` or `pp-ocrv5` |
 | Arabic / Devanagari / rare scripts | `paddleocr-vl` |
-| Maximum accuracy, no VRAM limit | `olmocr-2` (7B) |
-| Minimum VRAM, still good quality | `got-ocr` (580M) or `paddleocr-vl` (0.9B + flash-attn) |
+| Maximum accuracy, no VRAM limit | `olmocr-2` (7B) or `mineru-2.5` (1.2B) |
+| Minimum VRAM, still good quality | `got-ocr` (580M) or `mineru-2.5` (2.5GB) |
 | CPU only, no GPU | `tesseract` |
 | High volume batch | `pp-ocrv5` or `tesseract` |
 | Cloud, no local model | `mistral-ocr` or `deepseek-ocr` |
@@ -214,6 +245,7 @@ Microsoft Florence-2 is a general vision foundation model (object detection, ima
 |---------|------|---------------|-------|
 | PaddleOCR-VL-1.5 | 3.3GB | ✅ | Requires flash-attn |
 | GOT-OCR 2.0 | ~2GB | ✅ | Very lean |
+| MinerU2.5-Pro | ~2.5GB | ✅ | 1.2B params, efficient |
 | DeepSeek-OCR-2 | ~8GB | ✅ | bfloat16 |
 | DOTS.OCR | ~6GB | ✅ | |
 | Qwen2.5-VL-7B | ~16GB | ✅ | bfloat16 |

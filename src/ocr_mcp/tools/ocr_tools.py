@@ -34,7 +34,7 @@ precise, schema-aware operational tools.
 """
 
 import logging
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from ..core.config import OCRConfig
 from ..core.error_handler import ErrorHandler
@@ -85,28 +85,28 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
             "compare_backends",
             "analyze_image_quality",
         ],
-        source_path: Optional[str] = None,
+        source_path: str | None = None,
         backend: OCRBackend = "auto",
         ocr_mode: OCRMode = "auto",
         output_format: OutputFormat = "text",
-        language: Optional[str] = None,
-        region: Optional[list[int]] = None,
+        language: str | None = None,
+        region: list[int] | None = None,
         enhance_image: bool = True,
-        ocr_result: Optional[dict[str, Any]] = None,
-        ground_truth: Optional[str] = None,
+        ocr_result: dict[str, Any] | None = None,
+        ground_truth: str | None = None,
         assessment_type: Literal["comprehensive", "basic", "layout"] = "comprehensive",
         validation_type: Literal["character", "word"] = "character",
-        backends: Optional[list[OCRBackend]] = None,
-        quality_checks: Optional[list[str]] = None,
+        backends: list[OCRBackend] | None = None,
+        quality_checks: list[str] | None = None,
         analysis_type: Literal["comprehensive", "layout_only", "tables_only"] = "comprehensive",
         detect_tables: bool = True,
         detect_forms: bool = True,
         detect_headers: bool = True,
-        table_region: Optional[list[int]] = None,
+        table_region: list[int] | None = None,
         extract_dates: bool = True,
         extract_names: bool = True,
         extract_numbers: bool = True,
-        source_paths: Optional[list[str]] = None,
+        source_paths: list[str] | None = None,
         max_concurrent: int = 4,
     ) -> ToolResponse:
         """
@@ -264,15 +264,15 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
     @app.tool()
     async def manage_image(
         operation: Literal["preprocess", "convert", "pdf_to_images", "embed_text"],
-        source_path: Optional[str] = None,
-        target_path: Optional[str] = None,
+        source_path: str | None = None,
+        target_path: str | None = None,
         format: Literal["png", "jpg", "tiff", "webp"] = "png",
         grayscale: bool = True,
         denoise: bool = True,
         deskew: bool = True,
         threshold: bool = False,
         autocrop: bool = False,
-        dpi: Optional[int] = 300,
+        dpi: int | None = 300,
     ) -> ToolResponse:
         """
         Manage image preprocessing and format conversion.
@@ -357,19 +357,25 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
             "preview_scan",
             "diagnostics",
         ],
-        device_id: Optional[str] = None,
+        device_id: str | None = None,
         scan_source: Literal["flatbed", "adf"] = "flatbed",
         resolution: int = 300,
         color_mode: Literal["color", "grayscale", "lineart"] = "color",
         paper_size: str = "A4",
         output_prefix: str = "scan_",
+        save_path: str | None = None,
+        save_directory: str | None = None,
+        brightness: int = 0,
+        contrast: int = 0,
+        count: int = 1,
+        duplex: bool = False,
     ) -> ToolResponse:
         """
         Hardware control for connected Windows WIA scanners.
 
         OPERATIONS:
         - list_scanners: Enumerate connected devices and get device_ids.
-        - scan_document: Acquire single page from flatbed.
+        - scan_document: Acquire single page from flatbed. Returns ``saved_path`` for use with process_document.
         - scan_batch: Acquire multiple pages using ADF.
         - diagnostics: Test scanner connectivity and capabilities.
 
@@ -392,6 +398,12 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
                 output_prefix,
                 backend_manager=backend_manager,
                 config=config,
+                save_path=save_path,
+                save_directory=save_directory,
+                brightness=brightness,
+                contrast=contrast,
+                count=count,
+                duplex=duplex,
             )
             return ToolResponse(
                 success=res_data.get("success", True),
@@ -414,10 +426,10 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
             "list_backends",
             "manage_models",
         ],
-        workflow_name: Optional[str] = None,
-        source_dir: Optional[str] = None,
-        output_dir: Optional[str] = None,
-        pipeline_config: Optional[dict[str, Any]] = None,
+        workflow_name: str | None = None,
+        source_dir: str | None = None,
+        output_dir: str | None = None,
+        pipeline_config: dict[str, Any] | None = None,
     ) -> ToolResponse:
         """
         Orchestrate batch processing, custom pipelines, and system management.
@@ -453,17 +465,17 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
     @app.tool()
     async def manage_corpus(
         operation: Literal["register", "update_metadata", "get", "search", "list_recent", "attach_ocr_result"],
-        source_path: Optional[str] = None,
-        corpus_id: Optional[str] = None,
-        title: Optional[str] = None,
-        tags: Optional[str] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        query: Optional[str] = None,
+        source_path: str | None = None,
+        corpus_id: str | None = None,
+        title: str | None = None,
+        tags: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        query: str | None = None,
         limit: int = 20,
-        ocr_text: Optional[str] = None,
-        ocr_text_path: Optional[str] = None,
-        backend: Optional[OCRBackend] = None,
-        metadata_patch: Optional[dict[str, Any]] = None,
+        ocr_text: str | None = None,
+        ocr_text_path: str | None = None,
+        backend: OCRBackend | None = None,
+        metadata_patch: dict[str, Any] | None = None,
     ) -> ToolResponse:
         """
         Local SQLite document index management. Persist OCR results and metadata.
@@ -500,9 +512,7 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
             return ToolResponse(success=False, operation=operation, summary=str(e))
 
     @app.tool()
-    async def get_help(
-        level: Literal["basic", "intermediate", "advanced"] = "basic", topic: Optional[str] = None
-    ) -> str:
+    async def get_help(level: Literal["basic", "intermediate", "advanced"] = "basic", topic: str | None = None) -> str:
         """Contextual documentation for OCR operations and tool configurations."""
         return _workflow.get_help_content(level, topic)
 

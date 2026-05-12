@@ -2,8 +2,13 @@
 OCR Backend Manager: Manages multiple OCR backends with unified interface
 """
 
+import inspect
 import logging
+import tempfile
+from pathlib import Path
 from typing import Any
+
+from PIL import Image, ImageDraw
 
 from .backend_optimizer import BackendOptimizer
 from .config import OCRConfig
@@ -68,6 +73,32 @@ class MockOCRBackend:
 
 
 logger = logging.getLogger(__name__)
+
+# Optimizer / docs may still say "florence-2"; registry uses concrete package names only.
+_BACKEND_NAME_ALIASES: dict[str, str] = {
+    "deepseek": "deepseek-ocr",
+    "deepseek2": "deepseek-ocr2",
+    "deepseek-ocr-2": "deepseek-ocr2",
+    "paddleocr": "paddleocr-vl",
+    "paddle": "paddleocr-vl",
+    "paddleocr-vl-1.5": "paddleocr-vl",
+    "olmocr": "olmocr-2",
+    "olm": "olmocr-2",
+    "florence": "paddleocr-vl",
+    "florence-2": "paddleocr-vl",
+    "dots": "dots-ocr",
+    "pp-ocr": "pp-ocrv5",
+    "qwen": "qwen-layered",
+    "got": "got-ocr",
+    "tesseract": "tesseract",
+    "easyocr": "easyocr",
+    "mineru": "mineru-2.5",
+}
+
+
+def canonical_backend_name(name: str) -> str:
+    """Map legacy / marketing names to registry keys."""
+    return _BACKEND_NAME_ALIASES.get(name, name)
 
 
 class OCRBackend:
@@ -168,6 +199,12 @@ class BackendManager:
                 "model_size": "~500MB",
                 "description": "Mistral OCR 3 cloud API",
             },
+            "mineru-2.5": {
+                "module": "..backends.mineru_backend",
+                "class": "MinerU25Backend",
+                "model_size": "~2.5GB (1.2B params)",
+                "description": "MinerU2.5-Pro — Apr 2026, opendatalab coarse-to-fine doc parsing VLM",
+            },
             "got-ocr": {
                 "module": "..backends.got_ocr_backend",
                 "class": "GOTOCRBackend",
@@ -254,9 +291,7 @@ class BackendManager:
         if name in self.backends:
             self.backends[name] = None
 
-    def select_backend(
-        self, requested_backend: str = "auto", image_path: str | None = None
-    ) -> OCRBackend | None:
+    def select_backend(self, requested_backend: str = "auto", image_path: str | None = None) -> OCRBackend | None:
         """Select an appropriate backend based on request."""
         if requested_backend == "auto":
             # Intelligent auto-selection based on document analysis
@@ -266,30 +301,39 @@ class BackendManager:
 
                     optimal_backend_name = self.optimizer.select_optimal_backend(Path(image_path))
                     if optimal_backend_name != "auto":
-                        backend = self.get_backend(optimal_backend_name)
+                        resolved = canonical_backend_name(optimal_backend_name)
+                        backend = self.get_backend(resolved)
                         if backend and backend.is_available():
                             logger.info(
-                                f"Intelligent selection: {optimal_backend_name} for {Path(image_path).name}"
+                                "Intelligent selection: %s → %s for %s",
+                                optimal_backend_name,
+                                resolved,
+                                Path(image_path).name,
                             )
                             return backend
+                        if resolved != optimal_backend_name:
+                            logger.warning(
+                                "Optimizer suggested %s (resolved %s) but it is unavailable; using fallback order",
+                                optimal_backend_name,
+                                resolved,
+                            )
                 except Exception as e:
-                    logger.warning(
-                        f"Intelligent backend selection failed: {e}, falling back to preference order"
-                    )
+                    logger.warning(f"Intelligent backend selection failed: {e}, falling back to preference order")
 
-            # Fallback to preference order if intelligent selection fails
+            # Fallback: light reliable engines first so flatbed scans succeed without huge downloads.
             preference_order = [
-                "paddleocr-vl",  # Jan 2026 SOTA: 94.5% OmniDocBench, 0.9B, efficient
-                "mistral-ocr",  # Dec 2025 API: 74% win rate, 94.9% accuracy
-                "deepseek-ocr2",  # Jan 2026: Visual Causal Flow, 3B
-                "olmocr-2",  # Oct 2025: 82.4 olmOCR-Bench, best for academic
-                "deepseek-ocr",  # Original DeepSeek-OCR API
-                "qwen-layered",  # Qwen2.5-VL: still solid
-                "got-ocr",  # GOT-OCR2.0: fast, lean
-                "dots-ocr",  # DOTS.OCR
-                "pp-ocrv5",  # PaddlePaddle classic pipeline
-                "easyocr",  # Legacy
-                "tesseract",  # Backstop — always last
+                "tesseract",
+                "pp-ocrv5",
+                "got-ocr",
+                "dots-ocr",
+                "easyocr",
+                "paddleocr-vl",
+            "mistral-ocr",
+            "deepseek-ocr2",
+            "mineru-2.5",
+            "olmocr-2",
+                "deepseek-ocr",
+                "qwen-layered",
             ]
             for backend_name in preference_order:
                 backend = self.get_backend(backend_name)
@@ -300,35 +344,14 @@ class BackendManager:
             return None
 
         # Specific backend requested - handle common aliases
-        backend_name_map = {
-            "deepseek": "deepseek-ocr",
-            "deepseek2": "deepseek-ocr2",
-            "deepseek-ocr-2": "deepseek-ocr2",
-            "paddleocr": "paddleocr-vl",
-            "paddle": "paddleocr-vl",
-            "paddleocr-vl-1.5": "paddleocr-vl",
-            "olmocr": "olmocr-2",
-            "olm": "olmocr-2",
-            "florence": "paddleocr-vl",  # Florence removed; redirect to SOTA replacement
-            "dots": "dots-ocr",
-            "pp-ocr": "pp-ocrv5",
-            "qwen": "qwen-layered",
-            "got": "got-ocr",
-            "tesseract": "tesseract",
-            "easyocr": "easyocr",
-        }
-
-        # Normalize backend name
-        normalized_backend = backend_name_map.get(requested_backend, requested_backend)
+        normalized_backend = canonical_backend_name(requested_backend)
 
         backend = self.get_backend(normalized_backend)
         if backend and backend.is_available():
             return backend
 
         # Fallback to auto-selection if requested backend not available
-        logger.warning(
-            f"Requested backend '{requested_backend}' not available, falling back to auto-selection"
-        )
+        logger.warning(f"Requested backend '{requested_backend}' not available, falling back to auto-selection")
         return self.select_backend("auto")
 
     async def process_with_backend(
@@ -352,7 +375,17 @@ class BackendManager:
                     or (hasattr(backend, "pipeline") and backend.pipeline is None)
                 ):
                     logger.info(f"Automatically loading model/engine for {backend.name}")
-                    await backend.load_model()
+                    loaded = await backend.load_model()
+                    if loaded is False:
+                        return {
+                            "success": False,
+                            "error": (
+                                f"Model engine failed to load for '{backend.name}'. "
+                                "Check server logs (HF download, disk space, CUDA OOM). "
+                                "Try backend tesseract or pp-ocrv5 for offline scans."
+                            ),
+                            "backend_used": backend.name,
+                        }
 
             # Call the appropriate processing method
             if hasattr(backend, "process_document"):
@@ -380,9 +413,41 @@ class BackendManager:
             logger.error(f"Error processing with {backend.name}: {e}")
             return {
                 "success": False,
-                "error": f"OCR processing failed with {backend.name}: {str(e)}",
+                "error": f"OCR processing failed with {backend.name}: {e!s}",
                 "backend_used": backend.name,
             }
+
+    def list_backends(self) -> dict[str, Any]:
+        """List all registered backends with availability and capabilities.
+
+        Returns a dict with backends (dict keyed by backend name), available_count,
+        total_count, and a sorted list of names.
+        """
+        backends_info: dict[str, dict[str, Any]] = {}
+        available_count = 0
+        for name, meta in self.backend_registry.items():
+            backend = self.get_backend(name)
+            available = bool(backend and backend.is_available())
+            if available:
+                available_count += 1
+            capabilities: dict[str, Any] = {}
+            if backend and hasattr(backend, "get_capabilities"):
+                try:
+                    capabilities = backend.get_capabilities()
+                except Exception:
+                    pass
+            backends_info[name] = {
+                "name": name,
+                "available": available,
+                "description": meta.get("description", f"{name} OCR backend"),
+                "model_size": meta.get("model_size", "unknown"),
+                "capabilities": capabilities,
+            }
+        return {
+            "backends": backends_info,
+            "available_count": available_count,
+            "total_count": len(self.backend_registry),
+        }
 
     def get_model_stats(self) -> dict[str, Any]:
         """Get model memory and performance statistics"""
@@ -402,3 +467,115 @@ class BackendManager:
         """Clean up idle models"""
         cleaned_count = model_manager.cleanup_idle_models(max_idle_seconds)
         return {"models_cleaned": cleaned_count, "cleanup_complete": True}
+
+    async def probe_backend(self, backend_name: str) -> dict[str, Any]:
+        """Run availability + optional load_model + tiny sample OCR on *this* backend only (no auto-fallback)."""
+        raw = (backend_name or "").strip()
+        if not raw:
+            return {"success": False, "error": "Empty backend name", "backend": ""}
+
+        n = raw.lower()
+        key = _BACKEND_NAME_ALIASES.get(n, n)
+        if key not in self.backend_registry:
+            return {"success": False, "error": f"Unknown backend '{raw}'", "backend": key}
+
+        backend = self.get_backend(key)
+        if isinstance(backend, MockOCRBackend):
+            return {
+                "success": False,
+                "error": backend.error_message,
+                "backend": key,
+                "phase": "import_or_init",
+            }
+        if not backend.is_available():
+            return {
+                "success": False,
+                "error": "Backend reported not available (missing deps, GPU, API keys, etc.).",
+                "backend": key,
+                "phase": "availability",
+            }
+
+        if hasattr(backend, "load_model"):
+            try:
+                loaded = await backend.load_model()
+                if loaded is False:
+                    return {
+                        "success": False,
+                        "error": "load_model returned False (see server logs).",
+                        "backend": key,
+                        "phase": "load_model",
+                    }
+            except Exception as e:
+                logger.warning("probe_backend load_model %s: %s", key, e)
+                return {
+                    "success": False,
+                    "error": f"load_model failed: {e}",
+                    "backend": key,
+                    "phase": "load_model",
+                }
+
+        tmp_path: Path | None = None
+        try:
+            tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+            tmp.close()
+            tmp_path = Path(tmp.name)
+            img = Image.new("RGB", (280, 80), color="white")
+            draw = ImageDraw.Draw(img)
+            draw.rectangle((10, 10, 270, 70), outline="black", width=2)
+            draw.text((24, 28), "OCR probe OK", fill="black")
+            img.save(tmp_path, format="PNG")
+
+            if hasattr(backend, "process_document"):
+                sig = inspect.signature(backend.process_document)
+                if "ocr_mode" in sig.parameters:
+                    result = await backend.process_document(str(tmp_path), ocr_mode="text")
+                else:
+                    result = await backend.process_document(str(tmp_path), mode="text")
+            elif hasattr(backend, "process_image"):
+                result = await backend.process_image(str(tmp_path), "text")
+            else:
+                return {
+                    "success": False,
+                    "error": "Backend has no process_document / process_image",
+                    "backend": key,
+                    "phase": "run",
+                }
+
+            if not isinstance(result, dict):
+                return {
+                    "success": False,
+                    "error": f"Unexpected result type: {type(result).__name__}",
+                    "backend": key,
+                    "phase": "run",
+                }
+
+            err = result.get("error")
+            explicit_fail = result.get("success") is False
+            explicit_ok = result.get("success") is True
+            text = (result.get("text") or "").strip()
+            ok = explicit_ok or (not explicit_fail and not err and bool(text))
+            if explicit_fail and text:
+                ok = True
+
+            preview = text[:240] if text else ""
+            return {
+                "success": ok,
+                "backend": key,
+                "phase": "ocr_sample",
+                "sample_text_preview": preview or None,
+                "error": None if ok else (err or result.get("message") or "OCR returned no usable text"),
+            }
+        except Exception as e:
+            logger.exception("probe_backend OCR sample failed backend=%s", key)
+            return {
+                "success": False,
+                "error": str(e),
+                "backend": key,
+                "phase": "ocr_sample",
+            }
+        finally:
+            if tmp_path is not None:
+                try:
+                    tmp_path.unlink(missing_ok=True)
+                except OSError:
+                    pass

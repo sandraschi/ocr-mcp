@@ -156,9 +156,7 @@ class TestBackendManager:
 
         manager.backends["tesseract"] = mock_backend
 
-        result = await manager.process_with_backend(
-            "tesseract", str(sample_image_path), mode="text"
-        )
+        result = await manager.process_with_backend("tesseract", str(sample_image_path), mode="text")
 
         assert result["success"] is True
         assert result["text"] == "Test OCR result"
@@ -196,7 +194,7 @@ class TestBackendManager:
         assert "available_backends" in result
 
     def test_preference_order_auto_selection(self, config):
-        """Test that auto-selection follows preference order."""
+        """Auto mode prefers light engines first (tesseract before heavy VL models)."""
         manager = BackendManager(config)
 
         preference_order = [
@@ -212,7 +210,7 @@ class TestBackendManager:
 
         selected = manager.select_backend("auto")
         assert selected is not None
-        assert selected.name == "paddleocr-vl"
+        assert selected.name == "tesseract"
 
     def test_fallback_selection_when_preferred_unavailable(self, config):
         """Test fallback to next available backend when preferred is unavailable."""
@@ -254,6 +252,7 @@ class TestBackendManager:
             "paddleocr-vl",
             "dots-ocr",
             "pp-ocrv5",
+            "mineru-2.5",
             "got-ocr",
             "tesseract",
             "easyocr",
@@ -295,3 +294,205 @@ class TestBackendManager:
         available = manager.get_available_backends()
         assert len(available) == available_count
         assert all(n in manager.backends for n in available)
+
+
+class TestBackendListAndStatus:
+    """Test backend listing, model status, and availability tracking."""
+
+    def test_list_backends_returns_structured_dict(self, config):
+        """Test that list_backends returns proper structure with metadata."""
+        manager = BackendManager(config)
+
+        result = manager.list_backends()
+
+        assert isinstance(result, dict)
+        assert "backends" in result
+        assert "available_count" in result
+        assert "total_count" in result
+        assert isinstance(result["backends"], dict)
+        assert result["total_count"] > 0
+        assert result["available_count"] >= 0
+        assert result["available_count"] <= result["total_count"]
+
+    def test_list_backends_includes_registry_meta(self, config):
+        """Test that each backend entry has name, description, model_size."""
+        manager = BackendManager(config)
+
+        result = manager.list_backends()
+
+        for name, info in result["backends"].items():
+            assert "name" in info, f"missing name for {name}"
+            assert "description" in info, f"missing description for {name}"
+            assert "model_size" in info, f"missing model_size for {name}"
+            assert "available" in info, f"missing available for {name}"
+            assert isinstance(info["available"], bool)
+            assert "capabilities" in info
+
+    def test_list_backends_counts_available(self, config):
+        """Test that available_count matches actual available backends."""
+        manager = BackendManager(config)
+
+        # Pre-populate with mocks where half are available
+        for i, name in enumerate(manager.backends):
+            mock_b = Mock()
+            mock_b.name = name
+            mock_b.is_available.return_value = i % 2 == 0
+            manager.backends[name] = mock_b
+
+        result = manager.list_backends()
+        expected_available = sum(1 for i in range(len(manager.backends)) if i % 2 == 0)
+        assert result["available_count"] == expected_available
+
+    def test_list_backends_returns_capabilities(self, config):
+        """Test that capabilities are included for available backends."""
+        manager = BackendManager(config)
+
+        mock_be = Mock()
+        mock_be.name = "tesseract"
+        mock_be.is_available.return_value = True
+        mock_be.get_capabilities.return_value = {
+            "modes": ["text"],
+            "languages": ["eng"],
+            "gpu_support": False,
+        }
+        manager.backends["tesseract"] = mock_be
+
+        result = manager.list_backends()
+        assert result["backends"]["tesseract"]["available"] is True
+        caps = result["backends"]["tesseract"]["capabilities"]
+        assert "modes" in caps
+        assert "languages" in caps
+
+    def test_backend_registry_has_all_expected_keys(self, config):
+        """Test that the backend registry contains all expected backends."""
+        manager = BackendManager(config)
+
+        expected = {
+            "deepseek-ocr",
+            "paddleocr-vl",
+            "deepseek-ocr2",
+            "olmocr-2",
+            "dots-ocr",
+            "pp-ocrv5",
+            "qwen-layered",
+            "mistral-ocr",
+            "mineru-2.5",
+            "got-ocr",
+            "tesseract",
+            "easyocr",
+        }
+
+        for name in expected:
+            assert name in manager.backend_registry, f"missing registry entry: {name}"
+            meta = manager.backend_registry[name]
+            assert "module" in meta, f"missing module for {name}"
+            assert "class" in meta, f"missing class for {name}"
+            assert "model_size" in meta, f"missing model_size for {name}"
+            assert "description" in meta, f"missing description for {name}"
+
+    def test_lazy_loading_does_not_import_on_init(self, config):
+        """Test that backends are not imported during BackendManager init."""
+        manager = BackendManager(config)
+
+        for name in manager.backends:
+            assert manager.backends[name] is None, (
+                f"{name} was loaded during init — should be lazy"
+            )
+
+    def test_get_backend_lazy_loads_on_first_access(self, config):
+        """Test that get_backend loads a mock backend that is available."""
+        manager = BackendManager(config)
+
+        # Monkey-patch _load_backend to return a mock instead of real import
+        mock_be = Mock()
+        mock_be.name = "got-ocr"
+        mock_be.is_available.return_value = True
+
+        original_load = manager._load_backend
+        manager._load_backend = Mock(return_value=mock_be)
+        try:
+            be = manager.get_backend("got-ocr")
+            assert be is mock_be
+            manager._load_backend.assert_called_once_with("got-ocr")
+        finally:
+            manager._load_backend = original_load
+
+    def test_invalidate_backend_clears_cache(self, config):
+        """Test that invalidate_backend resets the cached instance."""
+        manager = BackendManager(config)
+
+        mock_be = Mock()
+        mock_be.name = "tesseract"
+        mock_be.is_available.return_value = True
+
+        manager.backends["tesseract"] = mock_be
+        assert manager.backends["tesseract"] is not None
+
+        manager.invalidate_backend("tesseract")
+        assert manager.backends["tesseract"] is None
+
+    def test_select_backend_resolves_aliases(self, config):
+        """Test that backend aliases are resolved correctly."""
+        manager = BackendManager(config)
+
+        mock_be = Mock()
+        mock_be.name = "deepseek-ocr"
+        mock_be.is_available.return_value = True
+        manager.backends["deepseek-ocr"] = mock_be
+
+        # Try with alias
+        selected = manager.select_backend("deepseek")
+        assert selected is not None
+        assert selected.name == "deepseek-ocr"
+
+    def test_select_backend_returns_none_when_none_available(self, config):
+        """Test that select_backend returns None when no backends available."""
+        manager = BackendManager(config)
+
+        for name in list(manager.backends.keys()):
+            mock_be = Mock()
+            mock_be.name = name
+            mock_be.is_available.return_value = False
+            manager.backends[name] = mock_be
+
+        selected = manager.select_backend("auto")
+        assert selected is None
+
+    def test_mock_backend_is_never_available(self, config):
+        """Test that MockOCRBackend always reports unavailable."""
+        from ocr_mcp.core.backend_manager import MockOCRBackend
+
+        mock = MockOCRBackend("test", "some error")
+        assert not mock.is_available()
+
+    @pytest.mark.asyncio
+    async def test_mock_backend_process_raises(self, config):
+        """Test that MockOCRBackend raises RuntimeError on process."""
+        from ocr_mcp.core.backend_manager import MockOCRBackend
+
+        mock = MockOCRBackend("test", "unavailable")
+        with pytest.raises(RuntimeError, match="not available"):
+            await mock.process_document("fake.png")
+
+    @pytest.mark.asyncio
+    async def test_process_with_backend_no_backends(self, config):
+        """Test that process_with_backend returns error when no backends."""
+        manager = BackendManager(config)
+
+        for name in list(manager.backends.keys()):
+            mock_be = Mock()
+            mock_be.name = name
+            mock_be.is_available.return_value = False
+            manager.backends[name] = mock_be
+
+        result = await manager.process_with_backend("auto", "fake.png")
+        assert result["success"] is False
+        assert "No suitable OCR backend" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_probe_backend_unknown_name(self, config):
+        """Test that probe_backend returns error for unknown name."""
+        manager = BackendManager(config)
+        result = await manager.probe_backend("nonexistent")
+        assert result["success"] is False
+        assert result.get("error")

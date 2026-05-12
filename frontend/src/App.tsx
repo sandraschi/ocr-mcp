@@ -14,6 +14,7 @@ import { PreprocessingPage } from '@pages/PreprocessingPage'
 import { ConversionPage } from '@pages/ConversionPage'
 import { ExportPage } from '@pages/ExportPage'
 import { ScanViewerPage } from '@pages/ScanViewerPage'
+import { BackendsPage } from '@pages/BackendsPage'
 import { usePerformanceMonitor } from '@hooks/usePerformanceMonitor'
 import { Topbar } from './components/layout/Topbar'
 import { LeftSidebar } from './components/layout/LeftSidebar'
@@ -88,6 +89,7 @@ function App() {
                     <Route path="/conversion" element={<ConversionPage />} />
                     <Route path="/export" element={<ExportPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/backends" element={<BackendsPage />} />
                     <Route path="*" element={<Navigate to="/upload" replace />} />
                   </Routes>
                 </main>

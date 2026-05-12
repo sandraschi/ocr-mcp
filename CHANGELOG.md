@@ -5,6 +5,38 @@ All notable changes to OCR-MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-05-12
+
+### Added
+
+- **MinerU2.5-Pro backend** (`mineru_backend.py`) — opendatalab coarse-to-fine doc parsing VLM
+  - 1.2B params, SOTA on multiple document parsing benchmarks
+  - Two-stage: global layout analysis → native-resolution content recognition
+  - HF: `opendatalab/MinerU2.5-Pro-2604-1.2B`
+  - Registered as `mineru-2.5` with alias `mineru`
+- **Backend model status UI** — New `/backends` route in `web_sota` with summary cards, per-backend availability indicators, model sizes, download/load buttons with live progress bars, and probe buttons
+- **`/api/models/status`** — Lists all registered backends with availability, capabilities, and download state
+- **`/api/models/download/{name}`** — Triggers async model load/download with background progress tracking
+- **`/api/models/download/{name}/progress`** — Pollable progress endpoint (not_started/downloading/verifying/available/failed)
+- **`POST /api/restart`** — Restarts the backend server process; spawns a new process and shuts down current one. Fallback Vite plugin handles restart when backend is dead
+- **"Restart Backend" button** in BackendsPage — visible when backend is offline, auto-refetches after 3-5s
+- **Fleet start script** — `D:\Dev\repos\mcp-central-docs\starts\ocr-sota-start.bat` created, delegates to `web_sota/start.ps1` which starts both backend (uvicorn :10859) and frontend (Vite :10858)
+- **`list_backends()` method** — Added to `BackendManager`; restructured return with `backends` dict, `available_count`, `total_count` (was missing, causing crashes in `manage_workflow(list_backends)`)
+- **18 new unit tests** — `TestBackendListAndStatus` (12 tests) + 4 webapp API tests + model availability/download/probe tests
+- **Vite proxy error suppression** — Proxy errors no longer flood terminal when backend is temporarily down
+
+### Fixed
+
+- **Environment fragility** — `.venv` can become corrupted (no `python.exe`). `web_sota/start.ps1` now runs `uv sync` before starting to ensure the venv is valid. Run `uv sync` manually if backend fails to start with "not a valid Python environment"
+- **`start.ps1` at repo root** — Was starting MCP server (`uv run -m ocr_mcp`) instead of web backend. Now delegates to `web_sota/start.ps1` which correctly starts both servers
+- **API port mismatch** — `frontend/src/services/api.ts` defaulted API base to `http://localhost:15550` (phantom port, never the right answer). Changed to empty string so requests go through Vite proxy to the correct backend port (10859)
+- **`web_sota/.env`** — Created with `VITE_API_BASE_URL=` to ensure proxy routing
+- **ScanViewer bitmap alignment** — `handleFit` now uses full-width scale (`container.width / img.width`) instead of letterbox; image left/right edges match viewer edges
+- **ScanViewer transform origin** — Changed from `50% 50%` to `0 0` with centering removed, keeping image anchored at top-left
+- **operate_scanner save_path** — Added `save_path`, `save_directory`, `brightness`, `contrast`, `count`, `duplex` parameters to MCP tool; scans are now always saved to disk (defaults to `scans/scan_{uuid}.png`) instead of returning in-memory PIL Image that couldn't be chained to `process_document`
+- **scan_batch argument order** — Fixed `scanner_manager.scan_batch(device_id, count, settings, save_directory)` → `(device_id, settings, count)`; batch scans now persist each image to disk
+- **list_backends** — Added missing method that was called from `_workflow.py` (would crash `manage_workflow(list_backends)` and `get_status`)
+
 ## [Unreleased] - 2026-03-19
 
 ### Fixed

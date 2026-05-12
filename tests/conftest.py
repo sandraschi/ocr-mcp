@@ -291,9 +291,7 @@ def mock_easyocr_backend():
     mock_backend = Mock()
     mock_backend.name = "easyocr"
     mock_backend.is_available.return_value = True
-    mock_backend.process_image = Mock(
-        return_value={"success": True, "text": "EasyOCR result", "backend": "easyocr"}
-    )
+    mock_backend.process_image = Mock(return_value={"success": True, "text": "EasyOCR result", "backend": "easyocr"})
     mock_backend.get_capabilities.return_value = {
         "name": "easyocr",
         "available": True,
@@ -395,9 +393,7 @@ def mock_document_processor():
 def mock_fastmcp_app():
     """Mock FastMCP application for testing."""
     mock_app = Mock()
-    mock_app.tool = Mock(
-        return_value=lambda func: func
-    )  # Decorator that returns function unchanged
+    mock_app.tool = Mock(return_value=lambda func: func)  # Decorator that returns function unchanged
     mock_app.get_tools = Mock(return_value=[])
     return mock_app
 
@@ -547,9 +543,7 @@ def create_test_cbz(temp_dir, create_test_image):
 
 
 # Error Testing Fixtures
-@pytest.fixture(
-    params=["FileNotFoundError", "PermissionError", "OSError", "ValueError", "RuntimeError"]
-)
+@pytest.fixture(params=["FileNotFoundError", "PermissionError", "OSError", "ValueError", "RuntimeError"])
 def expected_exception(request):
     """Parametrize expected exceptions for error testing."""
     return request.param
@@ -606,9 +600,7 @@ def data_validator():
 
 
 @pytest.fixture
-def test_context(
-    test_data_generator, performance_profiler, file_manager, async_helper, data_validator
-):
+def test_context(test_data_generator, performance_profiler, file_manager, async_helper, data_validator):
     """Comprehensive test context for integration-style tests."""
     return {
         "data_generator": test_data_generator,

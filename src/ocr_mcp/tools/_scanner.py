@@ -5,6 +5,8 @@ Consolidates all scanner hardware control operations into a single tool.
 """
 
 import logging
+import uuid
+from pathlib import Path
 from typing import Any
 
 from ..core.error_handler import ErrorHandler, create_success_response
@@ -84,13 +86,12 @@ async def handle_scanner_op(
             ).to_dict()
 
         # Check if scanner backend is available
-        if (
-            not backend_manager.scanner_manager
-            or not backend_manager.scanner_manager.is_available()
-        ):
+        if not backend_manager.scanner_manager or not backend_manager.scanner_manager.is_available():
             return ErrorHandler.create_error(
                 "SCANNER_NOT_FOUND",
-                message_override="Scanner backend not available. Ensure scanner hardware is connected and WIA is enabled.",
+                message_override=(
+                    "Scanner backend not available. Ensure scanner hardware is connected and WIA is enabled."
+                ),
                 details={"backend_status": "unavailable"},
             ).to_dict()
 
@@ -256,9 +257,7 @@ async def _handle_scanner_properties(device_id, backend_manager):
         return create_success_response(
             {
                 "device_id": device_id,
-                "properties": properties.__dict__
-                if hasattr(properties, "__dict__")
-                else properties,
+                "properties": properties.__dict__ if hasattr(properties, "__dict__") else properties,
             }
         )
 
@@ -292,9 +291,7 @@ async def _handle_configure_scan(
 
         success = backend_manager.scanner_manager.configure_scan(device_id, settings)
 
-        return create_success_response(
-            {"device_id": device_id, "configured": success, "settings": settings}
-        )
+        return create_success_response({"device_id": device_id, "configured": success, "settings": settings})
 
     except Exception as e:
         logger.error(f"Failed to configure scan for {device_id}: {e}")
@@ -334,15 +331,29 @@ async def _handle_scan_document(
                 "SCAN_FAILED", message_override=f"Scan failed for device {device_id}"
             ).to_dict()
 
-        saved_path = None
-        if save_path and hasattr(result, "save"):
-            from pathlib import Path
+        if not hasattr(result, "save"):
+            return create_success_response(
+                {
+                    "device_id": device_id,
+                    "scan_result": str(result),
+                    "saved_path": None,
+                    "settings": settings,
+                }
+            )
 
+        if save_path:
             path = Path(save_path)
-            if not path.suffix:
-                path = path.with_suffix(".png")
-            result.save(str(path))
-            saved_path = str(path)
+        else:
+            scans_dir = Path.cwd() / "scans"
+            scans_dir.mkdir(exist_ok=True)
+            path = scans_dir / f"scan_{uuid.uuid4().hex}.png"
+
+        if not path.suffix:
+            path = path.with_suffix(".png")
+        result.save(str(path))
+        saved_path = str(path)
+
+        logger.info("Scan saved to %s", saved_path)
 
         return create_success_response(
             {
@@ -383,14 +394,27 @@ async def _handle_scan_batch(
             "duplex": duplex,
         }
 
-        results = backend_manager.scanner_manager.scan_batch(
-            device_id, count, settings, save_directory
-        )
+        results = backend_manager.scanner_manager.scan_batch(device_id, settings, count)
+
+        saved_paths: list[str] = []
+        for i, img in enumerate(results or []):
+            if not hasattr(img, "save"):
+                continue
+            if save_directory:
+                dest = Path(save_directory)
+            else:
+                dest = Path.cwd() / "scans"
+            dest.mkdir(parents=True, exist_ok=True)
+            name = f"scan_batch_{i:03d}_{uuid.uuid4().hex[:8]}.png"
+            img_path = dest / name
+            img.save(str(img_path), format="PNG")
+            saved_paths.append(str(img_path))
 
         return create_success_response(
             {
                 "device_id": device_id,
                 "batch_results": [str(r) for r in results] if results else [],
+                "saved_paths": saved_paths,
                 "count_requested": count,
                 "count_completed": len(results) if results else 0,
                 "settings": settings,
@@ -434,9 +458,7 @@ async def _handle_diagnostics(device_id, backend_manager):
         # Get device-specific diagnostics if device_id provided
         if device_id:
             if hasattr(backend_manager.scanner_manager, "get_scanner_diagnostics"):
-                device_diagnostics = backend_manager.scanner_manager.get_scanner_diagnostics(
-                    device_id
-                )
+                device_diagnostics = backend_manager.scanner_manager.get_scanner_diagnostics(device_id)
                 if device_diagnostics:
                     diagnostics["device_diagnostics"] = device_diagnostics
                 else:
