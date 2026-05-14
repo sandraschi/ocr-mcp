@@ -14,6 +14,9 @@ $WebPort = 10858
 $BackendPort = 10859
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 
+# Ensure uv prefers CUDA torch when a GPU is available
+$env:UV_EXTRA_INDEX_URL = "https://download.pytorch.org/whl/cu126"
+
 if (-not (Test-Path (Join-Path $ProjectRoot "backend\app.py"))) {
     Write-Host "ERROR: Run from ocr-mcp repo. Backend not found." -ForegroundColor Red
     exit 1

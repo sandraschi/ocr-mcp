@@ -6,6 +6,11 @@ build-backend = "setuptools.build_meta"
 name = "ocr-mcp"
 version = "0.1.0"
 description = "FastMCP server providing comprehensive OCR capabilities to the MCP ecosystem"
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
 authors = [
     {name = "Sandra", email = "sandra@example.com"}
 ]
@@ -58,6 +63,7 @@ dependencies = [
     "jinja2>=3.1.0",
     "aiofiles>=23.2.1",
     "comtypes>=1.2.0 ; sys_platform == 'win32'",
+    "torch>=2.0.0",
     "transformers>=4.35.0",
     "accelerate>=0.24.0",
     "sentencepiece>=0.1.99",
