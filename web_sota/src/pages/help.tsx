@@ -222,14 +222,9 @@ export function Help() {
                                     <td className="p-3 text-slate-400">Requires API key (web <strong>Settings</strong> and/or <code className="text-slate-500">MISTRAL_API_KEY</code> for MCP); not offline; usage costs.</td>
                                 </tr>
                                 <tr>
-                                    <td className="p-3 font-mono text-amber-200/90">deepseek-ocr2</td>
-                                    <td className="p-3">Complex pages, newer DeepSeek pipeline (local HF model).</td>
-                                    <td className="p-3 text-slate-400">Large download and GPU RAM; slower than tiny models.</td>
-                                </tr>
-                                <tr>
-                                    <td className="p-3 font-mono text-amber-200/90">deepseek-ocr</td>
-                                    <td className="p-3">Dense text, math, multilingual (local).</td>
-                                    <td className="p-3 text-slate-400">Heavy model; setup like other HF backends.</td>
+                                    <td className="p-3 font-mono text-amber-200/90">nemotron-vl</td>
+                                    <td className="p-3">NVIDIA document intelligence VLM (8B). Best-in-class structured docs: invoices, forms, charts, diagrams. DocVQA 91.2%, ChartQA 86.3%.</td>
+                                    <td className="p-3 text-slate-400">English only; needs <strong>timm</strong>, <strong>einops</strong>, <strong>open-clip-torch</strong>; NVIDIA Open Model License (not Apache); ~16GB VRAM or ~5GB AWQ 4-bit.</td>
                                 </tr>
                                 <tr>
                                     <td className="p-3 font-mono text-amber-200/90">olmocr-2</td>

@@ -93,6 +93,8 @@ _BACKEND_NAME_ALIASES: dict[str, str] = {
     "tesseract": "tesseract",
     "easyocr": "easyocr",
     "mineru": "mineru-2.5",
+    "nemotron": "nemotron-vl",
+    "nemotron-vl": "nemotron-vl",
 }
 
 
@@ -210,6 +212,12 @@ class BackendManager:
                 "class": "GOTOCRBackend",
                 "model_size": "~300MB",
                 "description": "GOT-OCR2.0 legacy backend",
+            },
+            "nemotron-vl": {
+                "module": "..backends.nemotron_vl_backend",
+                "class": "NemotronVLBackend",
+                "model_size": "~16GB (8B params)",
+                "description": "NVIDIA Nemotron Nano VL 8B — Jun 2025, best-in-class document intelligence",
             },
             "tesseract": {
                 "module": "..backends.tesseract_backend",
@@ -334,6 +342,7 @@ class BackendManager:
             "olmocr-2",
                 "deepseek-ocr",
                 "qwen-layered",
+                "nemotron-vl",
             ]
             for backend_name in preference_order:
                 backend = self.get_backend(backend_name)

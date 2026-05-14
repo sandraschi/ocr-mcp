@@ -44,6 +44,7 @@ OCRBackend = Literal[
     "tesseract",
     "easyocr",
     "mistral-ocr",
+    "nemotron-vl",
     "florence-2",
 ]
 

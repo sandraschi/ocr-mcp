@@ -5,6 +5,19 @@ All notable changes to OCR-MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-05-14
+
+### Added
+
+- **Nemotron VL 8B backend** (`nemotron_vl_backend.py`) — NVIDIA document intelligence VLM
+  - 8B params, built on Llama-3.1-8B-Instruct + C-RADIOv2-H vision encoder
+  - Best-in-class document benchmarks: DocVQA 91.2%, ChartQA 86.3%, AI2D 85.0%
+  - Ideal for structured documents: invoices, forms, charts, diagrams, reports
+  - Requires `timm`, `einops`, `open-clip-torch` additional deps
+  - Uses custom `.chat()` API — different from standard `AutoModelForCausalLM`
+  - Backend name: `nemotron-vl`, alias: `nemotron`
+  - HF: `nvidia/Llama-3.1-Nemotron-Nano-VL-8B-V1`
+
 ## [Unreleased] - 2026-05-12
 
 ### Added

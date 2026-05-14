@@ -1,6 +1,6 @@
 # OCR-MCP AI Models Documentation
 
-*Last updated: 2026-05-12*
+*Last updated: 2026-05-14*
 
 This document lists every OCR backend used by **OCR-MCP** (both the [web app](README.md#-installation) and the [MCP server](README.md#-installation)): what they are, accuracy/benchmarks, when to use them, and how to install or enable them. Backend names here match the `backend` parameter in tools and the web UI dropdown.
 
@@ -12,6 +12,7 @@ This document lists every OCR backend used by **OCR-MCP** (both the [web app](RE
 |---------|--------|--------|------|-----------|----------|
 | **PaddleOCR-VL-1.5** | ✅ SOTA | 0.9B | 3.3GB* | 94.5% OmniDocBench v1.5 | General documents, tables, formulas, scans |
 | **MinerU2.5-Pro** | ✅ SOTA | 1.2B | ~4GB | SOTA multi-benchmark | Academic/technical docs, coarse-to-fine parsing |
+| **Nemotron VL 8B** | ✅ New | 8B | ~16GB | DocVQA 91.2%, ChartQA 86.3% | Structured docs, invoices, forms, charts |
 | **DeepSeek-OCR-2** | ✅ New | 3B | ~8GB | — (Jan 2026) | Structured markdown extraction |
 | **olmOCR-2** | ✅ New | 7B | ~16GB | 82.4 olmOCR-Bench | Academic PDFs, math, multi-column |
 | **Mistral OCR** | ✅ API | — | 0 | 94.9% claimed, 74% win rate | Cloud fallback, high accuracy |
@@ -26,7 +27,7 @@ This document lists every OCR backend used by **OCR-MCP** (both the [web app](RE
 *\* with `flash-attn` installed. Without it: ~40GB — do not run on GPU without flash-attn.*
 
 **Auto-selection priority** (highest to lowest):
-`paddleocr-vl → mistral-ocr → deepseek-ocr2 → mineru-2.5 → olmocr-2 → deepseek-ocr → qwen-layered → got-ocr → dots-ocr → pp-ocrv5 → easyocr → tesseract`
+`paddleocr-vl → mistral-ocr → deepseek-ocr2 → mineru-2.5 → olmocr-2 → nemotron-vl → deepseek-ocr → qwen-layered → got-ocr → dots-ocr → pp-ocrv5 → easyocr → tesseract`
 
 ---
 
@@ -179,6 +180,66 @@ Specialized for document structure analysis, particularly table extraction. 3B p
 **HF model:** `rednote-hilab/dots.ocr`
 **Backend name:** `dots-ocr`
 **Alias:** `dots`
+
+---
+
+### Nemotron VL 8B (NVIDIA)
+
+**June 2025 — best-in-class document intelligence VLM.**
+
+NVIDIA's document-specialized vision-language model, built on Llama-3.1-8B-Instruct with a C-RADIOv2-H vision encoder. Trained on interleaved image-text data with commercial images across all three training stages. The strongest open model for structured document understanding — forms, invoices, charts, diagrams, and reports.
+
+**Key features:**
+- DocVQA 91.2% — top of all open VLMs for document question answering
+- ChartQA 86.3% — best chart and graph understanding
+- AI2D 85.0% — scientific diagram parsing
+- OCRBench 839 — strong general OCR benchmark
+- InfoVQA 77.4% — infographic and visual information extraction
+- Multi-tile layout: up to 12 tiles at 512×512 px each, supporting aspect ratios up to 3072×1024
+- 16K token context window
+- Deployable on edge via AWQ 4-bit quantization (~5GB, Jetson Orin)
+
+**Limitations:**
+- **English only** — no multilingual OCR support
+- NVIDIA Open Model License (not Apache 2.0)
+- Requires additional dependencies: `timm`, `einops`, `open-clip-torch`
+- Single image per call (no multi-image batching)
+- Uses custom `.chat()` API — different from standard `AutoModelForCausalLM.generate()`
+
+**Best for:**
+- Invoices, receipts, and financial forms
+- Contracts and legal documents with structured layouts
+- Charts, graphs, and data visualizations with embedded text
+- Scientific diagrams and technical illustrations
+- Reports with mixed tables and text
+
+**Not ideal for:**
+- Multilingual documents (English only)
+- Handwritten text (not trained for it)
+- Batch/high-throughput processing (16GB VRAM, single-image)
+
+**HF model:** `nvidia/Llama-3.1-Nemotron-Nano-VL-8B-V1`
+**Backend name:** `nemotron-vl`
+**Alias:** `nemotron`
+**License:** [NVIDIA Open Model License](https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/)
+
+**Installation:**
+```
+pip install timm einops open-clip-torch
+```
+
+**Comparison with other 7-8B VLMs:**
+
+| Aspect | Nemotron VL 8B | olmOCR-2 (7B) | Qwen2.5-VL (7B) |
+|--------|---------------|---------------|-----------------|
+| DocVQA | **91.2%** | — | ~90% |
+| ChartQA | **86.3%** | — | ~83% |
+| AI2D | 85.0% | — | **87%** |
+| OCRBench | 839 | — | **845** |
+| Multilingual | No | **Yes** | **Yes** |
+| VRAM (FP16) | ~16GB | ~16GB | ~16GB |
+| Math/equations | Weak | **Strong** | Good |
+| Structured docs | **Best** | Good | Good |
 
 ---
 
