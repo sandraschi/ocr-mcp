@@ -21,7 +21,9 @@ export function backendRestartPlugin(): Plugin {
 
         // Kill existing backend if running
         if (backendProcess) {
-          try { backendProcess.kill(); } catch {}
+          try {
+            backendProcess.kill();
+          } catch {}
           backendProcess = null;
         }
 
@@ -53,14 +55,24 @@ export function backendRestartPlugin(): Plugin {
               const resp = await fetch(`http://127.0.0.1:${BACKEND_PORT}/api/health`);
               if (resp.ok) {
                 res.setHeader("Content-Type", "application/json");
-                res.end(JSON.stringify({ success: true, message: "Backend restarted" }));
+                res.end(
+                  JSON.stringify({
+                    success: true,
+                    message: "Backend restarted",
+                  }),
+                );
                 return;
               }
             } catch {}
             await new Promise((r) => setTimeout(r, 1000));
           }
           res.setHeader("Content-Type", "application/json");
-          res.end(JSON.stringify({ success: true, message: "Backend starting (may take a moment)" }));
+          res.end(
+            JSON.stringify({
+              success: true,
+              message: "Backend starting (may take a moment)",
+            }),
+          );
         }, 100);
       });
     },

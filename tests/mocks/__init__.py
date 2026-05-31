@@ -9,21 +9,17 @@ from .mock_document_processor import *
 from .mock_scanner import *
 
 __all__ = [
-    # Backend mocks
-    "MockDeepSeekBackend",
-    "MockFlorenceBackend",
     "MockDOTSBackend",
+    "MockDeepSeekBackend",
+    "MockDocumentProcessor",
+    "MockEasyOCRBackend",
+    "MockFlorenceBackend",
+    "MockGOTBackend",
     "MockPPOCRBackend",
     "MockQwenBackend",
-    "MockGOTBackend",
-    "MockTesseractBackend",
-    "MockEasyOCRBackend",
-    # Scanner mocks
-    "MockWIABackend",
     "MockScannerManager",
-    # Document processor mocks
-    "MockDocumentProcessor",
-    # Utility mocks
+    "MockTesseractBackend",
+    "MockWIABackend",
     "create_mock_image",
     "create_mock_ocr_result",
     "create_mock_scanner_info",

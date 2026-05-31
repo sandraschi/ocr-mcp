@@ -1,15 +1,15 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/app-layout';
-import { Dashboard } from '@/pages/dashboard';
-import { Import } from '@/pages/import';
-import { Scanner } from '@/pages/scanner';
-import { Process } from '@/pages/process';
-import { Editor } from '@/pages/editor';
-import { Status } from '@/pages/status';
-import { Help } from '@/pages/help';
-import { Chat } from '@/pages/chat';
-import { Settings } from '@/pages/settings';
-import { ScanViewerPage } from '@/pages/scan-viewer';
+import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import { AppLayout } from "@/components/layout/app-layout";
+import { Chat } from "@/pages/chat";
+import { Dashboard } from "@/pages/dashboard";
+import { Editor } from "@/pages/editor";
+import { Help } from "@/pages/help";
+import { Import } from "@/pages/import";
+import { Process } from "@/pages/process";
+import { ScanViewerPage } from "@/pages/scan-viewer";
+import { Scanner } from "@/pages/scanner";
+import { Settings } from "@/pages/settings";
+import { Status } from "@/pages/status";
 
 function App() {
   return (

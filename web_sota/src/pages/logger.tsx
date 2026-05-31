@@ -1,13 +1,7 @@
 import { RefreshCw, ScrollText } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const POLL_MS = 2500;
@@ -61,9 +55,8 @@ export function Logger() {
             Logger
           </h1>
           <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-            Recent lines from the FastAPI backend (in-memory buffer). Useful
-            when OCR selection or scans misbehave; full detail still lives in
-            the server console.
+            Recent lines from the FastAPI backend (in-memory buffer). Useful when OCR selection or scans misbehave; full
+            detail still lives in the server console.
           </p>
         </div>
         <Button
@@ -73,23 +66,16 @@ export function Logger() {
           onClick={() => void fetchLogs()}
           disabled={loading}
         >
-          {loading ? (
-            <RefreshCw className="h-4 w-4 animate-spin" />
-          ) : (
-            <RefreshCw className="h-4 w-4 mr-2" />
-          )}
+          {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
           Refresh
         </Button>
       </div>
 
       <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl">
         <CardHeader>
-          <CardTitle className="text-slate-100 text-base">
-            Server log tail
-          </CardTitle>
+          <CardTitle className="text-slate-100 text-base">Server log tail</CardTitle>
           <CardDescription className="text-slate-400">
-            Auto-refreshes every {POLL_MS / 1000}s. Sticky scroll to end when
-            you stay at the bottom.
+            Auto-refreshes every {POLL_MS / 1000}s. Sticky scroll to end when you stay at the bottom.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -103,15 +89,11 @@ export function Logger() {
             Follow tail
           </label>
           {error && (
-            <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md p-3">
-              {error}
-            </p>
+            <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md p-3">{error}</p>
           )}
           <ScrollArea className="h-[min(70vh,640px)] rounded-md border border-slate-800 bg-slate-950 p-3">
             <pre className="text-[11px] leading-relaxed font-mono text-slate-300 whitespace-pre-wrap break-all">
-              {lines.length === 0
-                ? "No log lines yet (or backend not reachable)."
-                : lines.join("\n")}
+              {lines.length === 0 ? "No log lines yet (or backend not reachable)." : lines.join("\n")}
             </pre>
             <div ref={bottomRef} />
           </ScrollArea>
