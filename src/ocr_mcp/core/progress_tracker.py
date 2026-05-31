@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 OCR-MCP Progress Tracking System
 
@@ -128,8 +156,7 @@ class ProgressTracker:
             completed_ops = [
                 op_id
                 for op_id, op in self.operations.items()
-                if op.status
-                in [ProgressStatus.COMPLETED, ProgressStatus.FAILED, ProgressStatus.CANCELLED]
+                if op.status in [ProgressStatus.COMPLETED, ProgressStatus.FAILED, ProgressStatus.CANCELLED]
             ]
             for op_id in completed_ops[: len(self.operations) - self.max_history + 100]:
                 del self.operations[op_id]
@@ -210,9 +237,7 @@ class ProgressTracker:
 
             self.update_progress(operation_id, operation.progress, message)
 
-    def complete_operation(
-        self, operation_id: str, success: bool = True, error_message: str | None = None
-    ):
+    def complete_operation(self, operation_id: str, success: bool = True, error_message: str | None = None):
         """Mark operation as completed"""
 
         if operation_id not in self.operations:
@@ -227,9 +252,7 @@ class ProgressTracker:
         else:
             self.update_progress(operation_id, 1.0, "Operation completed successfully")
 
-        logger.info(
-            f"Completed operation {operation_id} in {operation.duration():.2f}s (success: {success})"
-        )
+        logger.info(f"Completed operation {operation_id} in {operation.duration():.2f}s (success: {success})")
 
     def cancel_operation(self, operation_id: str, reason: str = "Cancelled by user"):
         """Cancel an operation"""
@@ -268,9 +291,7 @@ class ProgressTracker:
             "metadata": operation.metadata,
         }
 
-    def list_operations(
-        self, status_filter: list[ProgressStatus] | None = None
-    ) -> list[dict[str, Any]]:
+    def list_operations(self, status_filter: list[ProgressStatus] | None = None) -> list[dict[str, Any]]:
         """List all operations with optional status filter"""
 
         operations = []
@@ -334,8 +355,7 @@ class ProgressTracker:
 
         for operation_id, operation in self.operations.items():
             if (
-                operation.status
-                in [ProgressStatus.COMPLETED, ProgressStatus.FAILED, ProgressStatus.CANCELLED]
+                operation.status in [ProgressStatus.COMPLETED, ProgressStatus.FAILED, ProgressStatus.CANCELLED]
                 and current_time - operation.end_time > max_age_seconds
             ):
                 to_remove.append(operation_id)
@@ -376,21 +396,15 @@ def create_progress_context(
 
         def __exit__(self, exc_type, exc_val, exc_tb):
             if exc_type:
-                progress_tracker.complete_operation(
-                    self.operation_id, success=False, error_message=str(exc_val)
-                )
+                progress_tracker.complete_operation(self.operation_id, success=False, error_message=str(exc_val))
             else:
                 progress_tracker.complete_operation(self.operation_id, success=True)
 
         def update_progress(self, progress: float, message: str, **kwargs):
             progress_tracker.update_progress(self.operation_id, progress, message, **kwargs)
 
-        def update_item_progress(
-            self, completed: int, current_item: str | None = None, failed: int = 0
-        ):
-            progress_tracker.update_item_progress(
-                self.operation_id, completed, current_item, failed
-            )
+        def update_item_progress(self, completed: int, current_item: str | None = None, failed: int = 0):
+            progress_tracker.update_item_progress(self.operation_id, completed, current_item, failed)
 
     return ProgressContext(operation_type, total_items, steps, metadata)
 

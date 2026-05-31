@@ -20,6 +20,7 @@ var vite_config_default = defineConfig({
     }
   },
   server: {
+    allowedHosts: ['goliath'],
     host: "0.0.0.0",
     port: 15001,
     watch: {

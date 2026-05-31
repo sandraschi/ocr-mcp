@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 Advanced OCR-MCP Test Configuration
 
@@ -369,9 +397,7 @@ def mock_external_services():
         mock_post.return_value.json.return_value = {"id": "123", "status": "created"}
 
         mock_client.return_value.__aenter__.return_value.get.return_value.status_code = 200
-        mock_client.return_value.__aenter__.return_value.get.return_value.json.return_value = {
-            "data": "mock"
-        }
+        mock_client.return_value.__aenter__.return_value.get.return_value.json.return_value = {"data": "mock"}
 
         yield {"get": mock_get, "post": mock_post, "client": mock_client}
 
@@ -558,9 +584,7 @@ def cleanup_test_artifacts():
 
 def pytest_configure(config):
     """Configure pytest with custom markers."""
-    config.addinivalue_line(
-        "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
-    )
+    config.addinivalue_line("markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')")
     config.addinivalue_line("markers", "integration: marks tests as integration tests")
     config.addinivalue_line("markers", "e2e: marks tests as end-to-end tests")
     config.addinivalue_line("markers", "performance: marks tests as performance tests")

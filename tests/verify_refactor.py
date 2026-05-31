@@ -66,8 +66,8 @@ except Exception as e:
     traceback.print_exc()
     sys.exit(1)
 
-from ocr_mcp.core.backend_manager import BackendManager  # noqa: E402
-from ocr_mcp.core.config import OCRConfig  # noqa: E402
+from ocr_mcp.core.backend_manager import BackendManager
+from ocr_mcp.core.config import OCRConfig
 
 
 async def verify_tools():

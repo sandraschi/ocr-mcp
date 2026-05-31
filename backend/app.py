@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 OCR-MCP Web Application Backend
 FastAPI server providing web interface for OCR-MCP functionality
@@ -1716,7 +1744,9 @@ async def _download_model_background(backend_key: str, job_id: str):
     try:
         if not backend_manager:
             model_downloads[backend_key] = {
-                "status": "failed", "error": "Backend manager not initialized", "job_id": job_id
+                "status": "failed",
+                "error": "Backend manager not initialized",
+                "job_id": job_id,
             }
             return
 
@@ -1727,9 +1757,7 @@ async def _download_model_background(backend_key: str, job_id: str):
         be = backend_manager.get_backend(backend_key)
         if be is None:
             err_msg = f"Unknown backend: {backend_key}"
-            model_downloads[backend_key] = {
-                "status": "failed", "error": err_msg, "job_id": job_id
-            }
+            model_downloads[backend_key] = {"status": "failed", "error": err_msg, "job_id": job_id}
             return
 
         if be.is_available():
@@ -1777,15 +1805,33 @@ async def restart_backend():
     try:
         start_ps1 = project_root / "web_sota" / "start.ps1"
         if start_ps1.exists():
-            subprocess.Popen([  # noqa: S603,S607
-                "powershell", "-NoProfile", "-ExecutionPolicy", "Bypass",
-                "-File", str(start_ps1), "-Headless",
-            ], creationflags=subprocess.CREATE_NEW_CONSOLE)
+            subprocess.Popen(
+                [
+                    "powershell",
+                    "-NoProfile",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                    str(start_ps1),
+                    "-Headless",
+                ],
+                creationflags=subprocess.CREATE_NEW_CONSOLE,
+            )
         else:
-            subprocess.Popen([  # noqa: S603
-                sys.executable or "python", "-m", "uvicorn", "backend.app:app",
-                "--host", "127.0.0.1", "--port", "10859",
-            ], cwd=str(project_root), creationflags=subprocess.CREATE_NEW_CONSOLE)
+            subprocess.Popen(
+                [
+                    sys.executable or "python",
+                    "-m",
+                    "uvicorn",
+                    "backend.app:app",
+                    "--host",
+                    "127.0.0.1",
+                    "--port",
+                    "10859",
+                ],
+                cwd=str(project_root),
+                creationflags=subprocess.CREATE_NEW_CONSOLE,
+            )
 
         logger.info("Backend restart triggered. Shutting down current process...")
 

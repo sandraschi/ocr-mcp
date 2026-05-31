@@ -28,7 +28,6 @@
 
 """Tests for MCP workflow source_dir expansion and corpus config alignment."""
 
-
 from ocr_mcp.core.config import OCRConfig
 from ocr_mcp.tools._workflow import expand_source_dir_to_document_paths
 

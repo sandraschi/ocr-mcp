@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 OCR-MCP Backend Optimizer: Intelligent backend selection based on document characteristics
 
@@ -100,9 +128,7 @@ class DocumentAnalyzer:
             # Generate backend recommendations
             analysis["backend_recommendations"] = self._generate_backend_recommendations(analysis)
 
-            logger.info(
-                f"Document analysis complete for {image_path.name}: {analysis['document_type'].value}"
-            )
+            logger.info(f"Document analysis complete for {image_path.name}: {analysis['document_type'].value}")
             return analysis
 
         except Exception as e:
@@ -128,7 +154,7 @@ class DocumentAnalyzer:
 
         # Convert to grayscale for analysis
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        height, width = gray.shape
+        _height, _width = gray.shape
 
         # Calculate various metrics
         text_density = self._calculate_text_density(gray)
@@ -204,7 +230,7 @@ class DocumentAnalyzer:
         """Analyze document layout characteristics"""
 
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        height, width = gray.shape
+        _height, _width = gray.shape
 
         return {
             "has_tables": self._detect_tables(gray),
@@ -382,7 +408,7 @@ class DocumentAnalyzer:
     def _estimate_columns(self, gray: np.ndarray) -> int:
         """Estimate number of columns in document"""
         # Simplified column detection
-        h, w = gray.shape
+        _h, _w = gray.shape
 
         # Check vertical distribution of text
         vertical_projection = np.sum(gray < 128, axis=0)  # Sum along vertical axis
@@ -462,9 +488,7 @@ class BackendOptimizer:
                 return "auto"
 
         except Exception as e:
-            logger.warning(
-                f"Backend optimization failed for {image_path}: {e}, using auto-selection"
-            )
+            logger.warning(f"Backend optimization failed for {image_path}: {e}, using auto-selection")
             return "auto"
 
     def get_backend_performance_profile(self, backend_name: str) -> dict[str, Any]:

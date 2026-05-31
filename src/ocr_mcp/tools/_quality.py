@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 Quality Assessment Tools for OCR-MCP
 
@@ -73,10 +101,7 @@ async def assess_ocr_quality(
                 "max_confidence": round(max(confidence_scores), 3),
                 "confidence_std": round(
                     (
-                        sum(
-                            (x - sum(confidence_scores) / len(confidence_scores)) ** 2
-                            for x in confidence_scores
-                        )
+                        sum((x - sum(confidence_scores) / len(confidence_scores)) ** 2 for x in confidence_scores)
                         / len(confidence_scores)
                     )
                     ** 0.5,
@@ -85,15 +110,11 @@ async def assess_ocr_quality(
                 "low_confidence_count": sum(1 for c in confidence_scores if c < 0.7),
                 "high_confidence_count": sum(1 for c in confidence_scores if c >= 0.9),
             }
-        elif isinstance(confidence_scores, (int, float)):
+        elif isinstance(confidence_scores, int | float):
             confidence_analysis = {
                 "overall_confidence": round(confidence_scores, 3),
                 "confidence_level": (
-                    "high"
-                    if confidence_scores >= 0.9
-                    else "medium"
-                    if confidence_scores >= 0.7
-                    else "low"
+                    "high" if confidence_scores >= 0.9 else "medium" if confidence_scores >= 0.7 else "low"
                 ),
             }
 
@@ -101,12 +122,8 @@ async def assess_ocr_quality(
         quality_indicators = {
             "has_gibberish": _detect_gibberish(ocr_text),
             "has_repeated_chars": bool(re.search(r"(.)\1{4,}", ocr_text)),  # 5+ repeated chars
-            "has_missing_spaces": bool(
-                re.search(r"[a-z][A-Z]", ocr_text)
-            ),  # Missing spaces between words
-            "has_symbol_clusters": bool(
-                re.search(r"[^\w\s]{3,}", ocr_text)
-            ),  # 3+ consecutive symbols
+            "has_missing_spaces": bool(re.search(r"[a-z][A-Z]", ocr_text)),  # Missing spaces between words
+            "has_symbol_clusters": bool(re.search(r"[^\w\s]{3,}", ocr_text)),  # 3+ consecutive symbols
             "avg_word_length": (
                 round(
                     sum(len(word) for word in ocr_text.split()) / len(ocr_text.split()),
@@ -173,7 +190,7 @@ async def assess_ocr_quality(
         logger.error(f"OCR quality assessment failed: {e}")
         return {
             "success": False,
-            "error": f"Quality assessment failed: {str(e)}",
+            "error": f"Quality assessment failed: {e!s}",
             "assessment_type": assessment_type,
         }
 
@@ -230,9 +247,7 @@ async def compare_ocr_backends(
                 logger.info(f"Testing backend: {backend_name}")
 
                 # Process with this backend
-                result = await backend_manager.process_with_backend(
-                    backend_name, image_path, mode="text"
-                )
+                result = await backend_manager.process_with_backend(backend_name, image_path, mode="text")
 
                 if result.get("success"):
                     # Assess quality
@@ -292,12 +307,8 @@ async def compare_ocr_backends(
 
         # Calculate summary statistics
         if successful_results:
-            avg_quality = sum(r["quality_score"] for r in successful_results) / len(
-                successful_results
-            )
-            avg_time = sum(r["processing_time"] for r in successful_results) / len(
-                successful_results
-            )
+            avg_quality = sum(r["quality_score"] for r in successful_results) / len(successful_results)
+            avg_time = sum(r["processing_time"] for r in successful_results) / len(successful_results)
         else:
             avg_quality = 0
             avg_time = 0
@@ -324,7 +335,7 @@ async def compare_ocr_backends(
         logger.error(f"OCR backend comparison failed: {e}")
         return {
             "success": False,
-            "error": f"Backend comparison failed: {str(e)}",
+            "error": f"Backend comparison failed: {e!s}",
             "image_path": image_path,
         }
 
@@ -405,14 +416,12 @@ async def validate_ocr_accuracy(
         logger.error(f"OCR accuracy validation failed: {e}")
         return {
             "success": False,
-            "error": f"Accuracy validation failed: {str(e)}",
+            "error": f"Accuracy validation failed: {e!s}",
             "validation_type": validation_type,
         }
 
 
-async def analyze_image_quality(
-    image_path: str, quality_checks: list[str] | None = None
-) -> dict[str, Any]:
+async def analyze_image_quality(image_path: str, quality_checks: list[str] | None = None) -> dict[str, Any]:
     """
     Analyze image quality factors that affect OCR accuracy.
 
@@ -478,14 +487,10 @@ async def analyze_image_quality(
             quality_analysis["contrast"] = {
                 "contrast_ratio": round(contrast, 2),
                 "sufficient_contrast": contrast > 50,
-                "contrast_level": (
-                    "high" if contrast > 100 else "medium" if contrast > 50 else "low"
-                ),
+                "contrast_level": ("high" if contrast > 100 else "medium" if contrast > 50 else "low"),
             }
             if contrast <= 50:
-                recommendations.append(
-                    "Improve image contrast - text should be much darker than background"
-                )
+                recommendations.append("Improve image contrast - text should be much darker than background")
 
         # Noise analysis
         if "noise" in quality_checks:
@@ -504,14 +509,10 @@ async def analyze_image_quality(
             quality_analysis["blur"] = {
                 "blur_score": round(blur_score, 2),
                 "sharp_image": blur_score > 50,
-                "blur_level": (
-                    "sharp" if blur_score > 100 else "moderate" if blur_score > 50 else "blurry"
-                ),
+                "blur_level": ("sharp" if blur_score > 100 else "moderate" if blur_score > 50 else "blurry"),
             }
             if blur_score <= 50:
-                recommendations.append(
-                    "Image appears blurry - use sharpening or rescan at higher quality"
-                )
+                recommendations.append("Image appears blurry - use sharpening or rescan at higher quality")
 
         # Brightness analysis
         if "brightness" in quality_checks:
@@ -519,9 +520,7 @@ async def analyze_image_quality(
             quality_analysis["brightness"] = {
                 "brightness_level": round(brightness, 1),
                 "optimal_brightness": 80 <= brightness <= 180,
-                "brightness_category": (
-                    "dark" if brightness < 80 else "bright" if brightness > 180 else "optimal"
-                ),
+                "brightness_category": ("dark" if brightness < 80 else "bright" if brightness > 180 else "optimal"),
             }
             if brightness < 80:
                 recommendations.append("Image is too dark - increase brightness or exposure")
@@ -537,9 +536,7 @@ async def analyze_image_quality(
                 "needs_correction": abs(skew_angle) > 2.0,
             }
             if abs(skew_angle) > 2.0:
-                recommendations.append(
-                    f"Image is skewed by {skew_angle:.1f}° - deskewing recommended"
-                )
+                recommendations.append(f"Image is skewed by {skew_angle:.1f}° - deskewing recommended")
 
         # Overall quality score
         quality_score = _calculate_overall_quality_score(quality_analysis)
@@ -571,7 +568,7 @@ async def analyze_image_quality(
         logger.error(f"Image quality analysis failed: {e}")
         return {
             "success": False,
-            "error": f"Image quality analysis failed: {str(e)}",
+            "error": f"Image quality analysis failed: {e!s}",
             "image_path": image_path,
         }
 
@@ -599,14 +596,14 @@ def _calculate_accuracy_metrics(ocr_text: str, ground_truth: str) -> dict[str, f
     ocr_chars = list(ocr_text.replace(" ", ""))
     gt_chars = list(ground_truth.replace(" ", ""))
 
-    correct_chars = sum(1 for o, g in zip(ocr_chars, gt_chars) if o == g)
+    correct_chars = sum(1 for o, g in zip(ocr_chars, gt_chars, strict=False) if o == g)
     char_accuracy = (correct_chars / max(len(gt_chars), 1)) * 100
 
     # Word-level accuracy
     ocr_words = ocr_text.split()
     gt_words = ground_truth.split()
 
-    correct_words = sum(1 for o, g in zip(ocr_words, gt_words) if o == g)
+    correct_words = sum(1 for o, g in zip(ocr_words, gt_words, strict=False) if o == g)
     word_accuracy = (correct_words / max(len(gt_words), 1)) * 100
 
     # Sequence matching (longest common subsequence)
@@ -726,33 +723,23 @@ def _generate_recommendations(
     recommendations = []
 
     if quality_score < 70:
-        recommendations.append(
-            "Consider preprocessing the image (deskew, enhance, crop) before OCR"
-        )
+        recommendations.append("Consider preprocessing the image (deskew, enhance, crop) before OCR")
 
     if confidence_analysis and confidence_analysis.get("average_confidence", 1.0) < 0.8:
-        recommendations.append(
-            "Low confidence detected - try a different OCR backend or improve image quality"
-        )
+        recommendations.append("Low confidence detected - try a different OCR backend or improve image quality")
 
     if quality_indicators.get("has_gibberish", False):
-        recommendations.append(
-            "OCR produced gibberish - image may be too poor quality or incompatible format"
-        )
+        recommendations.append("OCR produced gibberish - image may be too poor quality or incompatible format")
 
     if quality_indicators.get("has_missing_spaces", False):
         recommendations.append("Missing word spacing detected - try layout-aware OCR backends")
 
     # Backend-specific recommendations
     if backend == "tesseract" and quality_score < 80:
-        recommendations.append(
-            "Tesseract works better with high-contrast, clean images - try preprocessing"
-        )
+        recommendations.append("Tesseract works better with high-contrast, clean images - try preprocessing")
 
     if backend == "easyocr" and quality_score < 80:
-        recommendations.append(
-            "EasyOCR is good for handwriting - ensure adequate resolution (200+ DPI)"
-        )
+        recommendations.append("EasyOCR is good for handwriting - ensure adequate resolution (200+ DPI)")
 
     return recommendations
 
@@ -788,7 +775,7 @@ def _normalize_text(text: str) -> str:
 def _estimate_dpi(image) -> int:
     """Estimate DPI from image dimensions (rough approximation)."""
     # Assume standard document sizes
-    width, height = image.size
+    width, _height = image.size
     # Rough DPI estimation based on common A4 at 300 DPI
     if width > 2000:  # Likely 300+ DPI
         return 300

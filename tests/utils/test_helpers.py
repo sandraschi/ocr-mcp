@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 OCR-MCP Test Helpers and Utilities
 
@@ -131,9 +159,7 @@ class TestDataGenerator:
         return images
 
     @staticmethod
-    def create_test_pdf(
-        output_path: Path, pages: int = 1, content: str = "Sample PDF content for testing."
-    ) -> Path:
+    def create_test_pdf(output_path: Path, pages: int = 1, content: str = "Sample PDF content for testing.") -> Path:
         """Create a simple test PDF file."""
         # For now, create a text file as placeholder
         # In production, would use reportlab or similar
@@ -143,9 +169,7 @@ class TestDataGenerator:
         return output_path
 
     @staticmethod
-    def create_test_cbz(
-        output_path: Path, pages: int = 3, content: str = "Sample comic content"
-    ) -> Path:
+    def create_test_cbz(output_path: Path, pages: int = 3, content: str = "Sample comic content") -> Path:
         """Create a simple test CBZ file."""
         # For now, create a text file as placeholder
         # In production, would create actual CBZ archive
@@ -200,9 +224,7 @@ class MockBackendFactory:
                 }
             )
         elif process_behavior == "failure":
-            mock_backend.process_image = AsyncMock(
-                side_effect=Exception(f"{name} processing failed")
-            )
+            mock_backend.process_image = AsyncMock(side_effect=Exception(f"{name} processing failed"))
         elif process_behavior == "timeout":
 
             async def timeout_process(*args, **kwargs):
@@ -280,9 +302,7 @@ class TestFileManager:
         self.base_dir = base_dir or Path(tempfile.mkdtemp(prefix="ocr_test_"))
         self.created_files = []
 
-    def create_temp_file(
-        self, content: str | bytes, suffix: str = ".txt", encoding: str = "utf-8"
-    ) -> Path:
+    def create_temp_file(self, content: str | bytes, suffix: str = ".txt", encoding: str = "utf-8") -> Path:
         """Create a temporary file and track it for cleanup."""
         file_path = self.base_dir / f"test_{len(self.created_files)}{suffix}"
 
@@ -318,9 +338,7 @@ class AsyncTestHelper:
     """Helpers for async testing."""
 
     @staticmethod
-    async def wait_for_condition(
-        condition_func, timeout: float = 5.0, interval: float = 0.1
-    ) -> bool:
+    async def wait_for_condition(condition_func, timeout: float = 5.0, interval: float = 0.1) -> bool:
         """Wait for a condition to become true."""
         start_time = time.time()
 
@@ -332,9 +350,7 @@ class AsyncTestHelper:
         return False
 
     @staticmethod
-    async def run_with_timeout(
-        coro, timeout: float = 10.0, timeout_message: str = "Operation timed out"
-    ):
+    async def run_with_timeout(coro, timeout: float = 10.0, timeout_message: str = "Operation timed out"):
         """Run a coroutine with timeout."""
         try:
             return await asyncio.wait_for(coro, timeout=timeout)

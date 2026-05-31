@@ -6,11 +6,6 @@ build-backend = "setuptools.build_meta"
 name = "ocr-mcp"
 version = "0.1.0"
 description = "FastMCP server providing comprehensive OCR capabilities to the MCP ecosystem"
-
-[[tool.uv.index]]
-name = "pytorch-cu126"
-url = "https://download.pytorch.org/whl/cu126"
-explicit = true
 authors = [
     {name = "Sandra", email = "sandra@example.com"}
 ]
@@ -32,7 +27,7 @@ classifiers = [
 keywords = ["ocr", "mcp", "fastmcp", "computer-vision", "document-processing", "ai", "ml"]
 
 dependencies = [
-    "fastmcp>=3.1",
+    "fastmcp>=3.2,<4",
     "pydantic>=2.0.0",
     "python-dotenv>=1.0.0",
     "click>=8.1.0",
@@ -136,6 +131,11 @@ ocr-mcp-test = "scripts.run_tests:main"
 ocr-mcp-install-models = "scripts.install_models:main"
 ocr-mcp-setup-dev = "scripts.setup_dev_env:main"
 
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
@@ -171,7 +171,9 @@ markers = [
     "gpu: marks tests that require GPU",
     "scanner: marks tests that require scanner hardware",
     "ocr_backend: marks tests specific to OCR backends",
-    "unit: marks tests as unit tests"
+    "unit: marks tests as unit tests",
+    "webapp: marks tests that import backend.app (FastAPI web UI; heavier startup)",
+    "real_ocr: optional tests that run real OCR engines on fixture images (set OCR_RUN_REAL_OCR=1)"
 ]
 asyncio_mode = "auto"
 
@@ -196,10 +198,44 @@ exclude_lines = [
 [tool.ruff]
 line-length = 120
 target-version = "py312"
+exclude = ["scripts/venv_fixes"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "S", "UP", "RUF"]
-ignore = ["S101", "B008"]
+ignore = [
+    "S101",
+    "B008",
+    "S110",
+    "S112",
+    "S603",
+    "S606",
+    "S607",
+    "B904",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "E402",
+    "F403",
+    "F405",
+    "S108",
+    "S311",
+    "B017",
+    "B007",
+    "F841",
+    "RUF013",
+    "F401",
+]
+"scripts/**" = [
+    "E402",
+    "F403",
+    "F405",
+    "S104",
+    "S603",
+    "S606",
+    "S607",
+]
+"backend/**" = ["S104"]
 
 [tool.ruff.format]
 quote-style = "double"

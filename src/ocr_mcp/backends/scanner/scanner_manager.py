@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 Scanner Manager: Unified interface for multiple scanner backends
 
@@ -231,7 +259,7 @@ class ScannerManager:
         Returns:
             List of PIL Image objects
         """
-        backend_name, actual_device_id = self._parse_device_id(device_id)
+        backend_name, _actual_device_id = self._parse_device_id(device_id)
         backend = self.backends.get(backend_name)
 
         if not backend or not backend.is_available():
@@ -280,10 +308,6 @@ class ScannerManager:
     def get_available_backends(self) -> list[str]:
         """Get list of available scanner backends."""
         return [name for name, backend in self.backends.items() if backend.is_available()]
-
-    def get_backend_status(self) -> dict[str, bool]:
-        """Get status of all scanner backends."""
-        return {name: backend.is_available() for name, backend in self.backends.items()}
 
 
 # Global scanner manager instance

@@ -10,6 +10,12 @@ FastMCP server providing comprehensive OCR capabilities to the MCP ecosystem
 - `uv run ocr-mcp-install-models` → `scripts.install_models:main`
 - `uv run ocr-mcp-setup-dev` → `scripts.setup_dev_env:main`
 
+## Quick Ref
+
+```powershell
+uv run pytest tests/ -q
+```
+
 ## Standards
 - FastMCP 3.2+ portmanteau tool pattern — tools use `operation` enum param
 - Responses: structured dicts with `success`, `message`, domain-specific fields

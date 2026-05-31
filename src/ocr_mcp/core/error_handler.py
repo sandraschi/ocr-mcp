@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 OCR-MCP Error Handler: Comprehensive error handling and user feedback system
 """
@@ -6,7 +34,7 @@ import logging
 import traceback
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +103,7 @@ class ErrorHandler:
     """Centralized error handling and recovery system"""
 
     # Error code definitions
-    ERROR_CODES = {
+    ERROR_CODES: ClassVar[dict[str, tuple[str, ErrorCategory, ErrorSeverity]]] = {
         # File I/O errors
         "FILE_NOT_FOUND": (
             "Source file not found",
@@ -266,9 +294,7 @@ class ErrorHandler:
         )
 
     @classmethod
-    def _generate_recovery_options(
-        cls, error_code: str, details: dict[str, Any] | None
-    ) -> list[str]:
+    def _generate_recovery_options(cls, error_code: str, details: dict[str, Any] | None) -> list[str]:
         """Generate contextual recovery options"""
 
         suggestions = {
@@ -425,7 +451,9 @@ class ErrorHandler:
                 errors.append(
                     cls.create_error(
                         "PARAMETERS_INVALID",
-                        message_override=f"Invalid backend: {kwargs['backend']}. Valid options: {', '.join(valid_backends)}",
+                        message_override=(
+                            f"Invalid backend: {kwargs['backend']}. Valid options: {', '.join(valid_backends)}"
+                        ),
                         details={
                             "parameter": "backend",
                             "value": kwargs["backend"],
@@ -445,7 +473,7 @@ class ErrorHandler:
                         details={"region": region},
                     )
                 )
-            elif not all(isinstance(coord, (int, float)) for coord in region):
+            elif not all(isinstance(coord, int | float) for coord in region):
                 errors.append(
                     cls.create_error(
                         "REGION_INVALID",

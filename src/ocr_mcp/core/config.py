@@ -32,12 +32,12 @@ OCR-MCP Configuration Management
 
 import logging
 import os
-
-logger = logging.getLogger(__name__)
 from pathlib import Path
 
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file if present
 load_dotenv()

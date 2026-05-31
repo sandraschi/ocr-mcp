@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 import asyncio
 import logging
 import os
@@ -58,9 +86,7 @@ async def main():
                 if result.get("success"):
                     logger.info(f"SUCCESS: OCR processing completed with {backend}.")
                     text = result.get("text", "")
-                    logger.info(
-                        f"Extracted Text Snippet (first 500 chars):\n{'-' * 40}\n{text[:500]}\n{'-' * 40}"
-                    )
+                    logger.info(f"Extracted Text Snippet (first 500 chars):\n{'-' * 40}\n{text[:500]}\n{'-' * 40}")
 
                     # Save OCR result to text file
                     output_path = Path("test_ocr_result.txt")
@@ -69,9 +95,7 @@ async def main():
                     success = True
                     break
                 else:
-                    logger.warning(
-                        f"OCR with {backend} FAILED: {result.get('error', 'Unknown error')}"
-                    )
+                    logger.warning(f"OCR with {backend} FAILED: {result.get('error', 'Unknown error')}")
             except Exception as e:
                 logger.warning(f"Error using backend {backend}: {e}")
 

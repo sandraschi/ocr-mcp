@@ -106,7 +106,7 @@ class CorpusStore:
                     )
                     """
                 )
-                conn.execute("CREATE INDEX IF NOT EXISTS idx_corpus_created " "ON corpus_documents(created_at DESC)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_corpus_created ON corpus_documents(created_at DESC)")
                 conn.execute("CREATE INDEX IF NOT EXISTS idx_corpus_path ON corpus_documents(source_path)")
                 conn.commit()
             finally:

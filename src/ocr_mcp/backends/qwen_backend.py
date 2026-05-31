@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 Qwen-Image-Layered Backend Implementation
 Integrates Qwen-Image-Layered for advanced image decomposition and layered OCR
@@ -29,13 +57,9 @@ class QwenLayeredBackend(OCRBackend):
     def __init__(self, config: OCRConfig):
         super().__init__("qwen-layered", config)
         self.pipeline = None
-        self.device = getattr(config, "ocr_device", None) or (
-            "cuda" if torch.cuda.is_available() else "cpu"
-        )
+        self.device = getattr(config, "ocr_device", None) or ("cuda" if torch.cuda.is_available() else "cpu")
         self.model_name = "Qwen/Qwen-Image-Layered"
-        self.cache_dir = Path(
-            getattr(config, "ocr_cache_dir", None) or str(Path.home() / ".cache" / "qwen-layered")
-        )
+        self.cache_dir = Path(getattr(config, "ocr_cache_dir", None) or str(Path.home() / ".cache" / "qwen-layered"))
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def is_available(self) -> bool:
@@ -108,7 +132,7 @@ class QwenLayeredBackend(OCRBackend):
 
         except Exception as e:
             logger.error(f"Qwen-Image-Layered processing failed: {e}")
-            raise RuntimeError(f"OCR processing failed: {str(e)}")
+            raise RuntimeError(f"OCR processing failed: {e!s}")
 
     async def _decompose_image(self, image: Image.Image) -> list[Image.Image]:
         """Decompose image into layers using Qwen-Image-Layered"""
@@ -133,9 +157,7 @@ class QwenLayeredBackend(OCRBackend):
             logger.error(f"Image decomposition failed: {e}")
             return [image]  # Fallback to original image
 
-    async def _process_layers_for_ocr(
-        self, layers: list[Image.Image], ocr_mode: str
-    ) -> dict[str, Any]:
+    async def _process_layers_for_ocr(self, layers: list[Image.Image], ocr_mode: str) -> dict[str, Any]:
         """Process decomposed layers for OCR"""
         # This would use another OCR backend to process the layers
         # For now, return placeholder results

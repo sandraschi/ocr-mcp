@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 DOTS.OCR Backend Implementation
 Integrates DOTS.OCR for document understanding and structured content extraction
@@ -31,13 +59,9 @@ class DOTSBackend(OCRBackend):
         super().__init__("dots-ocr", config)
         self.model = None
         self.processor = None
-        self.device = getattr(config, "ocr_device", None) or (
-            "cuda" if torch.cuda.is_available() else "cpu"
-        )
+        self.device = getattr(config, "ocr_device", None) or ("cuda" if torch.cuda.is_available() else "cpu")
         self.model_name = "rednote-hilab/dots.ocr"
-        self.cache_dir = Path(
-            getattr(config, "ocr_cache_dir", None) or Path.home() / ".cache" / "ocr_mcp"
-        )
+        self.cache_dir = Path(getattr(config, "ocr_cache_dir", None) or Path.home() / ".cache" / "ocr_mcp")
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def is_available(self) -> bool:
@@ -133,7 +157,7 @@ class DOTSBackend(OCRBackend):
 
         except Exception as e:
             logger.error(f"DOTS.OCR processing failed: {e}")
-            raise RuntimeError(f"OCR processing failed: {str(e)}")
+            raise RuntimeError(f"OCR processing failed: {e!s}")
 
     def _get_task_prompt(self, ocr_mode: str) -> str:
         """Get task-specific prompt for DOTS.OCR"""
@@ -144,9 +168,7 @@ class DOTSBackend(OCRBackend):
         }
         return prompts.get(ocr_mode, prompts["text"])
 
-    def _parse_dots_output(
-        self, raw_output: str, ocr_mode: str, image_size: tuple
-    ) -> dict[str, Any]:
+    def _parse_dots_output(self, raw_output: str, ocr_mode: str, image_size: tuple) -> dict[str, Any]:
         """Parse DOTS.OCR structured output"""
         # DOTS.OCR provides rich structured output
         parsed = self._parse_json_output(raw_output)

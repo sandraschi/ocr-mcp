@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 WIA (Windows Image Acquisition) Scanner Backend for OCR-MCP
 
@@ -50,9 +78,7 @@ if IS_WINDOWS:
             except Exception as e:
                 logger.error(f"Could not load WIA type library: {e}")
                 WIA = None
-        WIALib = (
-            WIA  # Alias for backward compatibility if needed, or remove if WIA is used directly
-        )
+        WIALib = WIA  # Alias for backward compatibility if needed, or remove if WIA is used directly
 
         # Test WIA availability by trying to create DeviceManager
         try:
@@ -218,7 +244,8 @@ class WIABackend:
 
         new_devices = {}
         try:
-            # Enumerate first without releasing previous connections (releasing before enumerate can make WIA report 0 devices).
+            # Enumerate first without releasing previous connections.
+            # Releasing before enumerate can make WIA report 0 devices.
             device_infos = manager.DeviceInfos
             logger.info(f"WIA reports {device_infos.Count} devices")
 
@@ -270,10 +297,7 @@ class WIABackend:
                 error_code = getattr(e, "hr", 0)
                 if error_code == -2145320955:  # WIA_ERROR_BUSY (0x8021006B)
                     if attempt < max_retries - 1:
-                        logger.warning(
-                            f"Device busy, retrying in 2 seconds "
-                            f"(attempt {attempt + 1}/{max_retries})"
-                        )
+                        logger.warning(f"Device busy, retrying in 2 seconds (attempt {attempt + 1}/{max_retries})")
                         import time
 
                         time.sleep(2)
@@ -288,7 +312,11 @@ class WIABackend:
         return None
 
     def _release_device(self, device):
-        """Release a device connection. Do NOT CoUninitialize - that tears down COM for the whole thread and breaks subsequent discovery."""
+        """Release a device connection.
+
+        Do NOT CoUninitialize: that tears down COM for the whole thread and
+        breaks subsequent discovery.
+        """
         try:
             if device and hasattr(device, "Release"):
                 device.Release()
@@ -479,9 +507,7 @@ class WIABackend:
             self._set_property_value(properties, "Brightness", settings.brightness)
             self._set_property_value(properties, "Contrast", settings.contrast)
 
-            logger.info(
-                f"Scanner {device_id} configured: {settings.dpi} DPI, {settings.color_mode}"
-            )
+            logger.info(f"Scanner {device_id} configured: {settings.dpi} DPI, {settings.color_mode}")
             return True
 
         except Exception as e:
@@ -505,7 +531,6 @@ class WIABackend:
         self._ensure_com_context()
 
         device = self._devices.get(device_id)
-        scan_success = False
         max_scan_attempts = 3
 
         for attempt in range(max_scan_attempts):
@@ -575,9 +600,7 @@ class WIABackend:
             if not manager:
                 return None
             for device_info in manager.DeviceInfos:
-                if str(device_info.DeviceID) == device_id or str(
-                    device_info.DeviceID
-                ) == device_id.replace("wia:", ""):
+                if str(device_info.DeviceID) == device_id or str(device_info.DeviceID) == device_id.replace("wia:", ""):
                     return self._connect_device_with_retry(device_info)
         except Exception as e:
             logger.error(f"Failed to get fresh connection for {device_id}: {e}")
@@ -636,9 +659,7 @@ class WIABackend:
             except Exception:
                 try:
                     item = items[idx + 1]
-                    logger.debug(
-                        f"Using scan item index {idx + 1} (use_adf={use_adf}) for {device_id}"
-                    )
+                    logger.debug(f"Using scan item index {idx + 1} (use_adf={use_adf}) for {device_id}")
                     return item
                 except Exception:
                     continue
@@ -754,15 +775,11 @@ class WIABackend:
                     # Direct attempt at BinaryData as it's the most standard
                     try:
                         image_data = file_data.BinaryData
-                        if image_data and isinstance(image_data, (bytes, bytearray)):
-                            logger.info(
-                                "Successfully extracted image data from BinaryData property"
-                            )
+                        if image_data and isinstance(image_data, bytes | bytearray):
+                            logger.info("Successfully extracted image data from BinaryData property")
                         else:
                             if image_data:
-                                logger.warning(
-                                    f"BinaryData property returned {type(image_data)}, not bytes"
-                                )
+                                logger.warning(f"BinaryData property returned {type(image_data)}, not bytes")
                                 image_data = bytes(image_data)
                     except Exception as e:
                         logger.debug(f"Failed to access BinaryData property: {e}")
@@ -775,26 +792,21 @@ class WIABackend:
                         except Exception:
                             pass
 
-                    if image_data is None or not isinstance(image_data, (bytes, bytearray)):
+                    if image_data is None or not isinstance(image_data, bytes | bytearray):
                         # Final attempt: try to convert Vector to bytes directly
                         try:
                             # If file_data is a comtypes Vector, we might needs to iterate
                             image_data = bytes(file_data)
                             logger.info("Successfully converted Vector to bytes directly")
                         except Exception:
-                            logger.error(
-                                f"All data extraction methods failed for Vector. "
-                                f"Type: {type(file_data)}"
-                            )
+                            logger.error(f"All data extraction methods failed for Vector. Type: {type(file_data)}")
                             # Introspect attributes for debugging
                             attrs = [a for a in dir(file_data) if not a.startswith("_")]
                             logger.debug(f"Vector attributes: {attrs}")
                             return None
 
-                    if not isinstance(image_data, (bytes, bytearray)):
-                        logger.error(
-                            f"Extraction failed: final result is {type(image_data)}, not bytes"
-                        )
+                    if not isinstance(image_data, bytes | bytearray):
+                        logger.error(f"Extraction failed: final result is {type(image_data)}, not bytes")
                         return None
 
                     image = Image.open(io.BytesIO(image_data))

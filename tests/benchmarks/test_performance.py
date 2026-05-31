@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 Performance benchmarks for OCR-MCP.
 
@@ -55,7 +83,7 @@ class TestOCRPerformance:
             try:
                 # Try to use default font
                 font = ImageFont.load_default()
-            except:
+            except Exception:
                 font = None
 
             # Add text at different positions
@@ -86,9 +114,7 @@ class TestOCRPerformance:
 
     @pytest.mark.benchmark
     @pytest.mark.parametrize("backend_name", ["deepseek-ocr", "florence-2", "got-ocr", "tesseract"])
-    def test_backend_processing_speed(
-        self, benchmark, backend_manager, benchmark_images, backend_name
-    ):
+    def test_backend_processing_speed(self, benchmark, backend_manager, benchmark_images, backend_name):
         """Benchmark OCR processing speed for different backends."""
 
         async def run_benchmark():
@@ -97,9 +123,7 @@ class TestOCRPerformance:
                 start_time = time.time()
                 initial_memory = self.get_memory_usage()
 
-                result = await backend_manager.process_with_backend(
-                    backend_name, str(img_path), mode="text"
-                )
+                result = await backend_manager.process_with_backend(backend_name, str(img_path), mode="text")
 
                 end_time = time.time()
                 final_memory = self.get_memory_usage()
@@ -120,9 +144,7 @@ class TestOCRPerformance:
         for img_name, metrics in results.items():
             assert metrics["success"], f"OCR failed for {img_name} with {backend_name}"
             assert metrics["processing_time"] > 0, "Processing time should be positive"
-            assert metrics["processing_time"] < 30, (
-                f"Processing too slow: {metrics['processing_time']}s"
-            )
+            assert metrics["processing_time"] < 30, f"Processing too slow: {metrics['processing_time']}s"
 
         # Store results for analysis
         benchmark.extra_info = {"backend": backend_name, "results": results}
@@ -160,9 +182,7 @@ class TestOCRPerformance:
         # Validate batch processing
         assert results["total_time"] > 0
         assert results["images_processed"] == len(benchmark_images)
-        successful = [
-            r for r in results["results"] if not isinstance(r, Exception) and r.get("success")
-        ]
+        successful = [r for r in results["results"] if not isinstance(r, Exception) and r.get("success")]
         assert len(successful) > 0, "No images processed successfully"
 
         benchmark.extra_info = results
@@ -178,9 +198,7 @@ class TestOCRPerformance:
             results = {}
             for test_mode in ["text", "formatted", "fine-grained"]:
                 start_time = time.time()
-                result = await backend_manager.process_with_backend(
-                    "auto", img_path, mode=test_mode
-                )
+                result = await backend_manager.process_with_backend("auto", img_path, mode=test_mode)
                 end_time = time.time()
 
                 results[test_mode] = {
@@ -220,9 +238,7 @@ class TestOCRPerformance:
                 memory_before = self.get_memory_usage()
 
                 # Process image
-                result = await backend_manager.process_with_backend(
-                    "auto", str(img_path), mode="text"
-                )
+                result = await backend_manager.process_with_backend("auto", str(img_path), mode="text")
 
                 # Measure memory after
                 memory_after = self.get_memory_usage()
@@ -245,9 +261,7 @@ class TestOCRPerformance:
         # Validate memory scaling is reasonable
         for size, stats in memory_stats.items():
             assert stats["success"], f"Processing failed for {size}"
-            assert stats["memory_delta"] < 500, (
-                f"Memory usage too high for {size}: {stats['memory_delta']}MB"
-            )
+            assert stats["memory_delta"] < 500, f"Memory usage too high for {size}: {stats['memory_delta']}MB"
 
         benchmark.extra_info = memory_stats
 
@@ -271,28 +285,22 @@ class TestOCRPerformance:
             for concurrency in concurrency_levels:
                 semaphore = asyncio.Semaphore(concurrency)
 
-                async def process_with_semaphore(img_path):
-                    async with semaphore:
-                        return await backend_manager.process_with_backend(
-                            "auto", img_path, mode="text"
-                        )
+                async def process_with_semaphore(img_path, sem=semaphore):
+                    async with sem:
+                        return await backend_manager.process_with_backend("auto", img_path, mode="text")
 
                 start_time = time.time()
                 tasks = [process_with_semaphore(img) for img in test_images]
                 batch_results = await asyncio.gather(*tasks, return_exceptions=True)
                 end_time = time.time()
 
-                successful = [
-                    r for r in batch_results if not isinstance(r, Exception) and r.get("success")
-                ]
+                successful = [r for r in batch_results if not isinstance(r, Exception) and r.get("success")]
 
                 results[f"concurrency_{concurrency}"] = {
                     "total_time": end_time - start_time,
                     "successful": len(successful),
                     "total": len(test_images),
-                    "throughput": len(successful) / (end_time - start_time)
-                    if end_time > start_time
-                    else 0,
+                    "throughput": len(successful) / (end_time - start_time) if end_time > start_time else 0,
                 }
 
             # Cleanup
@@ -390,9 +398,7 @@ class TestScannerPerformance:
         benchmark.extra_info = {
             "images_scanned": len(images),
             "batch_time": benchmark.stats["mean"],
-            "images_per_second": len(images) / benchmark.stats["mean"]
-            if benchmark.stats["mean"] > 0
-            else 0,
+            "images_per_second": len(images) / benchmark.stats["mean"] if benchmark.stats["mean"] > 0 else 0,
         }
 
 

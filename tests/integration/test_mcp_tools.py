@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 Integration tests for OCR-MCP tools.
 
@@ -15,6 +43,7 @@ from ocr_mcp.core.backend_manager import BackendManager
 from ocr_mcp.core.config import OCRConfig
 from ocr_mcp.tools.ocr_tools import register_sota_tools
 from tests.mocks.mock_backends import MockDeepSeekBackend
+from tests.mocks.mock_scanner import MockScannerManager
 
 
 class TestMCPToolsIntegration:
@@ -225,9 +254,7 @@ class TestMCPToolsIntegration:
         tools = await registered_app.get_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")
 
-        result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
-            operation="list_scanners"
-        )
+        result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(operation="list_scanners")
 
         assert isinstance(result, dict)
         assert "scanners" in result
@@ -334,9 +361,7 @@ class TestToolErrorHandling:
         manager.scanner_manager = failing_scanner
 
         # Make OCR processing fail
-        manager.process_with_backend = AsyncMock(
-            return_value={"success": False, "error": "OCR processing failed"}
-        )
+        manager.process_with_backend = AsyncMock(return_value={"success": False, "error": "OCR processing failed"})
 
         # Make backend selection fail
         manager.select_backend.return_value = None
@@ -344,11 +369,9 @@ class TestToolErrorHandling:
         return manager
 
     @pytest.mark.asyncio
-    async def test_document_processing_file_not_found(
-        self, fastmcp_app, mock_backend_manager, config
-    ):
+    async def test_document_processing_file_not_found(self, fastmcp_app, mock_backend_manager, config):
         """Test handling of non-existent files."""
-        register_document_processing_tools(fastmcp_app, mock_backend_manager, config)
+        register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
         tools = await fastmcp_app.get_tools()
         process_tool = next(t for t in tools if t.name == "document_processing")
@@ -361,15 +384,13 @@ class TestToolErrorHandling:
         assert "not found" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_process_document_unsupported_format(
-        self, fastmcp_app, mock_backend_manager, config, tmp_path
-    ):
+    async def test_process_document_unsupported_format(self, fastmcp_app, mock_backend_manager, config, tmp_path):
         """Test handling of unsupported file formats."""
         # Create a file with unsupported extension
         unsupported_file = tmp_path / "test.xyz"
         unsupported_file.write_text("not an image")
 
-        register_ocr_tools(fastmcp_app, mock_backend_manager, config)
+        register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
         tools = await fastmcp_app.get_tools()
         process_tool = next(t for t in tools if t.name == "process_document")
@@ -382,11 +403,9 @@ class TestToolErrorHandling:
         assert "unsupported" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_scanner_operations_with_invalid_device(
-        self, fastmcp_app, mock_backend_manager, config
-    ):
+    async def test_scanner_operations_with_invalid_device(self, fastmcp_app, mock_backend_manager, config):
         """Test scanner tools with invalid device IDs."""
-        register_scanner_operations_tools(fastmcp_app, mock_backend_manager, config)
+        register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
         tools = await fastmcp_app.get_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")
@@ -404,9 +423,7 @@ class TestToolParameterValidation:
     """Test parameter validation in MCP tools."""
 
     @pytest.mark.asyncio
-    async def test_document_processing_invalid_backend(
-        self, fastmcp_app, mock_backend_manager, config, tmp_path
-    ):
+    async def test_document_processing_invalid_backend(self, fastmcp_app, mock_backend_manager, config, tmp_path):
         """Test processing with invalid backend name."""
         test_image = tmp_path / "test.png"
         from PIL import Image
@@ -414,7 +431,7 @@ class TestToolParameterValidation:
         img = Image.new("RGB", (50, 50), color="white")
         img.save(test_image)
 
-        register_document_processing_tools(fastmcp_app, mock_backend_manager, config)
+        register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
         tools = await fastmcp_app.get_tools()
         process_tool = next(t for t in tools if t.name == "document_processing")
@@ -427,11 +444,9 @@ class TestToolParameterValidation:
         assert isinstance(result, dict)
 
     @pytest.mark.asyncio
-    async def test_scanner_operations_invalid_parameters(
-        self, fastmcp_app, mock_backend_manager, config
-    ):
+    async def test_scanner_operations_invalid_parameters(self, fastmcp_app, mock_backend_manager, config):
         """Test scan configuration with invalid parameters."""
-        register_scanner_operations_tools(fastmcp_app, mock_backend_manager, config)
+        register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
         tools = await fastmcp_app.get_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")
@@ -464,8 +479,8 @@ class TestToolParameterValidation:
         self, fastmcp_app, mock_backend_manager, config, tool_name, operation, required_params
     ):
         """Test that tools enforce required parameters."""
-        register_document_processing_tools(fastmcp_app, mock_backend_manager, config)
-        register_scanner_operations_tools(fastmcp_app, mock_backend_manager, config)
+        register_sota_tools(fastmcp_app, mock_backend_manager, config)
+        register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
         tools = await fastmcp_app.get_tools()
         tool = next((t for t in tools if t.name == tool_name), None)
@@ -480,9 +495,7 @@ class TestToolConcurrency:
     """Test concurrent execution of MCP tools."""
 
     @pytest.mark.asyncio
-    async def test_batch_processing_concurrency(
-        self, fastmcp_app, mock_backend_manager, config, tmp_path
-    ):
+    async def test_batch_processing_concurrency(self, fastmcp_app, mock_backend_manager, config, tmp_path):
         """Test that batch processing handles concurrency correctly."""
         # Create multiple test files
         test_files = []
@@ -494,7 +507,7 @@ class TestToolConcurrency:
             img.save(img_path)
             test_files.append(str(img_path))
 
-        register_workflow_management_tools(fastmcp_app, mock_backend_manager, config)
+        register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
         tools = await fastmcp_app.get_tools()
         workflow_tool = next(t for t in tools if t.name == "workflow_management")
@@ -513,7 +526,7 @@ class TestToolConcurrency:
     @pytest.mark.asyncio
     async def test_multiple_simultaneous_scans(self, fastmcp_app, mock_backend_manager, config):
         """Test multiple simultaneous scan operations."""
-        register_scanner_operations_tools(fastmcp_app, mock_backend_manager, config)
+        register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
         tools = await fastmcp_app.get_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")

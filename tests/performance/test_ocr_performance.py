@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 OCR Performance Testing Suite
 
@@ -29,9 +57,7 @@ class TestOCRPerformance:
 
         # Process document
         result = asyncio.run(
-            backend_manager_with_mocks.process_with_backend(
-                backend_name, str(sample_image_path), mode="text"
-            )
+            backend_manager_with_mocks.process_with_backend(backend_name, str(sample_image_path), mode="text")
         )
 
         elapsed = performance_monitor.stop(f"{backend_name}_single_doc")
@@ -50,9 +76,7 @@ class TestOCRPerformance:
         # Create multiple test images
         test_images = []
         for i in range(10):
-            img = test_data_generator.create_test_image(
-                text=f"Batch test document {i + 1}", width=800, height=600
-            )
+            img = test_data_generator.create_test_image(text=f"Batch test document {i + 1}", width=800, height=600)
             img_path = file_manager.create_temp_image(img)
             test_images.append(str(img_path))
 
@@ -61,9 +85,7 @@ class TestOCRPerformance:
         # Process batch
         results = []
         for img_path in test_images:
-            result = asyncio.run(
-                backend_manager_with_mocks.process_with_backend("auto", img_path, mode="text")
-            )
+            result = asyncio.run(backend_manager_with_mocks.process_with_backend("auto", img_path, mode="text"))
             results.append(result)
 
         elapsed = performance_monitor.stop("batch_processing_10_docs")
@@ -94,16 +116,12 @@ class TestOCRPerformance:
         # Create test images
         test_images = []
         for i in range(concurrent_jobs * 2):  # 2 jobs per concurrent worker
-            img = test_data_generator.create_test_image(
-                text=f"Concurrent test {i + 1}", width=600, height=400
-            )
+            img = test_data_generator.create_test_image(text=f"Concurrent test {i + 1}", width=600, height=400)
             img_path = file_manager.create_temp_image(img)
             test_images.append(str(img_path))
 
         async def process_single(image_path: str) -> dict[str, Any]:
-            return await backend_manager_with_mocks.process_with_backend(
-                "auto", image_path, mode="text"
-            )
+            return await backend_manager_with_mocks.process_with_backend("auto", image_path, mode="text")
 
         async def process_batch_concurrent() -> list[dict[str, Any]]:
             tasks = [process_single(img_path) for img_path in test_images]
@@ -146,14 +164,10 @@ class TestOCRPerformance:
         memory_samples = []
 
         for i in range(20):
-            img = test_data_generator.create_test_image(
-                text=f"Memory test document {i + 1}", width=1000, height=800
-            )
+            img = test_data_generator.create_test_image(text=f"Memory test document {i + 1}", width=1000, height=800)
             img_path = file_manager.create_temp_image(img)
 
-            result = asyncio.run(
-                backend_manager_with_mocks.process_with_backend("auto", str(img_path), mode="text")
-            )
+            result = asyncio.run(backend_manager_with_mocks.process_with_backend("auto", str(img_path), mode="text"))
 
             assert result["success"] is True
 
@@ -193,9 +207,7 @@ class TestOCRPerformance:
                 img_path = file_manager.create_temp_image(img)
 
                 result = asyncio.run(
-                    backend_manager_with_mocks.process_with_backend(
-                        "auto", str(img_path), mode="text"
-                    )
+                    backend_manager_with_mocks.process_with_backend("auto", str(img_path), mode="text")
                 )
 
                 if result.get("success"):
@@ -222,9 +234,7 @@ class TestOCRPerformance:
         assert ops_per_second >= 0.3  # At least 0.3 ops/second
 
     @pytest.mark.performance
-    def test_backend_selection_performance(
-        self, backend_manager_with_mocks, sample_image_path, performance_monitor
-    ):
+    def test_backend_selection_performance(self, backend_manager_with_mocks, sample_image_path, performance_monitor):
         """Test performance of intelligent backend selection."""
         # Test auto-selection performance
         performance_monitor.start()
@@ -254,16 +264,12 @@ class TestOCRPerformance:
         width, height = image_size
 
         # Create test image of specified size
-        img = test_data_generator.create_test_image(
-            width=width, height=height, text=f"Size test {width}x{height}"
-        )
+        img = test_data_generator.create_test_image(width=width, height=height, text=f"Size test {width}x{height}")
         img_path = file_manager.create_temp_image(img)
 
         performance_monitor.start()
 
-        result = asyncio.run(
-            backend_manager_with_mocks.process_with_backend("auto", str(img_path), mode="text")
-        )
+        result = asyncio.run(backend_manager_with_mocks.process_with_backend("auto", str(img_path), mode="text"))
 
         elapsed = performance_monitor.stop(f"size_{width}x{height}")
 

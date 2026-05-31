@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 OCR Fuzzing Tests
 
@@ -42,9 +70,7 @@ class TestOCRFuzzing:
         """Fuzz test with random text inputs."""
         # Create image with fuzzed text
         try:
-            img = TestDataGenerator.create_test_image(
-                text=text[:100]
-            )  # Limit text length for image
+            img = TestDataGenerator.create_test_image(text=text[:100])  # Limit text length for image
             img_path = file_manager.create_temp_image(img)
 
             # Basic validation
@@ -119,9 +145,7 @@ class TestOCRFuzzing:
 
     @given(
         filename=st.text(
-            alphabet=st.characters(
-                categories=["L", "N", "P", "S"], min_codepoint=0x0020, max_codepoint=0x10FFFF
-            ),
+            alphabet=st.characters(categories=["L", "N", "P", "S"], min_codepoint=0x0020, max_codepoint=0x10FFFF),
             min_size=1,
             max_size=255,
         )
@@ -156,9 +180,7 @@ class TestOCRFuzzing:
     @given(
         st.dictionaries(
             keys=st.text(min_size=1, max_size=50),
-            values=st.one_of(
-                st.text(max_size=1000), st.integers(), st.floats(), st.booleans(), st.none()
-            ),
+            values=st.one_of(st.text(max_size=1000), st.integers(), st.floats(), st.booleans(), st.none()),
             min_size=0,
             max_size=100,
         )
@@ -305,16 +327,12 @@ class TestOCRFuzzing:
         for i in range(iterations):
             try:
                 # Generate random test data
-                text = "".join(
-                    random.choices(string.ascii_letters + string.digits, k=random.randint(1, 100))
-                )
+                text = "".join(random.choices(string.ascii_letters + string.digits, k=random.randint(1, 100)))
                 width = random.randint(10, 1000)
                 height = random.randint(10, 1000)
 
                 # Create and validate image
-                img = TestDataGenerator.create_test_image(
-                    width=width, height=height, text=text[:20]
-                )
+                img = TestDataGenerator.create_test_image(width=width, height=height, text=text[:20])
                 img_path = file_manager.create_temp_image(img)
 
                 # Quick validation
@@ -329,9 +347,7 @@ class TestOCRFuzzing:
 
         # Allow some failures but require majority success
         success_rate = successes / (successes + errors)
-        assert success_rate >= 0.8, (
-            f"Success rate too low: {success_rate:.2%} ({successes}/{successes + errors})"
-        )
+        assert success_rate >= 0.8, f"Success rate too low: {success_rate:.2%} ({successes}/{successes + errors})"
 
     def test_edge_case_coverage(self, file_manager):
         """Test specific edge cases that should be covered."""

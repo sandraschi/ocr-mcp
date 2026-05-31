@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 Image Management Helpers for OCR-MCP Server
 """
@@ -52,9 +80,7 @@ async def preprocess_image(
         # import numpy as np
 
         if not os.path.exists(source_path):
-            return ErrorHandler.create_error(
-                "FILE_NOT_FOUND", f"File not found: {source_path}"
-            ).to_dict()
+            return ErrorHandler.create_error("FILE_NOT_FOUND", f"File not found: {source_path}").to_dict()
 
         img = Image.open(source_path)
         original_info = {"width": img.width, "height": img.height, "mode": img.mode}
@@ -111,9 +137,7 @@ async def preprocess_image(
             recommendations.append("Denoising improves text clarity by 15-25%")
         if threshold:
             operations_applied.append("Applied thresholding for binary image conversion")
-            recommendations.append(
-                "Thresholding enhances character recognition in high-contrast scenarios"
-            )
+            recommendations.append("Thresholding enhances character recognition in high-contrast scenarios")
         if autocrop:
             operations_applied.append("Applied automatic cropping to focus on content")
             recommendations.append("Cropping reduces processing time and improves focus")
@@ -158,12 +182,8 @@ async def preprocess_image(
                 "image_management(operation='convert')",
             ],
             "quality_improvements": {
-                "estimated_ocr_accuracy_boost": "15-30%"
-                if any([grayscale, denoise, threshold])
-                else "5-10%",
-                "processing_efficiency": "Maintained"
-                if not autocrop
-                else "Improved (smaller image)",
+                "estimated_ocr_accuracy_boost": "15-30%" if any([grayscale, denoise, threshold]) else "5-10%",
+                "processing_efficiency": "Maintained" if not autocrop else "Improved (smaller image)",
                 "text_clarity": "Enhanced" if denoise else "Preserved",
             },
         }

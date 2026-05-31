@@ -30,10 +30,14 @@
 OCR-MCP Server: Revolutionary Document Understanding Server (FastMCP 3.1).
 
 Features:
-- Sampling: sampling_handler for ctx.sample()/sample_step(); agentic_document_workflow uses sample_step with tools (SEP-1577).
-- Prompts: process-instructions, quality-assessment-guide, scanner-workflow, batch-processing-guide, agentic-workflow-instructions.
-- Resources: logs, capabilities (backends + 3.1 features), skills (LLM-oriented skills reference).
-- Agentic workflow tool: AI-orchestrated multi-step document processing via sampling with tools.
+- Sampling: sampling_handler for ctx.sample()/sample_step();
+  agentic_document_workflow uses sample_step with tools (SEP-1577).
+- Prompts: process-instructions, quality-assessment-guide, scanner-workflow,
+  batch-processing-guide, agentic-workflow-instructions.
+- Resources: logs, capabilities (backends + 3.1 features),
+  skills (LLM-oriented skills reference).
+- Agentic workflow tool: AI-orchestrated multi-step document processing
+  via sampling with tools.
 """
 
 import logging
@@ -42,6 +46,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastmcp import FastMCP
+from fastmcp.server import create_proxy
 
 from .core.backend_manager import BackendManager
 from .core.config import OCRConfig
@@ -125,6 +130,15 @@ Always provide technical, actionable responses including confidence scores and r
 )
 
 
+# MCP Bridge — proxy remote MCP servers via ProxyProvider
+MCP_BRIDGE_URLS = os.environ.get("MCP_BRIDGE_URLS", "")
+if MCP_BRIDGE_URLS:
+    for url in MCP_BRIDGE_URLS.split(","):
+        url = url.strip()
+        if url:
+            app.add_provider(create_proxy(url))
+
+
 # Resources
 @app.resource("resource://ocr/logs")
 def get_ocr_logs() -> str:
@@ -152,8 +166,10 @@ def get_ocr_capabilities() -> str:
 
     return (
         "OCR-MCP Capabilities:\n"
-        "- Tools: process_document, manage_image, operate_scanner, manage_workflow, manage_corpus, execute_agentic_workflow\n"
-        "- Features: SEP-1577 Sampling, Pydantic Structured Output, WIA Hardware Control\n"
+        "- Tools: process_document, manage_image, operate_scanner, "
+        "manage_workflow, manage_corpus, execute_agentic_workflow\n"
+        "- Features: SEP-1577 Sampling, Pydantic Structured Output, "
+        "WIA Hardware Control\n"
         f"- Active Backends: {', '.join(backends)}"
     )
 
@@ -173,7 +189,8 @@ def get_ocr_skills() -> str:
 - Acquire pages using `operate_scanner(operation='scan_document')`.
 
 ## 3. Autonomous Orchestration
-- Use `execute_agentic_workflow` for multi-step goals like "Find the scanner, scan 5 pages, and extract all invoice totals."
+- Use `execute_agentic_workflow` for multi-step goals like
+  "Find the scanner, scan 5 pages, and extract all invoice totals."
 """
 
 

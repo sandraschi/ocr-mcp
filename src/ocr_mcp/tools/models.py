@@ -26,7 +26,7 @@
 #
 #
 
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -82,7 +82,7 @@ class ErrorResponse(BaseResponse):
     severity: ErrorSeverity = Field(..., description="Severity of the error")
     details: dict[str, Any] = Field(default_factory=dict, description="Additional error details")
     recovery_options: list[str] = Field(default_factory=list, description="Suggestions for recovering from the error")
-    recovery_flow: Optional[str] = Field(None, description="Recommended next tool to call for recovery")
+    recovery_flow: str | None = Field(None, description="Recommended next tool to call for recovery")
 
 
 # Tool-Specific Result Models
@@ -91,15 +91,15 @@ class OCRResult(BaseModel):
     confidence: float = Field(..., description="Confidence score (0.0 to 1.0)")
     backend_used: str = Field(..., description="The OCR backend that performed the extraction")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Document metadata (dates, names, etc.)")
-    layout: Optional[dict[str, Any]] = Field(None, description="Layout analysis results")
-    pages: Optional[int] = Field(None, description="Number of pages processed")
+    layout: dict[str, Any] | None = Field(None, description="Layout analysis results")
+    pages: int | None = Field(None, description="Number of pages processed")
 
 
 class ScannerResult(BaseModel):
     device_id: str = Field(..., description="ID of the scanner device")
-    file_path: Optional[str] = Field(None, description="Path to the saved scan")
-    properties: Optional[dict[str, Any]] = Field(None, description="Scanner properties and capabilities")
-    scanners: Optional[list[dict[str, Any]]] = Field(None, description="List of discovered scanners")
+    file_path: str | None = Field(None, description="Path to the saved scan")
+    properties: dict[str, Any] | None = Field(None, description="Scanner properties and capabilities")
+    scanners: list[dict[str, Any]] | None = Field(None, description="List of discovered scanners")
 
 
 class ImageProcessResult(BaseModel):
@@ -115,12 +115,12 @@ class WorkflowResult(BaseModel):
     successful: int = Field(..., description="Number of successfully processed documents")
     failed: int = Field(..., description="Number of documents that failed processing")
     results: list[dict[str, Any]] = Field(default_factory=list, description="Individual result per document")
-    final_output: Optional[str] = Field(None, description="Aggregated final output if applicable")
+    final_output: str | None = Field(None, description="Aggregated final output if applicable")
 
 
 # Combined Tool Responses
 class ToolResponse(BaseResponse):
-    result: Optional[Any] = Field(None, description="The primary result of the operation")
-    summary: Optional[str] = Field(None, description="Human-readable summary of what was done")
+    result: Any | None = Field(None, description="The primary result of the operation")
+    summary: str | None = Field(None, description="Human-readable summary of what was done")
     next_steps: list[str] = Field(default_factory=list, description="Recommended next actions for the user/LLM")
     suggestions: list[str] = Field(default_factory=list, description="Optimization or alternative suggestions")

@@ -1,4 +1,32 @@
 #!/usr/bin/env python3
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 Comprehensive test runner for OCR-MCP with multiple test suites and reporting.
 
@@ -192,9 +220,7 @@ class TestRunner:
         if args.fail_fast:
             cmd.extend(["--tb=short", "--fail-fast"])
         if args.coverage:
-            cmd.extend(
-                ["--cov=src", "--cov-report=term-missing", f"--cov-report=html:{self.coverage_dir}"]
-            )
+            cmd.extend(["--cov=src", "--cov-report=term-missing", f"--cov-report=html:{self.coverage_dir}"])
         if args.junit:
             cmd.extend(["--junitxml", str(self.reports_dir / "smoke-tests.xml")])
         return self.run_command(cmd)
@@ -217,9 +243,7 @@ class TestRunner:
         ]
 
         if args.coverage:
-            cmd.extend(
-                ["--cov=src", "--cov-report=term-missing", f"--cov-report=html:{self.coverage_dir}"]
-            )
+            cmd.extend(["--cov=src", "--cov-report=term-missing", f"--cov-report=html:{self.coverage_dir}"])
 
         return self.run_command(cmd)
 
@@ -299,9 +323,7 @@ class TestRunner:
 
         parser.add_argument("--verbose", "-v", action="store_true", help="Increase verbosity")
 
-        parser.add_argument(
-            "--coverage", "-c", action="store_true", help="Generate coverage report"
-        )
+        parser.add_argument("--coverage", "-c", action="store_true", help="Generate coverage report")
 
         parser.add_argument("--html", action="store_true", help="Generate HTML coverage report")
 
@@ -309,21 +331,13 @@ class TestRunner:
 
         parser.add_argument("--fail-fast", action="store_true", help="Stop on first failure")
 
-        parser.add_argument(
-            "--no-mock-hardware", action="store_true", help="Use real hardware where possible"
-        )
+        parser.add_argument("--no-mock-hardware", action="store_true", help="Use real hardware where possible")
 
-        parser.add_argument(
-            "--benchmark-only", action="store_true", help="Skip accuracy tests in benchmarks"
-        )
+        parser.add_argument("--benchmark-only", action="store_true", help="Skip accuracy tests in benchmarks")
 
-        parser.add_argument(
-            "--performance-only", action="store_true", help="Skip accuracy tests in performance"
-        )
+        parser.add_argument("--performance-only", action="store_true", help="Skip accuracy tests in performance")
 
-        parser.add_argument(
-            "--show-structure", action="store_true", help="Show test directory structure and exit"
-        )
+        parser.add_argument("--show-structure", action="store_true", help="Show test directory structure and exit")
 
         args = parser.parse_args()
 

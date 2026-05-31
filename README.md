@@ -1,6 +1,11 @@
 # OCR-MCP
 
-[![FastMCP Version](https://img.shields.io/badge/FastMCP-3.1-blue?style=flat-square&logo=python&logoColor=white)](https://github.com/sandraschi/fastmcp) [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![Linted with Biome](https://img.shields.io/badge/Linted_with-Biome-60a5fa?style=flat-square&logo=biome&logoColor=white)](https://biomejs.dev/) [![Built with Just](https://img.shields.io/badge/Built_with-Just-000000?style=flat-square&logo=gnu-bash&logoColor=white)](https://github.com/casey/just)
+<p align="center">
+  <a href="https://github.com/casey/just"><img src="https://img.shields.io/badge/just-ready_to_go-7c5cfc?style=flat-square&logo=just&logoColor=white" alt="Just"></a>
+  <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>
+  <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.13+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"></a>
+  <a href="https://github.com/PrefectHQ/fastmcp"><img src="https://img.shields.io/badge/FastMCP-3.2-7c5cfc?style=flat-square" alt="FastMCP"></a>
+</p>
 
 **Complete AI OCR webapp and MCP server.** A **web app** for people (draganddrop OCR, scanner, batch) and a **FastMCP 3.1 MCP server** for agentic IDEsClaude, Cursor, Windsurfso agents can run OCR, preprocessing, and workflows as tools. Same 13 engines, WIA scanner (Windows), and pipelines; one repo.
 
@@ -38,38 +43,19 @@
 
 Also: [JUSTFILE.md](docs/JUSTFILE.md) (just recipes)  [OCR-MCP_MASTER_PLAN.md](OCR-MCP_MASTER_PLAN.md) (roadmap)  [tests/README.md](tests/README.md) (testing)
 
-## Install
-
-**Repository:** [github.com/sandraschi/ocr-mcp](https://github.com/sandraschi/ocr-mcp). Clone first  `uv sync` needs a project on disk:
+## Quick Start
 
 ```powershell
-git clone https://github.com/sandraschi/ocr-mcp.git
-Set-Location ocr-mcp
-uv sync
+git clone https://github.com/sandraschi/ocr-mcp
+cd ocr-mcp
+just
 ```
 
-## Quick start
+This opens an interactive dashboard showing all available commands. Run `just bootstrap` to install dependencies, then `just serve` or `just dev` to start.
 
-```powershell
-uv sync
-just run
-```
+### Manual Setup
 
-**Web UI (recommended):** from repo root run `web_sota\start.ps1` (PowerShell). It clears ports **10858/10859**, runs `uv sync`, restores PyYAML if needed (see [docs/INSTALL.md](docs/INSTALL.md)), starts the FastAPI backend in a new window, starts Vite in another window, then opens **<http://localhost:10858>** in your browser.
-
-Or: `just webapp` if your [justfile](docs/JUSTFILE.md) wraps the same flow.
-
-**If the start script fails**, use two terminals from the **ocr-mcp** repo root:
-
-- **Terminal 1 (backend):**  
-  `$env:PYTHONPATH = (Get-Location).Path; uv run uvicorn backend.app:app --host 127.0.0.1 --port 10859`
-- **Terminal 2 (frontend):**  
-  `cd web_sota; npm run dev -- --port 10858 --host`
-
-Then open <http://localhost:10858>
-
-**Tests:** `uv sync --extra dev` then `uv run python -m pytest` or `python scripts/run_tests.py --suite quick`. See [tests/README.md](tests/README.md).
-
+If you don't have `just` installed:
 
 ## 🛡️ Industrial Quality Stack
 

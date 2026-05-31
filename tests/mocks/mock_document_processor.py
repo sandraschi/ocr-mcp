@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 Mock Document Processor Implementation
 
@@ -62,9 +90,7 @@ class MockDocumentProcessor:
         else:
             raise ValueError(f"Unsupported file type: {file_type}")
 
-    def _mock_extract_pdf_images(
-        self, pdf_path: Path, dpi: int = 300, **kwargs
-    ) -> list[dict[str, Any]]:
+    def _mock_extract_pdf_images(self, pdf_path: Path, dpi: int = 300, **kwargs) -> list[dict[str, Any]]:
         """Mock PDF image extraction."""
         # Create mock images
         temp_dir = Path(tempfile.mkdtemp())
@@ -91,9 +117,7 @@ class MockDocumentProcessor:
                 "total_pages": 3,
             }
 
-            images_info.append(
-                {"image_path": str(image_path), "page_number": page_num, "metadata": metadata}
-            )
+            images_info.append({"image_path": str(image_path), "page_number": page_num, "metadata": metadata})
 
         self.extracted_images.extend(images_info)
         return images_info
@@ -121,9 +145,7 @@ class MockDocumentProcessor:
                 "total_pages": 5,
             }
 
-            images_info.append(
-                {"image_path": str(image_path), "page_number": page_num, "metadata": metadata}
-            )
+            images_info.append({"image_path": str(image_path), "page_number": page_num, "metadata": metadata})
 
         self.extracted_images.extend(images_info)
         return images_info
@@ -151,9 +173,7 @@ class MockDocumentProcessor:
                 "total_pages": 4,
             }
 
-            images_info.append(
-                {"image_path": str(image_path), "page_number": page_num, "metadata": metadata}
-            )
+            images_info.append({"image_path": str(image_path), "page_number": page_num, "metadata": metadata})
 
         self.extracted_images.extend(images_info)
         return images_info
@@ -228,9 +248,7 @@ def generate_mock_pdf_metadata(
     return images_info
 
 
-def generate_mock_cbz_metadata(
-    pages: int = 5, width: int = 800, height: int = 1200
-) -> list[dict[str, Any]]:
+def generate_mock_cbz_metadata(pages: int = 5, width: int = 800, height: int = 1200) -> list[dict[str, Any]]:
     """Generate mock CBZ extraction metadata."""
     images_info = []
     for page_num in range(pages):

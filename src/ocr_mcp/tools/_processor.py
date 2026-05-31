@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 Core Document Processor for OCR-MCP
 
@@ -46,15 +74,11 @@ async def process_document(
     logger.info(f"Processing document: {source_path} (backend: {backend}, mode: {mode})")
 
     if not backend_manager:
-        return ErrorHandler.create_error(
-            "INTERNAL_ERROR", "Backend manager not initialized"
-        ).to_dict()
+        return ErrorHandler.create_error("INTERNAL_ERROR", "Backend manager not initialized").to_dict()
 
     try:
         if not os.path.exists(source_path):
-            return ErrorHandler.create_error(
-                "FILE_NOT_FOUND", f"File not found: {source_path}"
-            ).to_dict()
+            return ErrorHandler.create_error("FILE_NOT_FOUND", f"File not found: {source_path}").to_dict()
 
         # Handle backend selection
         if backend == "auto":
@@ -79,38 +103,24 @@ async def process_document(
             recommendations = []
 
             if confidence > 0.9:
-                recommendations.append(
-                    "High confidence result - this backend works well for your document"
-                )
+                recommendations.append("High confidence result - this backend works well for your document")
             elif confidence > 0.7:
-                recommendations.append(
-                    "Good confidence - consider trying other backends for comparison"
-                )
+                recommendations.append("Good confidence - consider trying other backends for comparison")
                 recommendations.append("Use assess_quality operation for detailed analysis")
             else:
-                recommendations.append(
-                    "Low confidence - try different backends or image preprocessing"
-                )
-                recommendations.append(
-                    "Use image_management(operation='preprocess') to enhance image quality"
-                )
+                recommendations.append("Low confidence - try different backends or image preprocessing")
+                recommendations.append("Use image_management(operation='preprocess') to enhance image quality")
 
             # Add next steps based on content
             text_content = result.get("text", "")
             next_steps = []
 
             if "table" in text_content.lower() or result.get("tables_detected", False):
-                next_steps.append(
-                    "document_processing(operation='extract_tables') - Extract structured table data"
-                )
+                next_steps.append("document_processing(operation='extract_tables') - Extract structured table data")
             if result.get("forms_detected", False):
-                next_steps.append(
-                    "document_processing(operation='detect_forms') - Analyze form fields"
-                )
+                next_steps.append("document_processing(operation='detect_forms') - Analyze form fields")
             if len(text_content.split()) > 100:
-                next_steps.append(
-                    "document_processing(operation='analyze_layout') - Get document structure analysis"
-                )
+                next_steps.append("document_processing(operation='analyze_layout') - Get document structure analysis")
 
             # Add timing and quality metrics
             enhanced_result = {
@@ -196,17 +206,13 @@ async def process_batch(
     logger.info(f"Processing batch in: {source_dir}")
 
     if not backend_manager:
-        return ErrorHandler.create_error(
-            "INTERNAL_ERROR", "Backend manager not initialized"
-        ).to_dict()
+        return ErrorHandler.create_error("INTERNAL_ERROR", "Backend manager not initialized").to_dict()
 
     try:
         start_time = time.time()
 
         if not os.path.isdir(source_dir):
-            return ErrorHandler.create_error(
-                "FILE_NOT_FOUND", f"Directory not found: {source_dir}"
-            ).to_dict()
+            return ErrorHandler.create_error("FILE_NOT_FOUND", f"Directory not found: {source_dir}").to_dict()
 
         # Find all images
         supported_exts = {".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".pdf"}
@@ -247,9 +253,7 @@ async def process_batch(
         # Calculate batch statistics
         total_words = sum(r.get("result", {}).get("word_count", 0) for r in processed)
         avg_confidence = (
-            sum(r.get("result", {}).get("confidence_score", 0) for r in processed) / len(processed)
-            if processed
-            else 0
+            sum(r.get("result", {}).get("confidence_score", 0) for r in processed) / len(processed) if processed else 0
         )
         execution_time = time.time() - start_time
 
@@ -260,24 +264,16 @@ async def process_batch(
         if len(processed) > 0:
             success_rate = len(processed) / len(files)
             if success_rate > 0.9:
-                recommendations.append(
-                    "High success rate - your batch processing setup is working well"
-                )
+                recommendations.append("High success rate - your batch processing setup is working well")
             elif success_rate > 0.7:
-                recommendations.append(
-                    "Good success rate - consider optimizing failed documents individually"
-                )
+                recommendations.append("Good success rate - consider optimizing failed documents individually")
             else:
-                recommendations.append(
-                    "Low success rate - focus on preprocessing and backend selection"
-                )
+                recommendations.append("Low success rate - focus on preprocessing and backend selection")
 
             if avg_confidence > 0.8:
                 recommendations.append("High average confidence - results are reliable")
             elif avg_confidence > 0.6:
-                recommendations.append(
-                    "Moderate confidence - consider quality assessment on important documents"
-                )
+                recommendations.append("Moderate confidence - consider quality assessment on important documents")
 
             # Suggest next steps based on results
             if total_words > 1000:
@@ -285,9 +281,7 @@ async def process_batch(
                     "workflow_management(operation='create_processing_pipeline') - Create automated workflow"
                 )
             if len(failed) > 0:
-                next_steps.append(
-                    "document_processing(operation='assess_quality') - Analyze failed documents"
-                )
+                next_steps.append("document_processing(operation='assess_quality') - Analyze failed documents")
             next_steps.append(
                 "workflow_management(operation='process_batch_intelligent') - Use AI-powered batch processing"
             )
@@ -303,9 +297,7 @@ async def process_batch(
             "success_rate": round(len(processed) / len(files), 2) if files else 0,
             "average_confidence": round(avg_confidence, 2),
             "total_words_extracted": total_words,
-            "processing_rate": round(len(files) / execution_time, 2)
-            if execution_time > 0
-            else 0,  # files per second
+            "processing_rate": round(len(files) / execution_time, 2) if execution_time > 0 else 0,  # files per second
             "results": results,
             "recommendations": recommendations,
             "next_steps": next_steps

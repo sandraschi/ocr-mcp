@@ -1,4 +1,32 @@
 #!/usr/bin/env python3
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 OCR-MCP Model Installation Script
 
@@ -186,9 +214,7 @@ class ModelInstaller:
                 # Check for API key
                 api_key = os.getenv("MISTRAL_API_KEY")
                 if not api_key:
-                    logger.error(
-                        "MISTRAL_API_KEY environment variable not set. Get your key from https://mistral.ai/"
-                    )
+                    logger.error("MISTRAL_API_KEY environment variable not set. Get your key from https://mistral.ai/")
                     return False
 
                 # Test API connection
@@ -205,9 +231,7 @@ class ModelInstaller:
                     self.installed_models.add("mistral-ocr")
                     return True
                 else:
-                    logger.error(
-                        f"Failed to connect to Mistral API: {response.status_code} - {response.text}"
-                    )
+                    logger.error(f"Failed to connect to Mistral API: {response.status_code} - {response.text}")
                     return False
 
             except ImportError:
@@ -247,9 +271,7 @@ class ModelInstaller:
                 model.to(device)
                 logger.info("Testing Florence-2 model...")
                 # Quick test with dummy input
-                dummy_input = processor(
-                    text="<OCR>", images=[[[[0] * 3] * 64] * 64], return_tensors="pt"
-                ).to(device)
+                dummy_input = processor(text="<OCR>", images=[[[[0] * 3] * 64] * 64], return_tensors="pt").to(device)
                 with torch.no_grad():
                     _ = model.generate(**dummy_input, max_new_tokens=1)
 
@@ -302,9 +324,7 @@ class ModelInstaller:
                             return False
 
                 logger.info("PP-OCRv5 dependencies installed successfully")
-                logger.info(
-                    "Note: PaddleOCR API has changed, models will be downloaded on first use"
-                )
+                logger.info("Note: PaddleOCR API has changed, models will be downloaded on first use")
                 # Due to changing PaddleOCR APIs, we'll mark as installed since dependencies are ready
                 # Real initialization will happen when the OCR backend is used
 
@@ -390,12 +410,8 @@ class ModelInstaller:
                     logger.info(f"Tesseract version: {version}")
                 except Exception:
                     logger.warning("Tesseract binary not found in PATH")
-                    logger.info(
-                        "Please install Tesseract OCR from: https://github.com/UB-Mannheim/tesseract/wiki"
-                    )
-                    logger.info(
-                        "Or run: choco install tesseract (Windows) / brew install tesseract (macOS)"
-                    )
+                    logger.info("Please install Tesseract OCR from: https://github.com/UB-Mannheim/tesseract/wiki")
+                    logger.info("Or run: choco install tesseract (Windows) / brew install tesseract (macOS)")
                     return False
 
                 # Test with a simple image
@@ -436,7 +452,7 @@ class ModelInstaller:
                 # Test with simple text
                 logger.info("Testing EasyOCR...")
                 test_img = [[0] * 100 for _ in range(50)]  # Simple test array
-                results = reader.readtext(test_img)
+                _ = reader.readtext(test_img)
 
                 logger.info("SUCCESS: EasyOCR installed and working")
                 self.installed_models.add("easyocr")
@@ -499,12 +515,8 @@ class ModelInstaller:
                 try:
                     from transformers import AutoModelForCausalLM, AutoProcessor
 
-                    AutoProcessor.from_pretrained(
-                        "microsoft/Florence-2-base", cache_dir=str(self.cache_dir)
-                    )
-                    AutoModelForCausalLM.from_pretrained(
-                        "microsoft/Florence-2-base", cache_dir=str(self.cache_dir)
-                    )
+                    AutoProcessor.from_pretrained("microsoft/Florence-2-base", cache_dir=str(self.cache_dir))
+                    AutoModelForCausalLM.from_pretrained("microsoft/Florence-2-base", cache_dir=str(self.cache_dir))
                     logger.info("✓ Florence-2: Verified")
                 except Exception as e:
                     logger.error(f"✗ Florence-2: Verification failed: {e}")
@@ -572,9 +584,7 @@ class ModelInstaller:
 
         return success
 
-    async def install_all(
-        self, backends: list[str], dry_run: bool = False, skip_verification: bool = False
-    ) -> bool:
+    async def install_all(self, backends: list[str], dry_run: bool = False, skip_verification: bool = False) -> bool:
         """Install all specified backends."""
         logger.info(f"Installing backends: {', '.join(backends)}")
         if dry_run:
@@ -683,27 +693,17 @@ async def main():
         help="Backends to install (default: all)",
     )
 
-    parser.add_argument(
-        "--skip-verification", action="store_true", help="Skip verification after installation"
-    )
+    parser.add_argument("--skip-verification", action="store_true", help="Skip verification after installation")
 
-    parser.add_argument(
-        "--force-redownload", action="store_true", help="Force redownload of existing models"
-    )
+    parser.add_argument("--force-redownload", action="store_true", help="Force redownload of existing models")
 
     parser.add_argument("--cache-dir", type=Path, help="Custom cache directory for models")
 
-    parser.add_argument(
-        "--gpu-only", action="store_true", help="Only install GPU-compatible models"
-    )
+    parser.add_argument("--gpu-only", action="store_true", help="Only install GPU-compatible models")
 
-    parser.add_argument(
-        "--cpu-only", action="store_true", help="Only install CPU-compatible models"
-    )
+    parser.add_argument("--cpu-only", action="store_true", help="Only install CPU-compatible models")
 
-    parser.add_argument(
-        "--dry-run", action="store_true", help="Show what would be installed without doing it"
-    )
+    parser.add_argument("--dry-run", action="store_true", help="Show what would be installed without doing it")
 
     parser.add_argument("--verbose", "-v", action="store_true", help="Increase verbosity")
 
@@ -752,112 +752,7 @@ async def main():
     installer = ModelInstaller(cache_dir=args.cache_dir, force_redownload=args.force_redownload)
 
     # Run installation
-    success = await installer.install_all(
-        all_backends, dry_run=args.dry_run, skip_verification=args.skip_verification
-    )
-
-    return success
-
-
-async def main():
-    """Main installation function (renamed to avoid conflict)."""
-    parser = argparse.ArgumentParser(
-        description="OCR-MCP Model Installation Script",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=__doc__,
-    )
-
-    parser.add_argument(
-        "--backends",
-        nargs="+",
-        choices=[
-            "mistral-ocr",
-            "deepseek-ocr",
-            "florence-2",
-            "dots-ocr",
-            "pp-ocrv5",
-            "qwen-image-layered",
-            "got-ocr",
-            "tesseract",
-            "easyocr",
-            "all",
-        ],
-        default=["all"],
-        help="Backends to install (default: all)",
-    )
-
-    parser.add_argument(
-        "--skip-verification", action="store_true", help="Skip verification after installation"
-    )
-
-    parser.add_argument(
-        "--force-redownload", action="store_true", help="Force redownload of existing models"
-    )
-
-    parser.add_argument("--cache-dir", type=Path, help="Custom cache directory for models")
-
-    parser.add_argument(
-        "--gpu-only", action="store_true", help="Only install GPU-compatible models"
-    )
-
-    parser.add_argument(
-        "--cpu-only", action="store_true", help="Only install CPU-compatible models"
-    )
-
-    parser.add_argument(
-        "--dry-run", action="store_true", help="Show what would be installed without doing it"
-    )
-
-    parser.add_argument("--verbose", "-v", action="store_true", help="Increase verbosity")
-
-    args = parser.parse_args()
-
-    if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
-
-    # Handle "all" backends
-    if "all" in args.backends:
-        all_backends = [
-            "mistral-ocr",
-            "deepseek-ocr",
-            "florence-2",
-            "dots-ocr",
-            "pp-ocrv5",
-            "qwen-image-layered",
-            "got-ocr",
-            "tesseract",
-            "easyocr",
-        ]
-    else:
-        all_backends = args.backends
-
-    # Filter by GPU/CPU preferences (simplified)
-    if args.gpu_only:
-        # Only install backends that support GPU
-        gpu_backends = [
-            "mistral-ocr",
-            "deepseek-ocr",
-            "florence-2",
-            "pp-ocrv5",
-            "qwen-image-layered",
-            "got-ocr",
-        ]
-        all_backends = [b for b in all_backends if b in gpu_backends]
-        logger.info("GPU-only mode: Only installing GPU-compatible backends")
-
-    if args.cpu_only:
-        # All backends can run on CPU, but prefer CPU-optimized ones
-        cpu_backends = ["tesseract", "easyocr", "pp-ocrv5"]
-        all_backends = [b for b in all_backends if b in cpu_backends]
-        logger.info("CPU-only mode: Only installing CPU-optimized backends")
-
-    # Initialize installer
-    installer = ModelInstaller(cache_dir=args.cache_dir, force_redownload=args.force_redownload)
-
-    # Run installation
-    success = await installer.install_all(
-        all_backends, dry_run=args.dry_run, skip_verification=args.skip_verification
-    )
+    success = await installer.install_all(all_backends, dry_run=args.dry_run, skip_verification=args.skip_verification)
 
     return success
 

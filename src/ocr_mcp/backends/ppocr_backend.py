@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 PP-OCRv5 Backend Implementation
 Integrates PaddlePaddle PP-OCRv5 for industrial-grade OCR processing
@@ -108,11 +136,9 @@ class PPOCRBackend(OCRBackend):
 
         except Exception as e:
             logger.error(f"PP-OCRv5 processing failed: {e}")
-            raise RuntimeError(f"OCR processing failed: {str(e)}")
+            raise RuntimeError(f"OCR processing failed: {e!s}")
 
-    def _process_ppocr_results(
-        self, results: list, ocr_mode: str, image_size: tuple
-    ) -> dict[str, Any]:
+    def _process_ppocr_results(self, results: list, ocr_mode: str, image_size: tuple) -> dict[str, Any]:
         """Process PP-OCRv5 results into standardized format"""
         if not results or not results[0]:
             return {"text": "", "backend": "ppocr", "confidence": 0.0, "regions": []}

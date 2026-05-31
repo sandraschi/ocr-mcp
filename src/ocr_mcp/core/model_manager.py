@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 OCR-MCP Intelligent Model Manager
 
@@ -278,9 +306,7 @@ class ModelManager:
                 return 0
 
             # Sort models by priority (low first) then by last used time
-            models_to_unload = sorted(
-                self.loaded_models.values(), key=lambda m: (m.priority, m.last_used)
-            )
+            models_to_unload = sorted(self.loaded_models.values(), key=lambda m: (m.priority, m.last_used))
 
             for model_info in models_to_unload:
                 if gpu_info.free_memory + memory_freed >= target_free_mb:
@@ -408,7 +434,7 @@ class ModelManager:
         ]
 
         preloaded = 0
-        for backend_name, priority in preload_candidates:
+        for backend_name, _priority in preload_candidates:
             try:
                 # This would trigger lazy loading in the backend
                 # For now, just count available backends
@@ -432,15 +458,13 @@ class ModelManager:
 
             models_to_check = list(self.loaded_models.items())
 
-            for model_key, model_info in models_to_check:
+            for _model_key, model_info in models_to_check:
                 if model_info.priority >= 3:
                     continue  # Don't unload high-priority models
 
                 idle_time = current_time - model_info.last_used
                 if idle_time > max_idle_seconds:
-                    if self.unload_model(
-                        model_info.backend_name, model_info.model_name, force=False
-                    ):
+                    if self.unload_model(model_info.backend_name, model_info.model_name, force=False):
                         unloaded += 1
 
             if unloaded > 0:

@@ -1,3 +1,31 @@
+# MIT License
+#
+# Copyright (c) 2025 OCR-MCP Project
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+#
+#
+#
+#
+
 """
 Document Structure Analysis Tools for OCR-MCP
 
@@ -116,9 +144,7 @@ async def analyze_document_layout(
             "element_summary": element_summary,
             "document_structure": {
                 "has_tables": any(e["type"] == "table" for e in layout_elements),
-                "has_forms": any(
-                    e["type"] in ["form_field", "checkbox", "signature"] for e in layout_elements
-                ),
+                "has_forms": any(e["type"] in ["form_field", "checkbox", "signature"] for e in layout_elements),
                 "has_headers": any(e["type"] == "header" for e in layout_elements),
                 "has_footers": any(e["type"] == "footer" for e in layout_elements),
                 "text_blocks": len([e for e in layout_elements if e["type"] == "text_block"]),
@@ -136,7 +162,7 @@ async def analyze_document_layout(
         logger.error(f"Document layout analysis failed: {e}")
         return {
             "success": False,
-            "error": f"Layout analysis failed: {str(e)}",
+            "error": f"Layout analysis failed: {e!s}",
             "image_path": image_path,
         }
 
@@ -183,9 +209,7 @@ async def extract_table_data(
         extracted_tables = []
 
         for table_info in tables:
-            table_data = await _extract_table_content(
-                image_path, table_info, ocr_backend, backend_manager, config
-            )
+            table_data = await _extract_table_content(image_path, table_info, ocr_backend, backend_manager, config)
             extracted_tables.append(table_data)
 
         return {
@@ -202,7 +226,7 @@ async def extract_table_data(
         logger.error(f"Table extraction failed: {e}")
         return {
             "success": False,
-            "error": f"Table extraction failed: {str(e)}",
+            "error": f"Table extraction failed: {e!s}",
             "image_path": image_path,
         }
 
@@ -331,7 +355,7 @@ async def detect_form_fields(
         logger.error(f"Form field detection failed: {e}")
         return {
             "success": False,
-            "error": f"Form field detection failed: {str(e)}",
+            "error": f"Form field detection failed: {e!s}",
             "image_path": image_path,
         }
 
@@ -405,7 +429,7 @@ async def analyze_document_reading_order(
         logger.error(f"Reading order analysis failed: {e}")
         return {
             "success": False,
-            "error": f"Reading order analysis failed: {str(e)}",
+            "error": f"Reading order analysis failed: {e!s}",
             "image_path": image_path,
         }
 
@@ -447,9 +471,7 @@ async def classify_document_type(
         ocr_text = ocr_result.get("text", "") if ocr_result.get("success") else ""
 
         # Analyze layout
-        layout_analysis = await analyze_document_layout(
-            image_path, "basic", backend_manager=backend_manager
-        )
+        layout_analysis = await analyze_document_layout(image_path, "basic", backend_manager=backend_manager)
 
         # Classify based on content and layout features
         classification = _classify_document_type(ocr_text, layout_analysis)
@@ -462,14 +484,16 @@ async def classify_document_type(
             "alternative_types": classification["alternatives"],
             "detected_features": classification["features"],
             "classification_reasoning": classification["reasoning"],
-            "message": f"Document classified as: {classification['primary_type']} ({classification['confidence']}% confidence)",
+            "message": (
+                f"Document classified as: {classification['primary_type']} ({classification['confidence']}% confidence)"
+            ),
         }
 
     except Exception as e:
         logger.error(f"Document classification failed: {e}")
         return {
             "success": False,
-            "error": f"Document classification failed: {str(e)}",
+            "error": f"Document classification failed: {e!s}",
             "image_path": image_path,
         }
 
@@ -564,7 +588,7 @@ async def extract_document_metadata(
         logger.error(f"Metadata extraction failed: {e}")
         return {
             "success": False,
-            "error": f"Metadata extraction failed: {str(e)}",
+            "error": f"Metadata extraction failed: {e!s}",
             "image_path": image_path,
         }
 
@@ -652,9 +676,7 @@ def _detect_form_fields(image, text_regions):
 
         # Check for square-ish shapes (checkboxes)
         if 0.8 <= aspect_ratio <= 1.2 and 10 <= w <= 30:
-            form_fields.append(
-                {"type": "checkbox", "bbox": [x, y, x + w, y + h], "confidence": 0.75}
-            )
+            form_fields.append({"type": "checkbox", "bbox": [x, y, x + w, y + h], "confidence": 0.75})
 
     return form_fields
 
@@ -692,9 +714,7 @@ def _detect_orientation(image):
     return "landscape" if w > h else "portrait"
 
 
-async def _extract_table_content(
-    image_path, table_info, ocr_backend, backend_manager=None, config=None
-):
+async def _extract_table_content(image_path, table_info, ocr_backend, backend_manager=None, config=None):
     """Extract content from a detected table."""
     # This would use OCR to extract cell content
     # Placeholder implementation

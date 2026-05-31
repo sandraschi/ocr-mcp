@@ -468,7 +468,9 @@ async def _handle_process_batch_intelligent(
             "total_processing_time": round(end_time - start_time, 2),
         },
         "results": results,
-        "message": f"Batch processing complete: {len(successful)}/{len(document_paths)} documents processed successfully",
+        "message": (
+            f"Batch processing complete: {len(successful)}/{len(document_paths)} documents processed successfully"
+        ),
     }
 
 

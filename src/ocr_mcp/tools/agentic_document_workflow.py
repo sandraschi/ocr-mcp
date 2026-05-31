@@ -34,7 +34,7 @@ to accomplish complex document processing tasks.
 """
 
 import logging
-from typing import Literal, Optional
+from typing import Literal
 
 from fastmcp import Context
 
@@ -61,7 +61,7 @@ def register_agentic_document_workflow(app):
             ]
         ],
         max_iterations: int = 5,
-        context: Optional[Context] = None,
+        context: Context | None = None,
     ) -> ToolResponse:
         """
         Execute an autonomous document workflow using LLM sampling.
@@ -117,11 +117,12 @@ def register_agentic_document_workflow(app):
                 return ToolResponse(
                     success=False,
                     operation=operation,
-                    summary=f"None of the requested tools were found. Registered: {list(name_to_tool.keys())}",
+                    summary=(f"None of the requested tools were found. Registered: {list(name_to_tool.keys())}"),
                 )
 
             system_prompt = (
-                "You are an OCR/document workflow assistant. Use the provided tools to accomplish the user's document workflow. "
+                "You are an OCR/document workflow assistant. Use the provided tools "
+                "to accomplish the user's document workflow. "
                 "After using tools, summarize what was done and any next steps. Be concise."
             )
             messages: list = [{"role": "user", "content": workflow_prompt}]
