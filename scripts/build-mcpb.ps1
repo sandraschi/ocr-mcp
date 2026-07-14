@@ -43,7 +43,7 @@ if (!(Test-Path $OutputDir)) {
     New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 }
 
-Write-Host "🏗️ Building OCR-MCP MCPB Package..." -ForegroundColor Green
+Write-Host "ðŸ-ï¸ Building OCR-MCP MCPB Package..." -ForegroundColor Green
 Write-Host "Output Directory: $OutputDir" -ForegroundColor Cyan
 
 # Get version from pyproject.toml if not specified
@@ -214,7 +214,7 @@ if ($Compress) {
     }
 }
 
-Write-Host "✅ OCR-MCP MCPB package created successfully!" -ForegroundColor Green
+Write-Host "âœ… OCR-MCP MCPB package created successfully!" -ForegroundColor Green
 Write-Host "Package location: $PackageDir" -ForegroundColor Cyan
 
 if ($Compress) {
