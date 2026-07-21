@@ -48,13 +48,34 @@ All three save to SD card or network folder. OCR-MCP can watch that folder and a
 
 If you want the cheapest option and enjoy building things:
 
-- **Camera:** Any 12MP+ used mirrorless or a Logitech Brio webcam (~$50-100 used)
-- **Cradle:** Get a local metal shop to bend an aluminum V-trough (~$50)
-- **Lighting:** Two LED desk lamps at 45 degrees (~$30)
-- **Software:** CZUR's free software works with any camera. Or use ScanTailor + OpenCV.
-- **Foot pedal:** USB foot pedal from Amazon (~$25)
+- **Camera:** An **iPhone (or any modern smartphone)** is genuinely good enough now.
+  A 12MP+ iPhone from the last few years (XR or newer) has higher effective resolution
+  than many DSLRs from the 2000s. The key advantage: you already own it, and there are
+  free apps with remote shutter + timer. Mount it on a cheap copy stand or tripod.
+  The iPhone's built-in HDR and auto-focus handle lighting better than most webcams.
+  For the truly dedicated, a used Google Pixel (which has best-in-class document
+  capture algorithms) is ~$50-100 used.
+- **Cradle:** Get a local metal shop to bend an aluminum V-trough (~$50).
+  Or build one from plywood in an afternoon — many free plans online from the
+  DIY book scanning community.
+- **Lighting:** Two LED desk lamps at 45 degrees (~$30). The iPhone compensates for
+  uneven lighting better than older cameras, but even light still helps.
+- **Software:** The iPhone's built-in Notes app can scan documents (auto-crop, deskew)
+  and export to PDF. For book scanning, **Microsoft Lens** (free) or **Adobe Scan**
+  (free) handle page curve flattening better. For the full DIY workflow:
+  ScanTailor + OpenCV on the desktop.
+- **Foot pedal:** USB foot pedal from Amazon (~$25) for hands-free capture.
+  Or use the iPhone's voice shutter: "Hey Siri, take a picture."
+- **Remote camera app:** Many free apps let you trigger the iPhone camera from a
+  browser on your laptop — no foot pedal needed.
 
-Total: ~$150-250. Better scans than any flatbed for bound books.
+**Total with iPhone you already own: ~$105 (cradle + lights + pedal).**
+Total with used Pixel: ~$155-205.
+
+Better scans than any flatbed for bound books, and the iPhone's 4K video mode
+lets you record a page-flip session and extract frames — 30 pages/minute with
+no manual shutter pressing. There are iOS apps (Scanner Pro, Adobe Scan) that
+do this automatically.
 
 ### What NOT to buy
 
