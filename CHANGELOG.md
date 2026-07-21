@@ -1,5 +1,20 @@
 
-## [Unreleased] — 2026-07-21
+## [0.2.0-beta] — 2026-07-21
+
+### Added
+- **FastMCP 3.4+ feature set**: Skills directory, Prefab UI cards, parameterized prompts, ctx.sample() support
+  - `src/ocr_mcp/skills/ocr-expert/SKILL.md` — comprehensive skill with backend table, workflows, config
+  - `resource://ocr/skills` now reads dynamically from skills directory
+  - `skill://{name}` parameterized resource for per-skill access
+  - `show_health_card` and `show_backends_card` — rich Prefab UI cards for in-chat status
+  - All 5 prompts now accept domain-specific parameters (backend, dpi, goal, etc.)
+  - Agentic workflow uses `ctx.sample()` (FastMCP 3.4+) with fallback to `context.sample_step()` (3.1)
+- **CORS fleet-standard** — proper allow_origin_regex covering Tailscale, LAN, CGNAT
+- **transport.py** — uvicorn.Server on mcp.http_app() replacing run_http_async
+- **.cursorrules**, **.env.example** — session context injection and config template
+- **PRD.md**, **STATUS.md**, **llms-full.txt**, **WEBAPP_REDESIGN.md** — documentation
+
+## [Unreleased]
 
 ### Added
 - **Unlimited-OCR backend** (`unlimited_ocr_backend.py`) — Baidu one-shot long-horizon document parsing

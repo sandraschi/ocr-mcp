@@ -96,12 +96,25 @@ def register_agentic_document_workflow(app):
                     summary="No tools specified for the agent.",
                     next_steps=["Include at least one valid tool name in available_tools."],
                 )
-            if not hasattr(context, "sample_step"):
+            system_prompt = (
+                "You are an OCR/document workflow assistant. Use the provided tools "
+                "to accomplish the user's document workflow. "
+                "After using tools, summarize what was done and any next steps. Be concise."
+            )
+            messages: list = [{"role": "user", "content": workflow_prompt}]
+            executed_tools: list[str] = []
+            iterations = 0
+
+            # Try ctx.sample() first (FastMCP 3.4+), fall back to context.sample_step() (3.1)
+            has_sample = hasattr(context, "sample") and callable(context.sample)
+            has_sample_step = hasattr(context, "sample_step") and callable(context.sample_step)
+
+            if not has_sample and not has_sample_step:
                 return ToolResponse(
                     success=False,
                     operation=operation,
-                    summary="Sampling (SEP-1577) not supported by current context.",
-                    next_steps=["Ensure the client supports sampling and FastMCP 3.1+ is used."],
+                    summary="Sampling not supported by current context.",
+                    next_steps=["Ensure the client supports sampling (FastMCP 3.1+)."],
                 )
 
             # Resolve tools from app by name
@@ -120,48 +133,62 @@ def register_agentic_document_workflow(app):
                     summary=(f"None of the requested tools were found. Registered: {list(name_to_tool.keys())}"),
                 )
 
-            system_prompt = (
-                "You are an OCR/document workflow assistant. Use the provided tools "
-                "to accomplish the user's document workflow. "
-                "After using tools, summarize what was done and any next steps. Be concise."
-            )
-            messages: list = [{"role": "user", "content": workflow_prompt}]
-            executed_tools: list[str] = []
-            iterations = 0
-
             while iterations < max_iterations:
                 iterations += 1
                 logger.info("Agentic workflow step %s/%s", iterations, max_iterations)
-                step = await context.sample_step(
-                    messages,
-                    system_prompt=system_prompt,
-                    tools=tools_for_sampling,
-                    execute_tools=True,
-                    max_tokens=4096,
-                )
 
-                if hasattr(step, "history") and step.history:
-                    messages = list(step.history)
-                if hasattr(step, "tool_calls") and step.tool_calls:
-                    for tc in step.tool_calls:
-                        name = getattr(tc, "name", None) or getattr(tc, "tool_name", str(tc))
-                        if name:
-                            executed_tools.append(name)
-
-                # Done when LLM returns text (no tool use)
-                if not getattr(step, "is_tool_use", True):
-                    final_text = getattr(step, "text", "") or ""
-                    return ToolResponse(
-                        success=True,
-                        operation=operation,
-                        summary=f"Workflow completed in {iterations} round(s).",
-                        result={
-                            "final_output": final_text,
-                            "iterations": iterations,
-                            "executed_tools": list(dict.fromkeys(executed_tools)),
-                        },
-                        next_steps=["Review results or refine the workflow prompt."],
+                if has_sample:
+                    result = await context.sample(
+                        messages,
+                        system_prompt=system_prompt,
+                        tools=tools_for_sampling,
+                        max_tokens=4096,
                     )
+                    step_text = result.get("content", "") if isinstance(result, dict) else str(result)
+                    step_tools = result.get("tool_calls", []) if isinstance(result, dict) else []
+                    for tc in step_tools:
+                        name = tc.get("name", str(tc)) if isinstance(tc, dict) else str(tc)
+                        executed_tools.append(name)
+                    if not step_tools:
+                        return ToolResponse(
+                            success=True,
+                            operation=operation,
+                            summary=f"Workflow completed in {iterations} round(s).",
+                            result={
+                                "final_output": step_text,
+                                "iterations": iterations,
+                                "executed_tools": list(dict.fromkeys(executed_tools)),
+                            },
+                            next_steps=["Review results or refine the workflow prompt."],
+                        )
+                else:
+                    step = await context.sample_step(
+                        messages,
+                        system_prompt=system_prompt,
+                        tools=tools_for_sampling,
+                        execute_tools=True,
+                        max_tokens=4096,
+                    )
+                    if hasattr(step, "history") and step.history:
+                        messages = list(step.history)
+                    if hasattr(step, "tool_calls") and step.tool_calls:
+                        for tc in step.tool_calls:
+                            name = getattr(tc, "name", None) or getattr(tc, "tool_name", str(tc))
+                            if name:
+                                executed_tools.append(name)
+                    if not getattr(step, "is_tool_use", True):
+                        final_text = getattr(step, "text", "") or ""
+                        return ToolResponse(
+                            success=True,
+                            operation=operation,
+                            summary=f"Workflow completed in {iterations} round(s).",
+                            result={
+                                "final_output": final_text,
+                                "iterations": iterations,
+                                "executed_tools": list(dict.fromkeys(executed_tools)),
+                            },
+                            next_steps=["Review results or refine the workflow prompt."],
+                        )
 
             return ToolResponse(
                 success=True,

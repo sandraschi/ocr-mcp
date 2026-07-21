@@ -1,7 +1,7 @@
 {
   "manifest_version": "0.2",
   "name": "ocr-mcp",
-  "version": "0.1.0",
+  "version": "0.2.0-beta",
   "description": "FastMCP 3.4+ OCR server with 14 backends: Unlimited-OCR, PaddleOCR-VL-1.5, DeepSeek-OCR-2, Nemotron VL 8B, MinerU2.5-Pro, olmOCR-2, Mistral OCR, Qwen2.5-VL, GOT-OCR 2.0, DOTS.OCR, PP-OCRv5, EasyOCR, Tesseract. WIA scanner, batch pipelines, agentic workflows.",
   "author": { "name": "Sandra Schipal" },
   "license": "MIT",

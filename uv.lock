@@ -1939,7 +1939,7 @@ wheels = [
 
 [[package]]
 name = "ocr-mcp"
-version = "0.1.0"
+version = "0.2.0b0"
 source = { editable = "." }
 dependencies = [
     { name = "accelerate" },

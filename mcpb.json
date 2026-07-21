@@ -1,6 +1,6 @@
 {
     "name": "ocr-mcp",
-    "version": "1.0.0",
+    "version": "0.2.0-beta",
     "type": "server",
     "runtime": "python",
     "entry_point": "src/ocr_mcp/server.py",

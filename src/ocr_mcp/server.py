@@ -53,6 +53,8 @@ from .core.config import OCRConfig
 from .sampling.ocr_sampling_handler import OCRSamplingHandler
 from .tools.ocr_tools import register_sota_tools
 
+_SKILLS_DIR = Path(__file__).parent / "skills"
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -177,68 +179,98 @@ def get_ocr_capabilities() -> str:
 @app.resource("resource://ocr/skills")
 def get_ocr_skills() -> str:
     """Standardized skills library for LLM orchestration."""
-    return """# OCR-MCP Operational Skills
+    parts = []
+    if _SKILLS_DIR.is_dir():
+        for skill_dir in sorted(_SKILLS_DIR.iterdir()):
+            skill_file = skill_dir / "SKILL.md"
+            if skill_file.is_file():
+                parts.append(skill_file.read_text(encoding="utf-8"))
+    if not parts:
+        parts.append("No skills found.")
+    return "\n\n---\n\n".join(parts)
 
-## 1. Document Extraction
-- Use `process_document(operation='process_document')` for high-fidelity OCR.
-- Use `process_document(operation='extract_tables')` for structured data recovery.
-- If quality is low, run `manage_image(operation='preprocess')` first.
 
-## 2. Hardware Acquisition
-- Enumerate devices with `operate_scanner(operation='list_scanners')`.
-- Acquire pages using `operate_scanner(operation='scan_document')`.
-
-## 3. Autonomous Orchestration
-- Use `execute_agentic_workflow` for multi-step goals like
-  "Find the scanner, scan 5 pages, and extract all invoice totals."
-"""
+@app.resource("skill://{name}")
+def get_skill(name: str) -> str:
+    """Read a specific skill by name from the skills directory."""
+    skill_file = _SKILLS_DIR / name / "SKILL.md"
+    if skill_file.is_file():
+        return skill_file.read_text(encoding="utf-8")
+    return f"Skill '{name}' not found. Available: {[d.name for d in _SKILLS_DIR.iterdir() if d.is_dir()]}"
 
 
 # Prompts
 @app.prompt("prompt://ocr/process-instructions")
-def get_process_instructions_prompt() -> str:
-    """Guide for configuring document processing tasks."""
-    return """Assist the user in defining a document processing task.
-Collect:
-1. Source path (local file://).
-2. Backend (deepseek-ocr for complexity, paddleocr-vl for tables).
-3. Operation (OCR, Layout, or Metadata).
+def get_process_instructions_prompt(backend: str = "auto", task_type: str = "document") -> str:
+    """Guide for configuring a document processing task.
 
-Construct a `process_document` call based on these inputs."""
+    Args:
+        backend: OCR backend to use (default: auto).
+        task_type: Type of document (document, invoice, form, table).
+    """
+    return f"""You are processing a {task_type} with the OCR-MCP server.
+Suggested backend: {backend}.
+
+Workflow:
+1. Preprocess if needed: `manage_image(operation='preprocess', image_path='<path>', operations=['deskew', 'denoise'])`.
+2. OCR: `process_document(operation='process_document', image_path='<path>', backend='{backend}')`.
+3. If quality is low, run quality assessment first."""
 
 
 @app.prompt("prompt://ocr/quality-assessment-guide")
-def get_quality_assessment_guide_prompt() -> str:
-    """Workflow for evaluating and improving extraction quality."""
-    return """1. Run `process_document(operation='process_document')`.
+def get_quality_assessment_guide_prompt(min_score: float = 0.7) -> str:
+    """Workflow for evaluating extraction quality.
+
+    Args:
+        min_score: Minimum acceptable quality score (0.0-1.0).
+    """
+    return f"""1. Run `process_document(operation='process_document')`.
 2. Evaluate with `process_document(operation='assess_quality')`.
-3. If scores are low, apply `manage_image(operation='preprocess', deskew=True, denoise=True)`.
-4. Re-run OCR and compare."""
+3. If score is below {min_score}, apply `manage_image(operation='preprocess', deskew=True, denoise=True)`.
+4. Re-run OCR and compare scores."""
 
 
 @app.prompt("prompt://ocr/scanner-workflow")
-def get_scanner_workflow_prompt() -> str:
-    """Workflow for hardware-to-OCR pipelines."""
-    return """1. Locate hardware: `operate_scanner(operation='list_scanners')`.
-2. Configure: `operate_scanner(operation='configure_scan')`.
+def get_scanner_workflow_prompt(dpi: int = 300, color_mode: str = "Color") -> str:
+    """Workflow for hardware-to-OCR pipeline.
+
+    Args:
+        dpi: Scan resolution (default: 300).
+        color_mode: Color mode (Color, Grayscale, BlackAndWhite).
+    """
+    return f"""Scanner workflow ({dpi} DPI, {color_mode}):
+1. Locate hardware: `operate_scanner(operation='list_scanners')`.
+2. Configure: `operate_scanner(operation='configure_scan', dpi={dpi}, color_mode='{color_mode}')`.
 3. Acquire: `operate_scanner(operation='scan_document')`.
-4. Extract: `process_document(operation='process_document', source_path=<scan_path>)`."""
+4. OCR: `process_document(operation='process_document', image_path='<scan_path>')`."""
 
 
 @app.prompt("prompt://ocr/batch-processing-guide")
-def get_batch_processing_guide_prompt() -> str:
-    """Instructions for high-volume document batching."""
-    return """Use `manage_workflow(operation='process_batch_intelligent')` for automated directory processing.
-For custom logic, use `manage_workflow(operation='create_processing_pipeline')` to chain operations."""
+def get_batch_processing_guide_prompt(batch_size: int = 10, backend: str = "auto") -> str:
+    """Instructions for high-volume document batching.
+
+    Args:
+        batch_size: Max documents per batch (default: 10).
+        backend: OCR backend for batch processing (default: auto).
+    """
+    return f"""Batch processing ({batch_size} docs, backend: {backend}):
+Use `manage_workflow(operation='process_batch_intelligent', image_paths=['<paths>'], backend='{backend}')`.
+For custom pipelines, use `manage_workflow(operation='create_processing_pipeline')`.
+Monitor progress with `manage_workflow(operation='monitor_batch_progress')`."""
 
 
 @app.prompt("prompt://ocr/agentic-workflow-instructions")
-def get_agentic_workflow_instructions_prompt() -> str:
-    """Detailed guide for SEP-1577 autonomous execution."""
-    return """Explain `execute_agentic_workflow` (SEP-1577):
-- Provide a clear natural language goal (workflow_prompt).
-- Pass relevant tool names in `available_tools`.
-- The agent will autonomously loop, calling tools and analyzing results until the goal is achieved."""
+def get_agentic_workflow_instructions_prompt(goal: str = "") -> str:
+    """Guide for autonomous document workflows.
+
+    Args:
+        goal: The user's high-level goal for the workflow.
+    """
+    return f"""Autonomous document workflow (goal: {goal or "user-defined"}):
+Use `execute_agentic_workflow` with:
+- A clear natural language goal as `workflow_prompt`.
+- Relevant tools in `available_tools`.
+- The agent autonomously loops, calling tools and analyzing results until complete."""
 
 
 # Global instances - mutable runtime for lifespan injection
@@ -265,6 +297,17 @@ except ImportError as e:
     logger.warning(f"SEP-1577 executive workflow tool not available: {e}")
 except Exception as e:
     logger.error(f"Failed to register executive workflow tool: {e}")
+
+# Register Prefab UI tools
+try:
+    from .tools._prefab import register_prefab_tools
+
+    register_prefab_tools(app, _runtime)
+    logger.info("Prefab UI tools registered")
+except ImportError as e:
+    logger.warning(f"Prefab UI tools not available: {e}")
+except Exception as e:
+    logger.error(f"Failed to register Prefab UI tools: {e}")
 
 
 async def run_server():
