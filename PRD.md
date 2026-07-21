@@ -1,7 +1,7 @@
 # OCR-MCP — Product Requirements Document
 
-**Version:** 1.0
-**Status:** Draft
+**Version:** 1.1
+**Status:** Active
 **Last Updated:** 2026-07-21
 
 ## 1. Product Overview
@@ -49,6 +49,26 @@ OCR-MCP is a unified OCR platform with two surfaces: a **streamlined web applica
 | Auto backend selection | P0 | Intelligent fallback chain (14 backends). |
 | Resources | P1 | `resource://ocr/logs`, `resource://ocr/capabilities`. |
 | Sampling | P2 | `ctx.sample()` for agentic document workflows (Ollama or client LLM). |
+
+### 2.4 Book Pipeline (New)
+
+| Feature | Priority | Description |
+|---------|----------|-------------|
+| Chapter detection | P1 | Rules-based heading detection across OCR page text (supports EN/FR/DE/ES) |
+| EPUB assembly | P1 | Build valid EPUB with auto-generated TOC from chapters |
+| Metadata extraction | P2 | Auto-detect title/author from first 3 pages |
+| Full pipeline | P1 | One-shot: OCR pages -> detect chapters -> assemble EPUB |
+| Calibre integration | P2 | Send finished EPUB to calibre-mcp for library ingest |
+
+### 2.5 Auto-Scan Watcher (New)
+
+| Feature | Priority | Description |
+|---------|----------|-------------|
+| Preview-poll mode | P1 | Detect document placement on flatbed via low-res preview + image hash diff |
+| Button mode | P2 | Detect WIA scan button events |
+| Auto-OCR | P1 | Automatically scan + OCR when document detected |
+| Dashboard toggle | P1 | Start/stop watcher from Dashboard, see live scan count |
+| Settings config | P2 | Configure mode, interval, backend from Settings page |
 
 ### 2.3 OCR Backends
 
@@ -126,8 +146,14 @@ OCR-MCP is a unified OCR platform with two surfaces: a **streamlined web applica
 | MCP server | Done | Portmanteau tools, dual transport, resources, prompts |
 | WIA scanner | Done | Flatbed scanning on Windows |
 | Batch/pipelines | Done | Quality optimizer, pipeline execution |
+| Skills directory | Done | SKILL.md + parameterized skill:// resources |
+| Prefab UI cards | Done | Health card, backends card |
+| Book pipeline | Done | Chapter detection, EPUB assembly, webapp page |
+| Auto-Scan watcher | Done | Preview-poll + button event detection |
+| Agentic workflows | Done | ctx.sample() + sample_step() fallback |
 | Production packaging | In Progress | Tauri NSIS installer, PyInstaller sidecar |
 | CUA-NSIS smoke tests | In Progress | Install -> launch -> verify -> uninstall |
+| Folder watcher (CZUR) | Future | Watch directory for new scan images |
 | TWAIN scanner | Future | Support non-WIA scanners |
 | Cloud sync | Future | Cross-device settings, corpus sync |
 

@@ -1,6 +1,6 @@
 # OCR-MCP — Full Documentation for LLMs
 
-**Version:** 0.1.0
+**Version:** 0.2.0-beta
 **Last Updated:** 2026-07-21
 
 This is the complete reference for OCR-MCP, a FastMCP 3.4+ server providing comprehensive OCR capabilities. Read this to understand all tools, configuration, backends, and endpoints.
@@ -26,8 +26,13 @@ User ──►                                                       ├── B
 | `src/ocr_mcp/core/backend_manager.py` | Backend registry, lazy loading, auto-selection |
 | `src/ocr_mcp/core/config.py` | OCRConfig with env-based settings |
 | `src/ocr_mcp/tools/ocr_tools.py` | Portmanteau tool registration |
+| `src/ocr_mcp/tools/book_pipeline.py` | Book ingest pipeline (chapter detect, EPUB assembly) |
+| `src/ocr_mcp/tools/_prefab.py` | Prefab UI cards (health, backends display) |
+| `src/ocr_mcp/services/chapter_detector.py` | Rules-based chapter heading detection |
+| `src/ocr_mcp/services/book_assembler.py` | EPUB assembly via ebooklib |
+| `src/ocr_mcp/services/scanner_watcher.py` | Auto-scan background watcher (preview-poll + button) |
 | `src/ocr_mcp/backends/*.py` | 14 OCR backend implementations |
-| `backend/app.py` | FastAPI web backend (scanner, upload, settings) |
+| `backend/app.py` | FastAPI web backend (scanner, upload, settings, auto-scan, book pipeline) |
 | `web_sota/src/` | React frontend |
 | `run_server.py` | PyInstaller entry point for NSIS builds |
 
@@ -225,6 +230,23 @@ Contextual documentation for any topic. Parameters: `topic`, `level`.
 
 System health. Parameters: `level` (basic, detailed).
 
+### `ingest_book`
+
+| Operation | Description |
+|-----------|-------------|
+| `detect_chapters` | Find chapter boundaries in OCR page text (heading patterns, scoring) |
+| `detect_metadata` | Extract title and author from first 3 pages |
+| `assemble_epub` | Build EPUB from chapter text + metadata using ebooklib |
+| `full_pipeline` | OCR pages -> detect chapters -> assemble EPUB in one call |
+
+### `show_health_card` (Prefab, `app=True`)
+
+Rich in-chat card: server status, tool count, uptime, available backends.
+
+### `show_backends_card` (Prefab, `app=True`)
+
+Rich in-chat card: all 14 backends with availability, model size, modes, strengths.
+
 ---
 
 ## REST API (FastAPI backend at :10859)
@@ -250,6 +272,14 @@ OpenAPI docs at `http://127.0.0.1:10859/docs`.
 | `/api/settings/mistral/test` | POST | Validate Mistral key |
 | `/api/llm/providers` | GET | List detected LLM providers |
 | `/api/server_logs` | GET | Server log lines |
+| `/api/scanner/watch/status` | GET | Scanner auto-scan watcher status |
+| `/api/scanner/watch` | POST | Start scanner watcher (body: device_id, mode, interval_s, backend) |
+| `/api/scanner/watch/stop` | POST | Stop scanner watcher |
+| `/api/scanner/watch/reset` | POST | Reset watcher preview baseline |
+| `/api/ocr/detect-chapters` | POST | Detect chapter headings from OCR page text |
+| `/api/ocr/detect-metadata` | POST | Extract title/author from first pages |
+| `/api/ocr/assemble-epub` | POST | Build EPUB from chapter text + metadata |
+| `/api/ocr/book-pipeline` | POST | Full pipeline: OCR pages -> chapters -> EPUB |
 
 ---
 
@@ -288,6 +318,7 @@ OpenAPI docs at `http://127.0.0.1:10859/docs`.
 |-------|---------|-----------------|
 | `/` | Dashboard — quick scan, file drop, inline result | `dashboard`, `quick-scan-ocr`, `drop-zone`, `ocr-result`, `backend-select` |
 | `/editor` | Standalone text editor with export | — |
+| `/book-pipeline` | Book scanning pipeline: select pages, OCR, detect chapters, assemble EPUB | `book-pipeline` |
 | `/status` | Job activity and history | — |
 | `/settings` | Backend, scanner, Mistral config | — |
 | `/help` | In-app documentation | — |
