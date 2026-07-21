@@ -84,6 +84,91 @@ do this automatically.
 - **Flatbed scanners for books:** You have to press the book flat on the glass,
   which breaks spines on thick books and is painfully slow
 
+## Video Frame Extraction (iPhone Book Scanner)
+
+The simplest book scanner you can build today:
+
+1. Mount your iPhone on a cheap copy stand above a V-cradle
+2. Start 4K video recording in good light
+3. Flip pages naturally — one hand, steady rhythm
+4. Stop recording after 200 pages (~6 minutes)
+5. Run a script that extracts frames where the page is stable (no motion blur)
+6. Feed the extracted frames to OCR-MCP's batch pipeline
+
+**Frame extraction logic:**
+
+```python
+# For each frame, check Laplacian variance (focus measure)
+# When variance spikes above threshold after a dip, a new page
+# has settled into place — grab that frame
+variance = cv2.Laplacian(frame, cv2.CV_64F).var()
+if variance > sharp_threshold and was_blurry:
+    save_frame(frame, f"page_{page_num:03d}.png")
+    page_num += 1
+```
+
+No shutter button, no foot pedal, no scanner. Just flip pages and OCR-MCP handles
+the rest. The entire 200-page book goes from video to EPUB in one batch.
+
+iPhone apps that already do this: **Scanner Pro**, **Adobe Scan**, **Microsoft Lens**.
+But none of them feed into OCR-MCP's chapter detector + EPUB pipeline. That's
+where the custom pipeline wins.
+
+## Camera-Lid Integration (with devices-mcp)
+
+A clever escalation of the auto-scan idea: instead of polling the scanner's preview,
+use a **cheap USB webcam** pointed at the scanner to watch for physical interaction.
+
+**The flow:**
+
+```
+Camera watches scanner ──► detects lid open ──► waits for lid close
+    │                              │                      │
+    │  OpenCV motion detect        │  paper placed        │  trigger scan + OCR
+    │  + object presence           │  (camera sees it)    │
+    ▼                              ▼                      ▼
+  "lid opened"                  "paper on glass"       "lid closed — scan!"
+```
+
+**How it works with devices-mcp:**
+
+1. A USB webcam (~$20-40) is aimed at the flatbed scanner from the side
+2. devices-mcp exposes the camera feed to OCR-MCP
+3. OCR-MCP runs a simple OpenCV loop:
+   - **Lid open detected:** When the camera sees the scanner lid rise (motion in the upper region of the frame)
+   - **Paper detected:** When a new rectangular object appears on the glass (contour detection)
+   - **Lid closed:** When the lid returns to its original position
+   - **Trigger:** Full 300 DPI scan + Unlimited-OCR
+4. No scanning software, no WIA events, no preview-poll — just a camera watching the physical world
+
+**Why this is better than preview-poll:**
+
+| Method | Pros | Cons |
+|--------|------|------|
+| Preview-poll | No extra hardware | Wastes scanner cycles, slow (3s interval) |
+| WIA button events | Clean | Scanner-dependent, unreliable |
+| **Camera visual** | Instant, zero scanner wear, works with any scanner | Needs a webcam, OpenCV setup |
+
+**Estimated cost:** $20-40 for a USB webcam (Logitech C270 or similar).
+Mount it on a small arm or just tape it to a nearby shelf pointing at the scanner.
+No modification to the scanner needed.
+
+**Roadmap integration:**
+
+```
+┌─────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│ devices-mcp     │────►│ OCR-MCP          │────►│ Scanner + Pipeline│
+│ USB camera feed │     │ visual watcher   │     │ auto scan + OCR   │
+│ OpenCV detect   │     │ lid+paper events │     │ chapter detect    │
+└─────────────────┘     └──────────────────┘     └──► EPUB out       │
+                                                     └──────────────────┘
+```
+
+This idea is not implemented yet, but the building blocks all exist:
+- `devices-mcp` exposes camera feeds as MCP resources
+- `scanner_watcher.py` has the trigger framework (just needs a new detection mode)
+- The book pipeline handles everything after the scan
+
 ## Integrating with OCR-MCP
 
 ### Auto-Scan Watcher
