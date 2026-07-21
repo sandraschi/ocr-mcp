@@ -4,6 +4,8 @@ import {
   Clipboard,
   Cpu,
   Download,
+  Eye,
+  EyeOff,
   FileText,
   Loader2,
   RefreshCw,
@@ -56,6 +58,8 @@ export function Dashboard() {
   const [droppedFile, setDroppedFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [watcherActive, setWatcherActive] = useState(false);
+  const [watcherScans, setWatcherScans] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -105,13 +109,42 @@ export function Dashboard() {
     }
   }, []);
 
+  const fetchWatcherStatus = useCallback(async () => {
+    try {
+      const res = await fetch("/api/scanner/watch/status");
+      if (res.ok) {
+        const data = await res.json();
+        setWatcherActive(data.running);
+        setWatcherScans(data.scans_triggered || 0);
+      }
+    } catch { /* noop */ }
+  }, []);
+
+  const toggleWatcher = useCallback(async () => {
+    if (watcherActive) {
+      await fetch("/api/scanner/watch/stop", { method: "POST" });
+      setWatcherActive(false);
+    } else {
+      const deviceId = selectedScanner || (scanners.length > 0 ? scanners[0].device_id : "");
+      if (!deviceId) return;
+      await fetch("/api/scanner/watch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ device_id: deviceId, mode: "preview", backend: effectiveBackend }),
+      });
+      setWatcherActive(true);
+    }
+  }, [watcherActive, selectedScanner, scanners, effectiveBackend]);
+
   useEffect(() => {
     fetchScanners();
     fetchBackends();
     fetchHealth();
+    fetchWatcherStatus();
     const interval = setInterval(fetchHealth, 30000);
-    return () => clearInterval(interval);
-  }, [fetchScanners, fetchBackends, fetchHealth]);
+    const watcherInterval = setInterval(fetchWatcherStatus, 5000);
+    return () => { clearInterval(interval); clearInterval(watcherInterval); };
+  }, [fetchScanners, fetchBackends, fetchHealth, fetchWatcherStatus]);
 
   // Poll job status
   const pollJob = useCallback(
@@ -399,6 +432,22 @@ export function Dashboard() {
             >
               {scanning ? <Loader2 className="h-5 w-5 animate-spin" /> : <ScanLine className="h-5 w-5" />}
               {scanning ? "Processing..." : droppedFile ? "OCR File" : "Quick Scan & OCR"}
+            </button>
+
+            {/* Auto-scan watcher toggle */}
+            <button
+              onClick={toggleWatcher}
+              disabled={scanners.length === 0}
+              data-testid="auto-scan-toggle"
+              className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-colors ${
+                watcherActive
+                  ? "border-emerald-600 bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30"
+                  : "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+              } disabled:opacity-30 disabled:cursor-not-allowed`}
+              title={watcherActive ? `Auto-scan active (${watcherScans} triggered)` : "Auto-scan: watch for documents"}
+            >
+              {watcherActive ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
+              {watcherActive ? `Watching (${watcherScans})` : "Auto-Scan"}
             </button>
           </div>
         </CardContent>

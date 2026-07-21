@@ -17,6 +17,16 @@
 ## [Unreleased]
 
 ### Added
+- **Auto-Scan watcher** (`src/ocr_mcp/services/scanner_watcher.py`) — background service that
+  polls for document placement on flatbed scanners via preview-scan image diff detection.
+  Toggle from Dashboard or Settings. When a document is detected, triggers full scan + OCR
+  with the configured backend. Two modes: `preview` (universal, image-hash comparison) and
+  `button` (WIA button event polling, scanner-dependent).
+- **Book scanning guide** (`docs/BOOK_SCANNING.md`) — history of home book scanning,
+  CZUR recommendations, V-cradle DIY, cut-away-spine method, and integration with OCR-MCP's
+  auto-scan and folder watching.
+
+### Added
 - **Unlimited-OCR backend** (`unlimited_ocr_backend.py`) — Baidu one-shot long-horizon document parsing
   - 3B params, MIT license, arXiv:2606.23050
   - Two inference modes: gundam (cropped, 640px) and base (full, 1024px)

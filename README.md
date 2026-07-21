@@ -25,7 +25,7 @@
 - **Web app**  React (`web_sota/`) + FastAPI (`backend/app.py`): upload or scan, pick engine, get text/PDF/JSON. Ports **10858** (Vite) and **10859** (API). In-app **Help** (`/help`) documents the web UI, the MCP server, and OCR backends.
 - **MCP server**  FastMCP 3.1 stdio: tools for OCR, preprocessing, scanner, workflows. **Sampling defaults to local [Ollama](https://ollama.com)** (`http://127.0.0.1:11434/v1`, model `llama3.2`)  no cloud API key. Set **`OCR_SAMPLING_USE_CLIENT_LLM=1`** to use the host IDEs LLM instead. Mistral OCR uses **`MISTRAL_API_KEY`** when you call that backend. See [AI_FEATURES.md](docs/AI_FEATURES.md).
 
-**Features:** 14 backends (Unlimited-OCR, PaddleOCR-VL-1.5, Nemotron VL 8B, DeepSeek-OCR-2, MinerU2.5-Pro, Mistral OCR)  Auto backend selection  Preprocessing (deskew, enhance, crop)  Layout & table extraction  Quality assessment  WIA scanner  Batch & pipelines  Multi-format export
+**Features:** 14 backends (Unlimited-OCR, PaddleOCR-VL-1.5, Nemotron VL 8B, DeepSeek-OCR-2, MinerU2.5-Pro, Mistral OCR)  Auto backend selection  Preprocessing (deskew, enhance, crop)  Layout & table extraction  Quality assessment  WIA scanner  **Auto-Scan watcher** (detect documents on flatbed, auto-OCR)  Batch & pipelines  Multi-format export
 
 ## Docs
 
@@ -39,6 +39,7 @@
 | [**MCP toolset matrix**](docs/MCP_TOOLSET_MATRIX.md) | Portmanteau tools, operation status, corpus v0 |
 | [**AI features**](docs/AI_FEATURES.md) | Sampling, SEP-1577, agentic workflows, prompts |
 | [**Webapp redesign**](docs/WEBAPP_REDESIGN.md) | July 2026 redesign: dashboard-first workflow, removed legacy frontend, 5-page sidebar |
+| [**Book scanning**](docs/BOOK_SCANNING.md) | Home book scanning guide: V-cradle, CZUR, auto-scan integration |
 | [**In-app Help**](web_sota/src/pages/help.tsx) | Source for `/help`: webapp vs MCP vs backends (mirrors INSTALL / TECHNICAL) |
 | [**SOTA Compliance**](../mcp-central-docs/standards/AGENT_PROTOCOLS.md) |  Verified SOTA v12.0 Architecture |
 

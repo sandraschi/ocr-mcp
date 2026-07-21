@@ -1500,6 +1500,100 @@ async def scan_document(
         return {"success": False, "message": str(e), "device_id": device_id}
 
 
+# ── Scanner watcher (auto-detect documents on flatbed) ──────────────────────
+
+_watcher_scan_fn: callable | None = None
+_watcher_ocr_fn: callable | None = None
+
+
+def _watcher_scan(device_id: str, settings: dict) -> Any:
+    """Synchronous scan callback for the watcher service."""
+    if not scanner_manager:
+        return None
+    from ocr_mcp.backends.scanner.wia_scanner import ScanSettings as WiaSettings
+    s = WiaSettings(
+        dpi=settings.get("dpi", 300),
+        color_mode=settings.get("color_mode", "Color"),
+        paper_size=settings.get("paper_size", "A4"),
+    )
+    return scanner_manager.scan_document(device_id, s)
+
+
+async def _watcher_ocr(image_path: str, backend: str) -> str | None:
+    """OCR callback for the watcher service — queues a processing job."""
+    import uuid
+    _prune_old_jobs()
+    job_id = f"auto_scan_{uuid.uuid4().hex[:12]}"
+    processing_jobs[job_id] = {
+        "status": "processing",
+        "filename": Path(image_path).name,
+        "file_path": image_path,
+        "ocr_mode": "text",
+        "backend": backend,
+        "result": None,
+        "error": None,
+    }
+    try:
+        await process_scanned_background(job_id, image_path, "text", backend)
+    except Exception as e:
+        logger.error("Watcher OCR failed for %s: %s", job_id, e)
+    return job_id
+
+
+@app.get("/api/scanner/watch/status")
+async def watcher_status():
+    """Get scanner watcher status."""
+    from ocr_mcp.services.scanner_watcher import get_watcher
+    return get_watcher().get_status()
+
+
+class WatcherConfigBody(BaseModel):
+    mode: str = "preview"
+    interval_s: float = 3.0
+    change_threshold: float = 0.05
+    stabilize_frames: int = 2
+    auto_ocr: bool = True
+    backend: str = "unlimited-ocr"
+    device_id: str = ""
+
+
+@app.post("/api/scanner/watch")
+async def watcher_start(body: WatcherConfigBody):
+    """Start the scanner watcher with the given configuration."""
+    from ocr_mcp.services.scanner_watcher import WatcherConfig, get_watcher
+    config = WatcherConfig(
+        enabled=True,
+        mode=body.mode,
+        interval_s=body.interval_s,
+        change_threshold=body.change_threshold,
+        stabilize_frames=body.stabilize_frames,
+        auto_ocr=body.auto_ocr,
+        backend=body.backend,
+        device_id=body.device_id,
+    )
+    watcher = get_watcher()
+    watcher.scan_fn = _watcher_scan
+    watcher.ocr_fn = _watcher_ocr
+    await watcher.start(config)
+    return {"success": True, "status": watcher.get_status()}
+
+
+@app.post("/api/scanner/watch/stop")
+async def watcher_stop():
+    """Stop the scanner watcher."""
+    from ocr_mcp.services.scanner_watcher import get_watcher
+    await get_watcher().stop()
+    return {"success": True}
+
+
+@app.post("/api/scanner/watch/reset")
+async def watcher_reset():
+    """Reset the preview baseline (e.g. after cleaning the glass)."""
+    from ocr_mcp.services.scanner_watcher import get_watcher
+    get_watcher().reset_baseline()
+    return {"success": True}
+
+
 @app.post("/api/ocr_scanned")
 async def ocr_scanned_document(
     background_tasks: BackgroundTasks,

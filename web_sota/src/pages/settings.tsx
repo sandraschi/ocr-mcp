@@ -2,6 +2,7 @@ import {
   CheckCircle2,
   Cpu,
   Database,
+  Eye,
   FlaskConical,
   Key,
   Loader2,
@@ -45,6 +46,7 @@ interface MistralSettingsResponse {
 }
 
 const DEFAULT_BACKEND_KEY = "ocr_default_backend";
+const AUTO_SCAN_KEY = "ocr-auto-scan-enabled";
 
 export function Settings() {
   const [backends, setBackends] = useState<BackendInfo[]>([]);
@@ -55,6 +57,8 @@ export function Settings() {
   const [saved, setSaved] = useState(false);
   const [llmProviders, setLlmProviders] = useState<LlmProvider[]>([]);
   const [, setLlmProviderMap] = useState<Record<string, LlmProvider>>({});
+  const [autoScan, setAutoScan] = useState(() => localStorage.getItem(AUTO_SCAN_KEY) === "true");
+  const [watcherStatus, setWatcherStatus] = useState<any>(null);
 
   const [mistralBaseUrl, setMistralBaseUrl] = useState("https://api.mistral.ai/v1");
   const [mistralKeyInput, setMistralKeyInput] = useState("");
@@ -84,6 +88,13 @@ export function Settings() {
       .catch(() => {});
   };
 
+  const loadWatcherStatus = () => {
+    fetch("/api/scanner/watch/status")
+      .then((r) => r.json())
+      .then((d) => setWatcherStatus(d))
+      .catch(() => {});
+  };
+
   useEffect(() => {
     loadBackends();
     fetch("/api/scanners")
@@ -91,6 +102,7 @@ export function Settings() {
       .then((d) => setScanners(d.scanners || []))
       .catch(() => {});
     loadMistral();
+    loadWatcherStatus();
     fetch("/api/llm/providers")
       .then((r) => r.json())
       .then((d) => {
@@ -404,6 +416,59 @@ export function Settings() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Auto-Scan Settings */}
+        <Card className="border-slate-800 bg-slate-950/50">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Eye className="w-5 h-5 text-emerald-400" /> Auto-Scan
+            </CardTitle>
+            <CardDescription className="text-slate-400">
+              Automatically detect documents on the flatbed via preview-scan polling.
+              When content change is detected, scan + OCR triggers automatically.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-300">Auto-detect documents</span>
+              <button
+                onClick={() => {
+                  const next = !autoScan;
+                  setAutoScan(next);
+                  localStorage.setItem(AUTO_SCAN_KEY, String(next));
+                  if (next && scanners.length > 0) {
+                    fetch("/api/scanner/watch", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        device_id: scanners[0].device_id,
+                        mode: "preview",
+                        backend: defaultBackend === "auto" ? "unlimited-ocr" : defaultBackend,
+                      }),
+                    }).then(loadWatcherStatus).catch(() => {});
+                  } else if (!next) {
+                    fetch("/api/scanner/watch/stop", { method: "POST" }).catch(() => {});
+                  }
+                }}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  autoScan ? "bg-emerald-600" : "bg-slate-700"
+                }`}
+                role="switch"
+                aria-checked={autoScan}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  autoScan ? "translate-x-6" : "translate-x-1"
+                }`} />
+              </button>
+            </div>
+            {watcherStatus && watcherStatus.running && (
+              <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 p-3 rounded-md border border-emerald-500/20">
+                <Eye className="h-3.5 w-3.5" />
+                Watcher active - {watcherStatus.scans_triggered} scans - interval {watcherStatus.interval_s}s
               </div>
             )}
           </CardContent>
