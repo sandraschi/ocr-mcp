@@ -1,5 +1,6 @@
 import {
   Activity,
+  BookOpen,
   ChevronLeft,
   ChevronRight,
   FileEdit,
@@ -21,6 +22,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   const navItems = [
     { href: "/", label: "Dashboard", icon: LayoutDashboard, testId: "nav-dashboard" },
+    { href: "/book-pipeline", label: "Book Pipeline", icon: BookOpen, testId: "nav-book-pipeline" },
     { href: "/editor", label: "Editor", icon: FileEdit, testId: "nav-editor" },
     { href: "/status", label: "Activity", icon: Activity, testId: "nav-activity" },
     { href: "/settings", label: "Settings", icon: Settings, testId: "nav-settings" },

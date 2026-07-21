@@ -1511,6 +1511,7 @@ def _watcher_scan(device_id: str, settings: dict) -> Any:
     if not scanner_manager:
         return None
     from ocr_mcp.backends.scanner.wia_scanner import ScanSettings as WiaSettings
+
     s = WiaSettings(
         dpi=settings.get("dpi", 300),
         color_mode=settings.get("color_mode", "Color"),
@@ -1522,6 +1523,7 @@ def _watcher_scan(device_id: str, settings: dict) -> Any:
 async def _watcher_ocr(image_path: str, backend: str) -> str | None:
     """OCR callback for the watcher service — queues a processing job."""
     import uuid
+
     _prune_old_jobs()
     job_id = f"auto_scan_{uuid.uuid4().hex[:12]}"
     processing_jobs[job_id] = {
@@ -1544,6 +1546,7 @@ async def _watcher_ocr(image_path: str, backend: str) -> str | None:
 async def watcher_status():
     """Get scanner watcher status."""
     from ocr_mcp.services.scanner_watcher import get_watcher
+
     return get_watcher().get_status()
 
 
@@ -1561,6 +1564,7 @@ class WatcherConfigBody(BaseModel):
 async def watcher_start(body: WatcherConfigBody):
     """Start the scanner watcher with the given configuration."""
     from ocr_mcp.services.scanner_watcher import WatcherConfig, get_watcher
+
     config = WatcherConfig(
         enabled=True,
         mode=body.mode,
@@ -1582,6 +1586,7 @@ async def watcher_start(body: WatcherConfigBody):
 async def watcher_stop():
     """Stop the scanner watcher."""
     from ocr_mcp.services.scanner_watcher import get_watcher
+
     await get_watcher().stop()
     return {"success": True}
 
@@ -1590,6 +1595,7 @@ async def watcher_stop():
 async def watcher_reset():
     """Reset the preview baseline (e.g. after cleaning the glass)."""
     from ocr_mcp.services.scanner_watcher import get_watcher
+
     get_watcher().reset_baseline()
     return {"success": True}
 
@@ -2000,6 +2006,92 @@ async def restart_backend():
 scans_dir = project_root / "scans"
 scans_dir.mkdir(exist_ok=True)
 app.mount("/static/scans", StaticFiles(directory=str(scans_dir)), name="scans")
+
+
+@app.post("/api/ocr/detect-chapters")
+async def api_detect_chapters(body: dict):
+    """Detect chapters from OCR page text."""
+    pages = body.get("pages", [])
+    from ocr_mcp.services.chapter_detector import detect_chapters
+
+    chapters = detect_chapters(pages)
+    return {"success": True, "chapters": chapters, "count": len(chapters)}
+
+
+@app.post("/api/ocr/detect-metadata")
+async def api_detect_metadata(body: dict):
+    """Detect title/author from first pages."""
+    pages = body.get("pages", [])
+    from ocr_mcp.services.chapter_detector import detect_metadata
+
+    meta = detect_metadata(pages)
+    return {"success": True, **meta}
+
+
+@app.post("/api/ocr/assemble-epub")
+async def api_assemble_epub(body: dict):
+    """Assemble EPUB from chapter text + metadata."""
+    from ocr_mcp.services.book_assembler import assemble_epub
+
+    result = assemble_epub(
+        title=body.get("title", "Untitled"),
+        author=body.get("author", ""),
+        chapters=body.get("chapters", []),
+        output_path=body.get("output_path", ""),
+        language=body.get("language", "en"),
+    )
+    return result
+
+
+@app.post("/api/ocr/book-pipeline")
+async def api_book_pipeline(body: dict):
+    """Full pipeline: OCR pages -> chapters -> EPUB."""
+    image_paths = body.get("image_paths", [])
+    bkend = body.get("backend", "unlimited-ocr")
+    title = body.get("title", "")
+    author = body.get("author", "")
+    if not image_paths or not backend_manager:
+        return {"success": False, "error": "Missing image_paths or backend"}
+
+    pages = []
+    for i, p in enumerate(sorted(image_paths)):
+        result = await backend_manager.process_with_backend(bkend, str(p), "text")
+        pages.append(
+            {"page_number": i + 1, "text": result.get("text", ""), "confidence": result.get("confidence", 0.0)}
+        )
+
+    if not pages:
+        return {"success": False, "error": "OCR produced no pages"}
+
+    from ocr_mcp.services.book_assembler import assemble_epub
+    from ocr_mcp.services.chapter_detector import detect_chapters, detect_metadata
+
+    meta = detect_metadata(pages)
+    title = title or meta.get("title", "Scanned Book")
+    author = author or meta.get("author", "")
+    chapters = detect_chapters(pages)
+    chapter_texts = []
+    for ch in chapters:
+        start = ch["start_page"]
+        end = ch["end_page"] or len(pages)
+        ct = "\n".join(pages[i - 1]["text"] for i in range(start, end + 1) if i <= len(pages))
+        chapter_texts.append({"chapter_number": ch["chapter_number"], "title": ch["title"], "text": ct})
+
+    if not chapter_texts:
+        chapter_texts = [{"chapter_number": 1, "title": "Chapter 1", "text": "\n".join(p["text"] for p in pages)}]
+
+    safe = "".join(c for c in title if c.isalnum() or c in " -_").strip()[:60] or "book"
+    output_path = str(Path("output") / f"{safe}.epub")
+    epub_result = assemble_epub(title=title, author=author, chapters=chapter_texts, output_path=output_path)
+    return {
+        "success": epub_result.get("success", False),
+        "pages_ocr": len(pages),
+        "chapters_detected": len(chapters),
+        "title": title,
+        "author": author,
+        "epub": epub_result,
+    }
+
 
 # Mount React app static files (defined after all API routes for proper precedence)
 if dist_dir.exists():

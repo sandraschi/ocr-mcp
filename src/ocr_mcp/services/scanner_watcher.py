@@ -12,9 +12,10 @@ import logging
 import os
 import time
 import uuid
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -105,10 +106,11 @@ class ScannerWatcher:
 
     async def _check_button_event(self) -> bool:
         """Check if the scanner button was pressed (WIA event polling)."""
-        if not self.config.mode in ("button", "both"):
+        if self.config.mode not in ("button", "both"):
             return False
         try:
             from comtypes.client import CreateObject
+
             dev_mgr = CreateObject("{E1C5D730-1228-487F-9675-91F3E1F5483E}")
             for info in dev_mgr.DeviceInfos:
                 if not self.config.device_id or str(info.DeviceID) == self.config.device_id:

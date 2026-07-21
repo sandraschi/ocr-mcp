@@ -1,5 +1,6 @@
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { AppLayout } from "@/components/layout/app-layout";
+import { BookPipeline } from "@/pages/book-pipeline";
 import { Chat } from "@/pages/chat";
 import { Dashboard } from "@/pages/dashboard";
 import { Editor } from "@/pages/editor";
@@ -13,6 +14,7 @@ function App() {
       <AppLayout>
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/book-pipeline" element={<BookPipeline />} />
           <Route path="/editor" element={<Editor />} />
           <Route path="/status" element={<Status />} />
           <Route path="/chat" element={<Chat />} />

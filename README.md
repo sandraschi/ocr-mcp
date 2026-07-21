@@ -40,6 +40,7 @@
 | [**AI features**](docs/AI_FEATURES.md) | Sampling, SEP-1577, agentic workflows, prompts |
 | [**Webapp redesign**](docs/WEBAPP_REDESIGN.md) | July 2026 redesign: dashboard-first workflow, removed legacy frontend, 5-page sidebar |
 | [**Book scanning**](docs/BOOK_SCANNING.md) | Home book scanning guide: V-cradle, CZUR, auto-scan integration |
+| [**Book pipeline**](docs/BOOK_SCANNING_PIPELINE.md) | Spine-to-EPUB pipeline plan: cut, scan, OCR, chapter detect, EPUB, Calibre |
 | [**In-app Help**](web_sota/src/pages/help.tsx) | Source for `/help`: webapp vs MCP vs backends (mirrors INSTALL / TECHNICAL) |
 | [**SOTA Compliance**](../mcp-central-docs/standards/AGENT_PROTOCOLS.md) |  Verified SOTA v12.0 Architecture |
 

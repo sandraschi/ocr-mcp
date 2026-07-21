@@ -309,6 +309,18 @@ except ImportError as e:
 except Exception as e:
     logger.error(f"Failed to register Prefab UI tools: {e}")
 
+# Register book pipeline tool
+try:
+    from .tools.book_pipeline import register_book_pipeline_tool
+
+    bm = _runtime.get("backend_manager")
+    register_book_pipeline_tool(app, bm, config)
+    logger.info("Book pipeline tool registered")
+except ImportError as e:
+    logger.warning(f"Book pipeline tool not available: {e}")
+except Exception as e:
+    logger.error(f"Failed to register book pipeline tool: {e}")
+
 
 async def run_server():
     """Run the server with background services using FastMCP 3.1 lifespan."""
