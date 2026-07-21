@@ -62,53 +62,39 @@ export function Help() {
                 <tbody className="divide-y divide-slate-800">
                   <tr>
                     <td className="p-3 font-mono text-slate-200">Dashboard</td>
-                    <td className="p-3 text-slate-400">Overview and entry points.</td>
-                  </tr>
-                  <tr>
-                    <td className="p-3 font-mono text-slate-200">Import</td>
-                    <td className="p-3 text-slate-400">Upload files; OCR runs in the background.</td>
-                  </tr>
-                  <tr>
-                    <td className="p-3 font-mono text-slate-200">Scanner</td>
-                    <td className="p-3 text-slate-400">WIA scanners on the host (Windows).</td>
-                  </tr>
-                  <tr>
-                    <td className="p-3 font-mono text-slate-200">Process</td>
-                    <td className="p-3 text-slate-400">Quality-focused pipelines and iterative optimization.</td>
+                    <td className="p-3 text-slate-400">
+                      <strong className="text-slate-300">Quick Scan & OCR</strong> — drop a file or use a scanner,
+                      select a backend (default: Unlimited-OCR), and click one button. Result appears inline. Copy or
+                      export as .txt/.md. Live KPI cards show server health and backend availability.
+                    </td>
                   </tr>
                   <tr>
                     <td className="p-3 font-mono text-slate-200">Editor</td>
                     <td className="p-3 text-slate-400">
-                      <strong className="text-slate-300">OCR text</strong> — latest result loads automatically; edit and
-                      export (e.g. JSON, CSV, XML). Job IDs are optional (advanced / Activity).
+                      Standalone text view with export (JSON, CSV, XML). Latest result loads automatically.
                     </td>
                   </tr>
                   <tr>
-                    <td className="p-3 font-mono text-slate-200">Status</td>
-                    <td className="p-3 text-slate-400">Activity / job status for debugging.</td>
-                  </tr>
-                  <tr>
-                    <td className="p-3 font-mono text-slate-200">Chat</td>
-                    <td className="p-3 text-slate-400">Assistant-style UI when wired to the stack.</td>
-                  </tr>
-                  <tr>
-                    <td className="p-3 font-mono text-slate-200">Scan viewer</td>
-                    <td className="p-3 text-slate-400">Review scan output / viewer workflow.</td>
+                    <td className="p-3 font-mono text-slate-200">Activity</td>
+                    <td className="p-3 text-slate-400">Job status and history for debugging.</td>
                   </tr>
                   <tr>
                     <td className="p-3 font-mono text-slate-200">Settings</td>
                     <td className="p-3 text-slate-400">
-                      Default OCR backend (stored in the browser), Mistral API key + base URL + test (stored in the{" "}
-                      <strong className="text-slate-300">backend process</strong> only), backend and scanner lists.
+                      Default OCR backend (browser), Mistral API key + test, backend and scanner status.
                     </td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 font-mono text-slate-200">Help</td>
+                    <td className="p-3 text-slate-400">This page.</td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
           <p className="text-xs text-slate-500">
-            Tip: after upload or scan, open <strong className="text-slate-400">Editor</strong> — you don&apos;t need to
-            copy internal job IDs for normal use.
+            Tip: the Dashboard handles the full scan/upload → OCR → read workflow. You don&apos;t need to visit multiple
+            pages for a single document.
           </p>
         </CardContent>
       </Card>

@@ -809,9 +809,49 @@ def _calculate_brightness(image_array) -> float:
 
 
 def _estimate_skew(image_array) -> float:
-    """Estimate image skew angle (simplified version)."""
-    # This is a placeholder - actual skew detection is complex
-    return 0.0
+    """Estimate image skew angle in degrees using Hough line transform.
+
+    Converts the image to binary via adaptive threshold, detects lines with
+    HoughLines, and computes the median angle.  Returns 0.0 if no lines are
+    found or the image is too noisy.
+    """
+    import math
+
+    import cv2
+    import numpy as np
+
+    try:
+        if image_array.ndim == 3:
+            gray = cv2.cvtColor(image_array, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = image_array
+
+        binary = cv2.adaptiveThreshold(
+            gray,
+            255,
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY_INV,
+            11,
+            2,
+        )
+        edges = cv2.Canny(binary, 50, 150, apertureSize=3)
+        lines = cv2.HoughLines(edges, 1, np.pi / 180, threshold=150)
+
+        if lines is None:
+            return 0.0
+
+        angles = []
+        for _rho, theta in lines[:, 0]:
+            angle_deg = math.degrees(theta) - 90
+            if abs(angle_deg) < 45:
+                angles.append(angle_deg)
+
+        if not angles:
+            return 0.0
+
+        return round(float(np.median(angles)), 2)
+    except Exception:
+        return 0.0
 
 
 def _calculate_overall_quality_score(analysis: dict) -> int:

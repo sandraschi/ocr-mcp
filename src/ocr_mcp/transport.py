@@ -245,7 +245,29 @@ async def run_server_async(mcp_app, args: argparse.Namespace | None = None, serv
             path = config["path"]
             endpoint = f"http://{host}:{port}{path}"
             logger.info(f"Running in HTTP Streamable mode: {endpoint}")
-            await mcp_app.run_http_async(host=host, port=port, path=path)
+            import uvicorn
+            from fastapi.middleware.cors import CORSMiddleware
+
+            http_app = mcp_app.http_app()
+            cors_origins = [
+                "http://localhost:10858",
+                "http://127.0.0.1:10858",
+                "tauri://localhost",
+                "http://tauri.localhost",
+                "https://tauri.localhost",
+            ]
+            cors_regex = r"https?://(?:[a-zA-Z0-9-]+\.ts\.net|.*?\.tail-[a-f0-9]+\.ts\.net|tauri\.localhost|localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|100\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::\d+)?$|^tauri://localhost$"
+            http_app.add_middleware(
+                CORSMiddleware,
+                allow_origins=cors_origins,
+                allow_origin_regex=cors_regex,
+                allow_credentials=True,
+                allow_methods=["*"],
+                allow_headers=["*"],
+            )
+            config_obj = uvicorn.Config(http_app, host=host, port=port, log_level="info")
+            server = uvicorn.Server(config_obj)
+            await server.serve()
 
         elif transport == "sse":
             host = config["host"]

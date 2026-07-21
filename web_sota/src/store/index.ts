@@ -14,6 +14,16 @@ interface ScanResult {
   } | null;
 }
 
+interface OCRTextState {
+  ocrText: string;
+  ocrJobId: string | null;
+  ocrStatus: "idle" | "processing" | "completed" | "failed";
+  setOcrText: (text: string) => void;
+  setOcrJobId: (id: string | null) => void;
+  setOcrStatus: (status: "idle" | "processing" | "completed" | "failed") => void;
+  clearOcr: () => void;
+}
+
 interface ScanStore {
   lastScan: ScanResult;
   lastOcrJobId: string | null;
@@ -21,6 +31,21 @@ interface ScanStore {
   setLastOcrJobId: (id: string | null) => void;
   clearLastScan: () => void;
 }
+
+const useOcrTextStore = create<OCRTextState>()(
+  persist(
+    (set) => ({
+      ocrText: "",
+      ocrJobId: null,
+      ocrStatus: "idle",
+      setOcrText: (text) => set({ ocrText: text }),
+      setOcrJobId: (id) => set({ ocrJobId: id }),
+      setOcrStatus: (status) => set({ ocrStatus: status }),
+      clearOcr: () => set({ ocrText: "", ocrJobId: null, ocrStatus: "idle" }),
+    }),
+    { name: "ocr-mcp-ocr-text" },
+  ),
+);
 
 export const useScanStore = create<ScanStore>()(
   persist(
@@ -46,3 +71,5 @@ export const useScanStore = create<ScanStore>()(
     },
   ),
 );
+
+export { useOcrTextStore };

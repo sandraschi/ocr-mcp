@@ -1,6 +1,6 @@
 # OCR-MCP AI Models Documentation
 
-*Last updated: 2026-05-14*
+*Last updated: 2026-07-21*
 
 This document lists every OCR backend used by **OCR-MCP** (both the [web app](README.md#-installation) and the [MCP server](README.md#-installation)): what they are, accuracy/benchmarks, when to use them, and how to install or enable them. Backend names here match the `backend` parameter in tools and the web UI dropdown.
 
@@ -12,6 +12,7 @@ This document lists every OCR backend used by **OCR-MCP** (both the [web app](RE
 |---------|--------|--------|------|-----------|----------|
 | **PaddleOCR-VL-1.5** | ✅ SOTA | 0.9B | 3.3GB* | 94.5% OmniDocBench v1.5 | General documents, tables, formulas, scans |
 | **MinerU2.5-Pro** | ✅ SOTA | 1.2B | ~4GB | SOTA multi-benchmark | Academic/technical docs, coarse-to-fine parsing |
+| **Unlimited-OCR** | ✅ New | 3B | ~6GB | ParseBench 46.17 mean | Long-horizon parsing, unbounded docs |
 | **Nemotron VL 8B** | ✅ New | 8B | ~16GB | DocVQA 91.2%, ChartQA 86.3% | Structured docs, invoices, forms, charts |
 | **DeepSeek-OCR-2** | ✅ New | 3B | ~8GB | — (Jan 2026) | Structured markdown extraction |
 | **olmOCR-2** | ✅ New | 7B | ~16GB | 82.4 olmOCR-Bench | Academic PDFs, math, multi-column |
@@ -27,7 +28,7 @@ This document lists every OCR backend used by **OCR-MCP** (both the [web app](RE
 *\* with `flash-attn` installed. Without it: ~40GB — do not run on GPU without flash-attn.*
 
 **Auto-selection priority** (highest to lowest):
-`paddleocr-vl → mistral-ocr → deepseek-ocr2 → mineru-2.5 → olmocr-2 → nemotron-vl → deepseek-ocr → qwen-layered → got-ocr → dots-ocr → pp-ocrv5 → easyocr → tesseract`
+`paddleocr-vl → mistral-ocr → deepseek-ocr2 → unlimited-ocr → mineru-2.5 → olmocr-2 → nemotron-vl → deepseek-ocr → qwen-layered → got-ocr → dots-ocr → pp-ocrv5 → easyocr → tesseract`
 
 ---
 
@@ -55,6 +56,37 @@ Without this, the model will OOM on a 24GB GPU. With it, leaves ~20GB free on th
 **HF model:** `PaddlePaddle/PaddleOCR-VL-1.5`
 **Backend name:** `paddleocr-vl`
 **Aliases:** `paddleocr`, `paddle`, `paddleocr-vl-1.5`
+
+---
+
+### Unlimited-OCR
+
+**July 2026 — Baidu, one-shot long-horizon parsing. arXiv:2606.23050.**
+
+Baidu's Unlimited-OCR extends DeepSeek-OCR's approach to handle unbounded-length documents without image resolution limits. Uses a long-horizon parsing strategy with two inference modes: "gundam" (cropped at 640px for single document images) and "base" (full 1024px resolution for multi-page documents).
+
+**Key features:**
+- One-shot long-horizon parsing — no image resolution limits
+- Two inference modes: gundam (640px, crop_mode=True) and base (1024px, crop_mode=False)
+- ParseBench scores: 46.17 mean, 86.81 text content
+- Multi-page and PDF support via `infer_multi()`
+- MIT license — fully open source
+- 3B params, moderate VRAM
+- Built on DeepSeek-OCR lineage with Baidu's long-horizon parsing improvements
+- Two prompt modes: `document parsing.` (structured) and `Free OCR.` (raw text)
+
+**Dependencies:**
+```
+pip install einops addict easydict
+pip install torch>=2.10.0 transformers>=4.57.1
+```
+
+**HF model:** `baidu/Unlimited-OCR`
+**Backend name:** `unlimited-ocr`
+**Aliases:** `unlimited`, `baidu`
+
+**GitHub:** https://github.com/baidu/Unlimited-OCR
+**Spaces:** https://huggingface.co/spaces/baidu/Unlimited-OCR
 
 ---
 
@@ -284,9 +316,10 @@ Microsoft Florence-2 is a general vision foundation model (object detection, ima
 |-----------|-------------|
 | General document scanning | `paddleocr-vl` |
 | Tilted / folded / damaged document | `paddleocr-vl` (irregular box localization) |
+| Long / unbounded documents | `unlimited-ocr` (long-horizon parsing) |
 | Scientific paper / arXiv PDF | `olmocr-2` or `mineru-2.5` |
 | Document with math equations | `olmocr-2` or `mineru-2.5` |
-| Need clean markdown output | `deepseek-ocr2` or `mineru-2.5` |
+| Need clean markdown output | `deepseek-ocr2` or `unlimited-ocr` |
 | Table-heavy document | `paddleocr-vl` (tables) or `dots-ocr` |
 | Formula / LaTeX extraction | `paddleocr-vl` or `mineru-2.5` |
 | Chart or diagram description | `paddleocr-vl` (chart task) |
@@ -305,6 +338,7 @@ Microsoft Florence-2 is a general vision foundation model (object detection, ima
 | Backend | VRAM | Fits on 4090? | Notes |
 |---------|------|---------------|-------|
 | PaddleOCR-VL-1.5 | 3.3GB | ✅ | Requires flash-attn |
+| Unlimited-OCR | ~6GB | ✅ | 3B params, bfloat16 |
 | GOT-OCR 2.0 | ~2GB | ✅ | Very lean |
 | MinerU2.5-Pro | ~2.5GB | ✅ | 1.2B params, efficient |
 | DeepSeek-OCR-2 | ~8GB | ✅ | bfloat16 |
@@ -325,6 +359,10 @@ pip install flash-attn --no-build-isolation
 # DeepSeek-OCR-2 dependencies
 pip install einops addict easydict
 pip install flash-attn==2.7.3 --no-build-isolation
+
+# Unlimited-OCR dependencies
+pip install einops addict easydict
+pip install torch>=2.10.0 transformers>=4.57.1
 
 # Models download automatically on first use via Hugging Face hub
 # Cache location: configured in OCRConfig.model_dir
@@ -348,7 +386,8 @@ Key patterns from existing backends:
 - Always use `torch.inference_mode()` for generation
 - Decode only generated tokens: `output_ids[0][input_ids.shape[1]:]`
 - Return `{"success": True/False, "text": ..., "backend": name, "processing_time": ..., "confidence": ...}`
+- For custom API models (e.g. Unlimited-OCR with `model.infer()`): write results to temp dir, read output files
 
 ---
 
-*Benchmarks sourced from: OmniDocBench v1.5, olmOCR-Bench, published model cards. Last updated 2026-02-27.*
+*Benchmarks sourced from: OmniDocBench v1.5, olmOCR-Bench, ParseBench, published model cards. Last updated 2026-07-21.*

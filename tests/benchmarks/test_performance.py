@@ -469,7 +469,7 @@ class TestSystemPerformance:
             register_scanner_tools(app, manager, config)
 
             # Simulate getting tools (startup operation)
-            tools = await app.get_tools()
+            tools = await app.list_tools()
             return len(tools)
 
         tool_count = asyncio.run(start_server())

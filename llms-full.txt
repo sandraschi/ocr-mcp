@@ -1,0 +1,341 @@
+# OCR-MCP — Full Documentation for LLMs
+
+**Version:** 0.1.0
+**Last Updated:** 2026-07-21
+
+This is the complete reference for OCR-MCP, a FastMCP 3.4+ server providing comprehensive OCR capabilities. Read this to understand all tools, configuration, backends, and endpoints.
+
+---
+
+## Architecture
+
+OCR-MCP has two surfaces sharing the same backend layer:
+
+```
+                          ┌─ Webapp (React) ── FastAPI (:10859) ─┐
+User ──►                                                       ├── BackendManager ──► 14 OCR backends
+                          └─ IDE (stdio/HTTP) ── FastMCP ──────┘
+```
+
+### Key files
+
+| File | Purpose |
+|------|---------|
+| `src/ocr_mcp/server.py` | FastMCP server setup: lifespan, tools, resources, prompts |
+| `src/ocr_mcp/transport.py` | Dual transport: stdio / HTTP / SSE |
+| `src/ocr_mcp/core/backend_manager.py` | Backend registry, lazy loading, auto-selection |
+| `src/ocr_mcp/core/config.py` | OCRConfig with env-based settings |
+| `src/ocr_mcp/tools/ocr_tools.py` | Portmanteau tool registration |
+| `src/ocr_mcp/backends/*.py` | 14 OCR backend implementations |
+| `backend/app.py` | FastAPI web backend (scanner, upload, settings) |
+| `web_sota/src/` | React frontend |
+| `run_server.py` | PyInstaller entry point for NSIS builds |
+
+### Ports
+
+| Service | Port |
+|---------|------|
+| Vite frontend | 10858 |
+| FastAPI backend | 10859 |
+| MCP HTTP transport | 10859 (`/mcp`) |
+
+---
+
+## OCR Backends (14 total)
+
+### Registration in BackendManager
+
+All backends are registered in `src/ocr_mcp/core/backend_manager.py` under `_initialize_backend_registry()` and `_BACKEND_NAME_ALIASES`. Each has a canonical key, module path, class name, model size, and description.
+
+### Unlimited-OCR
+
+- **HF:** `baidu/Unlimited-OCR` (MIT, 3B params)
+- **Key:** `unlimited-ocr`, aliases: `unlimited`, `baidu`
+- **VRAM:** ~6GB (bfloat16)
+- **Benchmark:** ParseBench 46.17 mean / 86.81 text content
+- **Deps:** torch>=2.10.0, transformers>=4.57.1, einops, addict, easydict
+- **Two modes:** gundam (crop 640px, single images) and base (full 1024px, multi-page)
+- **Custom API:** uses `model.infer()` with trust_remote_code=True
+- **Available via:** dashboard default backend, auto-selection priority
+
+### PaddleOCR-VL-1.5
+
+- **HF:** `PaddlePaddle/PaddleOCR-VL-1.5` (0.9B params)
+- **Key:** `paddleocr-vl`, aliases: `paddleocr`, `paddle`, `florence`
+- **VRAM:** 3.3GB with flash-attn (~40GB without)
+- **Benchmark:** 94.5% OmniDocBench v1.5
+- **Languages:** 109
+- **Best for:** General documents, tables, formulas, charts, seals
+
+### MinerU2.5-Pro
+
+- **HF:** `opendatalab/MinerU2.5-Pro-2604-1.2B` (1.2B params)
+- **Key:** `mineru-2.5`, alias: `mineru`
+- **VRAM:** ~4GB
+- **Best for:** Academic/technical docs, coarse-to-fine parsing
+
+### Nemotron VL 8B
+
+- **HF:** `nvidia/Llama-3.1-Nemotron-Nano-VL-8B-V1` (8B params)
+- **Key:** `nemotron-vl`, alias: `nemotron`
+- **VRAM:** ~16GB (~5GB AWQ 4-bit)
+- **Benchmark:** DocVQA 91.2%, ChartQA 86.3%
+- **Note:** English only, NVIDIA Open Model License
+
+### DeepSeek-OCR-2
+
+- **HF:** `deepseek-ai/DeepSeek-OCR-2` (3B params)
+- **Key:** `deepseek-ocr2`, aliases: `deepseek2`, `deepseek-ocr-2`
+- **VRAM:** ~8GB
+- **Best for:** Structured markdown extraction
+
+### olmOCR-2
+
+- **HF:** `allenai/olmOCR-2-7B-1025` (7B params)
+- **Key:** `olmocr-2`, aliases: `olmocr`, `olm`
+- **VRAM:** ~16GB
+- **Benchmark:** 82.4 olmOCR-Bench
+- **Best for:** Academic PDFs, math, multi-column
+
+### Mistral OCR
+
+- **Type:** Cloud API
+- **Key:** `mistral-ocr`
+- **Requires:** `MISTRAL_API_KEY` env var or web Settings
+- **Benchmark:** 94.9% claimed, 74% win rate
+- **Cost:** $1/1000 pages batch
+
+### Qwen2.5-VL
+
+- **HF:** `Qwen/Qwen2.5-VL-7B-Instruct` (7B params)
+- **Key:** `qwen-layered`, alias: `qwen`
+- **VRAM:** ~16GB
+- **Best for:** Complex layouts, VQA
+
+### GOT-OCR 2.0
+
+- **HF:** `stepfun-ai/GOT-OCR2_0` (580M params)
+- **Key:** `got-ocr`, alias: `got`
+- **VRAM:** ~2GB
+- **Best for:** Fast, lean VRAM, mixed content
+
+### DOTS.OCR
+
+- **HF:** `rednote-hilab/dots.ocr` (3B params)
+- **Key:** `dots-ocr`, alias: `dots`
+- **VRAM:** ~6GB
+- **Best for:** Table-heavy documents
+
+### PP-OCRv5
+
+- **Key:** `pp-ocrv5`, alias: `pp-ocr`
+- **VRAM:** low (CPU-capable)
+- **Best for:** High throughput, CJK
+
+### EasyOCR
+
+- **Key:** `easyocr`
+- **VRAM:** low (GPU optional via torch)
+- **Best for:** Handwriting, 80+ languages
+
+### Tesseract
+
+- **Key:** `tesseract`
+- **VRAM:** 0 (CPU only)
+- **Best for:** Always-available fallback
+
+### Auto-Selection Priority
+
+When backend is "auto", the fallback chain is:
+`tesseract` -> `pp-ocrv5` -> `got-ocr` -> `dots-ocr` -> `easyocr` -> `paddleocr-vl` -> `mistral-ocr` -> `deepseek-ocr2` -> `unlimited-ocr` -> `mineru-2.5` -> `olmocr-2` -> `deepseek-ocr` -> `qwen-layered` -> `nemotron-vl`
+
+---
+
+## MCP Tools (Portmanteau Pattern)
+
+All tools use an `operation: Literal[...]` first parameter.
+
+### `process_document`
+
+| Operation | Description |
+|-----------|-------------|
+| `process_document` | Core OCR with specified backend |
+| `process_batch` | Batch document processing |
+| `analyze_layout` | Document layout and structure analysis |
+| `extract_tables` | Table extraction |
+| `detect_forms` | Form field detection |
+| `analyze_reading_order` | Reading order analysis |
+| `classify_type` | Document type classification |
+| `extract_metadata` | Document metadata extraction |
+| `assess_quality` | OCR quality assessment |
+| `validate_accuracy` | Accuracy validation |
+| `compare_backends` | Cross-backend comparison |
+| `analyze_image_quality` | Image quality analysis |
+
+### `manage_image`
+
+| Operation | Description |
+|-----------|-------------|
+| `preprocess` | Deskew, denoise, grayscale, threshold, autocrop |
+| `convert` | Format conversion (PNG, JPG, TIFF, WebP) |
+| `pdf_to_images` | PDF page rasterization |
+| `embed_text` | Create searchable PDF |
+
+### `operate_scanner`
+
+| Operation | Description |
+|-----------|-------------|
+| `list_scanners` | Enumerate WIA scanners |
+| `scanner_properties` | Get scanner capabilities |
+| `configure_scan` | Set DPI, color mode, paper size |
+| `scan_document` | Single document scan |
+| `scan_batch` | Batch scan |
+| `preview_scan` | Preview scan |
+| `diagnostics` | Scanner diagnostics |
+
+### `manage_workflow`
+
+| Operation | Description |
+|-----------|-------------|
+| `process_batch_intelligent` | AI-driven batch processing |
+| `create_processing_pipeline` | Define multi-step pipeline |
+| `execute_pipeline` | Run a pipeline |
+| `monitor_batch_progress` | Track batch jobs |
+| `optimize_processing` | Quality optimizer |
+| `ocr_health_check` | Backend diagnostics |
+| `list_backends` | List all backends with availability |
+| `manage_models` | Model cache management |
+
+### `manage_corpus`
+
+| Operation | Description |
+|-----------|-------------|
+| `register` | Add document to corpus |
+| `update_metadata` | Update document metadata |
+| `get` | Retrieve document |
+| `search` | Search corpus |
+| `list_recent` | Recent documents |
+| `attach_ocr_result` | Link OCR result to document |
+
+### `get_help`
+
+Contextual documentation for any topic. Parameters: `topic`, `level`.
+
+### `get_status`
+
+System health. Parameters: `level` (basic, detailed).
+
+---
+
+## REST API (FastAPI backend at :10859)
+
+OpenAPI docs at `http://127.0.0.1:10859/docs`.
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/health` | GET | Server status, version, uptime, tool count |
+| `/api/backends` | GET | Registered backends with availability |
+| `/api/scanners` | GET | WIA scanner discovery |
+| `/api/scan` | POST | Trigger WIA scan (FormData: device_id, dpi, color_mode, paper_size) |
+| `/api/ocr_scanned` | POST | OCR a scanned image (FormData: filename, ocr_mode, backend) |
+| `/api/ocr_selection` | POST | OCR a selected region (FormData: filename, x, y, width, height, backend) |
+| `/api/upload` | POST | Upload and OCR a file (FormData: file, ocr_mode, backend) |
+| `/api/job/{id}` | GET | Poll job status |
+| `/api/export` | POST | Export result (JSON: export_type, content, filename) |
+| `/api/pipelines` | GET | List available pipelines |
+| `/api/pipelines/execute` | POST | Execute a pipeline |
+| `/api/optimize` | POST | Quality optimizer |
+| `/api/chat` | POST | Chat with LLM backend |
+| `/api/settings/mistral` | GET/POST | Mistral API key management |
+| `/api/settings/mistral/test` | POST | Validate Mistral key |
+| `/api/llm/providers` | GET | List detected LLM providers |
+| `/api/server_logs` | GET | Server log lines |
+
+---
+
+## Configuration
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OCR_CACHE_DIR` | `~/.cache/ocr-mcp` | Model cache directory |
+| `OCR_DEVICE` | `auto` | Computing device: cuda, cpu, auto |
+| `OCR_MAX_MEMORY` | — | Max GPU memory in GB |
+| `OCR_DEFAULT_BACKEND` | — | Default OCR backend name |
+| `OCR_TRANSPORT` | `stdio` | MCP transport: stdio, http, sse |
+| `OCR_HOST` | `127.0.0.1` | HTTP bind host |
+| `OCR_PORT` | `10859` | HTTP bind port |
+| `OCR_LOG_LEVEL` | `info` | Log level |
+| `OCR_AUTO_BOOTSTRAP` | `1` | Auto-run bootstrap checks |
+| `OCR_AUTO_INSTALL_DEPS` | `0` | Auto-install missing pip packages |
+| `MISTRAL_API_KEY` | — | Mistral OCR API key |
+| `MISTRAL_BASE_URL` | `https://api.mistral.ai/v1` | Mistral API base URL |
+| `TESSERACT_CMD` | — | Full path to tesseract.exe |
+| `POPPLER_PATH` | — | Folder containing pdftoppm.exe |
+| `MCP_TRANSPORT` | `stdio` | MCP transport mode |
+| `MCP_PORT` | — | Port for MCP HTTP transport |
+| `MCP_HOST` | `127.0.0.1` | Host for MCP HTTP transport |
+| `OCR_SAMPLING_USE_CLIENT_LLM` | `0` | Use client LLM for sampling |
+| `OCR_SAMPLING_BASE_URL` | — | Custom sampling endpoint |
+| `OCR_SAMPLING_MODEL` | — | Custom sampling model |
+
+---
+
+## Webapp Pages
+
+| Route | Purpose | Key data-testid |
+|-------|---------|-----------------|
+| `/` | Dashboard — quick scan, file drop, inline result | `dashboard`, `quick-scan-ocr`, `drop-zone`, `ocr-result`, `backend-select` |
+| `/editor` | Standalone text editor with export | — |
+| `/status` | Job activity and history | — |
+| `/settings` | Backend, scanner, Mistral config | — |
+| `/help` | In-app documentation | — |
+
+### Dashboard Quick Scan Workflow
+
+1. User selects scanner (or drops file) and backend
+2. Clicks "Quick Scan & OCR" (`data-testid="quick-scan-ocr"`)
+3. Backend processes: `POST /api/scan` -> `POST /api/ocr_scanned` (scanner) or `POST /api/upload` (file)
+4. Frontend polls `GET /api/job/{id}` every 1.5s
+5. Result appears in inline textarea (`data-testid="ocr-result"`)
+6. User copies or downloads as .txt / .md
+
+---
+
+## Installation
+
+```powershell
+# Clone and install
+git clone https://github.com/sandraschi/ocr-mcp
+cd ocr-mcp
+uv sync
+
+# Run MCP server (stdio)
+uv run ocr-mcp
+
+# Run webapp (backend + frontend)
+just webapp
+# or: web_sota/start.ps1
+```
+
+### MCP Client Config
+
+```json
+{
+  "mcpServers": {
+    "ocr-mcp": {
+      "command": "uv",
+      "args": ["--directory", "D:/Dev/repos/ocr-mcp", "run", "ocr-mcp"]
+    }
+  }
+}
+```
+
+---
+
+## Packaging
+
+NSIS installer via Tauri 2.0: `just build-native`
+PyInstaller sidecar: `native/build.ps1`
+MCPB bundle: `mcpb pack . dist/ocr-mcp.mcpb`

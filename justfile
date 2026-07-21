@@ -1,10 +1,11 @@
 set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+import 'scripts/just/fleet.just'
 
 # ── Dashboard ─────────────────────────────────────────────────────────────────
 
 # Open the interactive recipe dashboard in the browser
 default:
-    @pwsh.exe -NoProfile -ExecutionPolicy Bypass -File ../mcp-central-docs/scripts/just-dashboard.ps1 -Path .
+    @just --list
 
 # ── Quality ───────────────────────────────────────────────────────────────────
 
@@ -51,6 +52,7 @@ run:
     uv run ocr-mcp
 
 # Run MCP server (alias)
+serve: run
 server: run
 
 # Run tests

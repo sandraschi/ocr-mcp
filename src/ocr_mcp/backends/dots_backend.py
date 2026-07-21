@@ -52,6 +52,18 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+def _text_quality_confidence(text: str) -> float:
+    """Compute a text-quality heuristic confidence when the model doesn't provide one.
+
+    Ratio of alphanumeric+grapheme characters to total length.  Returns 0.0
+    for empty strings, up to ~1.0 for clean text.
+    """
+    if not text:
+        return 0.0
+    good = sum(1 for c in text if c.isalnum() or c in ".,;:!?-()[]{}'\" \t\n")
+    return round(good / max(len(text), 1), 4)
+
+
 class DOTSBackend(OCRBackend):
     """DOTS.OCR backend for document structure analysis and content extraction"""
 
@@ -177,14 +189,14 @@ class DOTSBackend(OCRBackend):
             return {
                 "text": parsed.get("text", "").strip(),
                 "backend": "dots",
-                "confidence": parsed.get("confidence", 0.90),
+                "confidence": parsed.get("confidence") or _text_quality_confidence(parsed.get("text", "")),
                 "regions": [],
             }
         elif ocr_mode == "format":
             return {
                 "text": parsed.get("text", "").strip(),
                 "backend": "dots",
-                "confidence": parsed.get("confidence", 0.90),
+                "confidence": parsed.get("confidence") or _text_quality_confidence(parsed.get("text", "")),
                 "structured": parsed.get("structure", {}),
                 "regions": [],
             }
@@ -192,7 +204,7 @@ class DOTSBackend(OCRBackend):
             return {
                 "text": parsed.get("text", "").strip(),
                 "backend": "dots",
-                "confidence": parsed.get("confidence", 0.90),
+                "confidence": parsed.get("confidence") or _text_quality_confidence(parsed.get("text", "")),
                 "regions": parsed.get("regions", []),
                 "structured": parsed.get("structure", {}),
             }
@@ -207,11 +219,11 @@ class DOTSBackend(OCRBackend):
             return self._parse_text_output(raw_output)
 
     def _parse_text_output(self, raw_output: str) -> dict[str, Any]:
-        """Fallback parsing for text-based output"""
-        # This would implement custom parsing logic for DOTS.OCR text output
+        """Fallback parsing for text-based output."""
+        text = raw_output.strip()
         return {
-            "text": raw_output.strip(),
-            "confidence": 0.90,
+            "text": text,
+            "confidence": _text_quality_confidence(text),
             "structure": {},
             "regions": [],
         }

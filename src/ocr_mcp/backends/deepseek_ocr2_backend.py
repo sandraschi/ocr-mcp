@@ -133,10 +133,14 @@ class DeepSeekOCR2Backend(OCRBackend):
                     do_sample=False,
                     use_cache=True,
                 )
+                logits = self._model(output_ids).logits
 
             input_len = inputs["input_ids"].shape[1]
+            generated = output_ids[0][input_len:]
+            confidence = self._compute_confidence(logits, generated, input_len) if len(generated) > 0 else 0.0
+
             text = self._tokenizer.decode(
-                output_ids[0][input_len:],
+                generated,
                 skip_special_tokens=True,
             ).strip()
 
@@ -147,13 +151,25 @@ class DeepSeekOCR2Backend(OCRBackend):
                 "model": self.model_name,
                 "mode": mode,
                 "processing_time": time.time() - t0,
-                "confidence": 0.93,
+                "confidence": confidence,
                 "metadata": {"device": self._device},
             }
 
         except Exception as e:
             logger.error(f"DeepSeek-OCR-2 error: {e}")
             return {"success": False, "error": str(e), "backend": "deepseek-ocr2"}
+
+    @staticmethod
+    def _compute_confidence(logits, generated_ids, input_len: int) -> float:
+        import torch
+
+        try:
+            gen_logits = logits[0, input_len - 1 : input_len - 1 + len(generated_ids)]
+            probs = torch.softmax(gen_logits, dim=-1)
+            token_probs = probs[torch.arange(len(generated_ids), device=probs.device), generated_ids]
+            return round(float(token_probs.prod().item() ** (1.0 / max(len(generated_ids), 1))), 4)
+        except Exception:
+            return 0.85
 
     def get_capabilities(self) -> dict[str, Any]:
         caps = super().get_capabilities()

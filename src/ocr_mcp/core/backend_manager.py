@@ -123,6 +123,9 @@ _BACKEND_NAME_ALIASES: dict[str, str] = {
     "mineru": "mineru-2.5",
     "nemotron": "nemotron-vl",
     "nemotron-vl": "nemotron-vl",
+    "unlimited-ocr": "unlimited-ocr",
+    "unlimited": "unlimited-ocr",
+    "baidu": "unlimited-ocr",
 }
 
 
@@ -247,6 +250,12 @@ class BackendManager:
                 "model_size": "~16GB (8B params)",
                 "description": "NVIDIA Nemotron Nano VL 8B — Jun 2025, best-in-class document intelligence",
             },
+            "unlimited-ocr": {
+                "module": "..backends.unlimited_ocr_backend",
+                "class": "UnlimitedOCRBackend",
+                "model_size": "~6GB (3B params)",
+                "description": "Baidu Unlimited-OCR — Jul 2026, one-shot long-horizon parsing, MIT license",
+            },
             "tesseract": {
                 "module": "..backends.tesseract_backend",
                 "class": "TesseractBackend",
@@ -366,6 +375,7 @@ class BackendManager:
                 "paddleocr-vl",
                 "mistral-ocr",
                 "deepseek-ocr2",
+                "unlimited-ocr",
                 "mineru-2.5",
                 "olmocr-2",
                 "deepseek-ocr",

@@ -1,0 +1,108 @@
+[
+  {
+    "tool": "process_document",
+    "operation": "process_document",
+    "params": { "image_path": "scan.png", "backend": "unlimited-ocr" },
+    "description": "OCR a scanned document with Unlimited-OCR"
+  },
+  {
+    "tool": "process_document",
+    "operation": "process_document",
+    "params": { "image_path": "invoice.jpg", "backend": "auto" },
+    "description": "OCR with auto-selected best backend"
+  },
+  {
+    "tool": "process_document",
+    "operation": "process_batch",
+    "params": { "image_paths": ["a.png", "b.png"], "backend": "paddleocr-vl" },
+    "description": "Batch OCR multiple images"
+  },
+  {
+    "tool": "process_document",
+    "operation": "analyze_layout",
+    "params": { "image_path": "page.png" },
+    "description": "Analyze document layout structure"
+  },
+  {
+    "tool": "process_document",
+    "operation": "extract_tables",
+    "params": { "image_path": "table.png" },
+    "description": "Extract tables from document"
+  },
+  {
+    "tool": "process_document",
+    "operation": "assess_quality",
+    "params": { "image_path": "scan.png" },
+    "description": "Assess OCR result quality"
+  },
+  {
+    "tool": "manage_image",
+    "operation": "preprocess",
+    "params": { "image_path": "scan.png", "operations": ["deskew", "denoise"] },
+    "description": "Deskew and denoise a scanned image"
+  },
+  {
+    "tool": "manage_image",
+    "operation": "convert",
+    "params": { "image_path": "scan.png", "target_format": "jpg" },
+    "description": "Convert image to JPG format"
+  },
+  {
+    "tool": "manage_image",
+    "operation": "pdf_to_images",
+    "params": { "pdf_path": "document.pdf" },
+    "description": "Rasterize PDF pages to images"
+  },
+  {
+    "tool": "operate_scanner",
+    "operation": "list_scanners",
+    "params": {},
+    "description": "List available WIA scanners"
+  },
+  {
+    "tool": "operate_scanner",
+    "operation": "scan_document",
+    "params": { "device_id": "scanner-id", "dpi": 300 },
+    "description": "Scan a document at 300 DPI"
+  },
+  {
+    "tool": "operate_scanner",
+    "operation": "scan_batch",
+    "params": { "device_id": "scanner-id", "count": 5 },
+    "description": "Batch scan 5 pages"
+  },
+  {
+    "tool": "manage_workflow",
+    "operation": "process_batch_intelligent",
+    "params": { "image_paths": ["doc1.png", "doc2.png"], "backend": "auto" },
+    "description": "Intelligent batch processing"
+  },
+  {
+    "tool": "manage_workflow",
+    "operation": "ocr_health_check",
+    "params": {},
+    "description": "Check all backend health"
+  },
+  {
+    "tool": "manage_workflow",
+    "operation": "list_backends",
+    "params": {},
+    "description": "List all registered backends with availability"
+  },
+  {
+    "tool": "manage_corpus",
+    "operation": "search",
+    "params": { "query": "invoice" },
+    "description": "Search the document corpus"
+  },
+  {
+    "tool": "get_help",
+    "params": { "topic": "backends" },
+    "description": "Get help about OCR backends"
+  },
+  {
+    "tool": "get_status",
+    "params": {},
+    "description": "Get system health status"
+  }
+]

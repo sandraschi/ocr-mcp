@@ -180,7 +180,7 @@ class TestInputValidation:
             # Should fail validation
             result = ErrorHandler.validate_file_path(traversal_path)
             assert result is not None, f"Path traversal not prevented: {traversal_path}"
-            assert "FILE_NOT_FOUND" in str(result)
+            assert result.error_code == "FILE_NOT_FOUND"
 
     def test_file_type_validation(self, test_data_generator, file_manager):
         """Test that file type validation works correctly."""

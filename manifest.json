@@ -1,19 +1,29 @@
 {
-    "name": "ocr-mcp",
-    "version": "1.0.0",
-    "description": "Professional Document Processing Suite",
-    "author": "Sandra Schipal",
-    "license": "MIT",
-    "mcp": {
-        "version": "1.0.0",
-        "runtime": "python",
-        "entrypoint": "src/ocr_mcp/server.py",
-        "install": "pip install -e .",
-        "capabilities": {
-            "tools": true,
-            "resources": true,
-            "prompts": true,
-            "logging": true
-        }
+  "manifest_version": "0.2",
+  "name": "ocr-mcp",
+  "version": "0.1.0",
+  "description": "FastMCP 3.4+ OCR server with 14 backends: Unlimited-OCR, PaddleOCR-VL-1.5, DeepSeek-OCR-2, Nemotron VL 8B, MinerU2.5-Pro, olmOCR-2, Mistral OCR, Qwen2.5-VL, GOT-OCR 2.0, DOTS.OCR, PP-OCRv5, EasyOCR, Tesseract. WIA scanner, batch pipelines, agentic workflows.",
+  "author": { "name": "Sandra Schipal" },
+  "license": "MIT",
+  "server": {
+    "type": "python",
+    "entry_point": "src/ocr_mcp/server.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": ["run", "ocr-mcp"],
+      "env": {
+        "PYTHONPATH": "${PWD}",
+        "PYTHONUNBUFFERED": "1"
+      }
     }
+  },
+  "tools": [
+    { "name": "process_document", "description": "Core OCR with 14 backends: process, batch, layout analysis, table extraction, form detection, quality assessment, backend comparison" },
+    { "name": "manage_image", "description": "Image preprocessing and format conversion: deskew, denoise, grayscale, threshold, autocrop, PDF rasterization" },
+    { "name": "operate_scanner", "description": "WIA scanner control (Windows): list scanners, configure, scan, batch scan, preview, diagnostics" },
+    { "name": "manage_workflow", "description": "Batch processing, pipelines, quality optimizer, backend management, health checks" },
+    { "name": "manage_corpus", "description": "Document corpus: register, search, metadata, OCR result attachment" },
+    { "name": "get_help", "description": "Contextual documentation for all tools and configuration" },
+    { "name": "get_status", "description": "System health: backends, models, server status" }
+  ]
 }

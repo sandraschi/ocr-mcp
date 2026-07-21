@@ -2,11 +2,13 @@
 
 Summary of supported backends. Full specs and benchmarks: [AI_MODELS.md](../AI_MODELS.md).
 
-## Backends (10+)
+## Backends (14)
 
 | Model | Text OCR | Tables | Formulas | Handwriting | Multi-lang | VRAM | Speed |
 |-------|----------|--------|----------|-------------|------------|------|-------|
+| **Unlimited-OCR** | ✅ | ✅ | ✅ | ⚠️ | ✅ | ~6GB | Medium |
 | **PaddleOCR-VL-1.5** | ✅ | ✅ | ✅ | ✅ | 109 langs | 3.3GB* | Fast |
+| **MinerU2.5-Pro** | ✅ | ✅ | ✅ | ⚠️ | ✅ | ~4GB | Fast |
 | **DeepSeek-OCR-2** | ✅ | ✅ | ✅ | ⚠️ | ✅ | ~8GB | Medium |
 | **olmOCR-2** | ✅ | ✅ | ✅ | ⚠️ | ✅ | ~16GB | Slow |
 | Mistral OCR | ✅ | ✅ | ✅ | ✅ | ✅ | 0 (API) | Fast |
@@ -19,7 +21,7 @@ Summary of supported backends. Full specs and benchmarks: [AI_MODELS.md](../AI_M
 
 *\* PaddleOCR-VL-1.5 requires `flash-attn` for 3.3GB; without it ~40GB (OOM on 24GB GPU)*
 
-**Links:** [PaddleOCR-VL-1.5](https://huggingface.co/PaddlePaddle/PaddleOCR-VL-1.5) · [DeepSeek-OCR-2](https://huggingface.co/deepseek-ai/DeepSeek-OCR-2) · [olmOCR-2](https://huggingface.co/allenai/olmOCR-2-7B-1025) · [Mistral OCR](https://mistral.ai) · [Qwen2.5-VL](https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct) · [GOT-OCR 2.0](https://github.com/Ucas-HaoranWei/GOT-OCR2.0) · [DOTS.OCR](https://huggingface.co/rednote-hilab/dots.ocr) · [PP-OCRv5](https://huggingface.co/PaddlePaddle/PP-OCRv5) · [EasyOCR](https://github.com/JaidedAI/EasyOCR) · [Tesseract](https://github.com/tesseract-ocr/tesseract)
+**Links:** [Unlimited-OCR](https://huggingface.co/baidu/Unlimited-OCR) · [PaddleOCR-VL-1.5](https://huggingface.co/PaddlePaddle/PaddleOCR-VL-1.5) · [MinerU2.5-Pro](https://huggingface.co/opendatalab/MinerU2.5-Pro-2604-1.2B) · [DeepSeek-OCR-2](https://huggingface.co/deepseek-ai/DeepSeek-OCR-2) · [olmOCR-2](https://huggingface.co/allenai/olmOCR-2-7B-1025) · [Mistral OCR](https://mistral.ai) · [Qwen2.5-VL](https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct) · [GOT-OCR 2.0](https://github.com/Ucas-HaoranWei/GOT-OCR2.0) · [DOTS.OCR](https://huggingface.co/rednote-hilab/dots.ocr) · [PP-OCRv5](https://huggingface.co/PaddlePaddle/PP-OCRv5) · [EasyOCR](https://github.com/JaidedAI/EasyOCR) · [Tesseract](https://github.com/tesseract-ocr/tesseract)
 
 ## Capabilities
 

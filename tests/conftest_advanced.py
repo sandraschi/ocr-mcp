@@ -347,6 +347,21 @@ def security_test_cases():
             "file-with-dashes.pdf",
             "file.with.many.dots.txt",
         ],
+        "encodings": ["utf-8", "utf-16", "ascii", "latin-1", "cp1252"],
+        "special_strings": [
+            "",
+            "\x00",
+            "\n",
+            "\r\n",
+            "\t",
+            "<script>",
+            "<?php",
+            "<!--",
+            "🚀🔥💯",
+            "αβγδε",
+            "中文",
+            "русский",
+        ],
     }
 
 

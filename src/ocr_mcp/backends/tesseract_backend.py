@@ -129,18 +129,21 @@ class TesseractBackend(OCRBackend):
             # Configure Tesseract
             config = "--psm 6"  # Assume a single uniform block of text
 
-            # Extract text
-            text = pytesseract.image_to_string(image, lang=lang, config=config)
+            # Extract text with per-word confidence data
+            data = pytesseract.image_to_data(image, lang=lang, config=config, output_type=pytesseract.Output.DICT)
+            text = " ".join([w for w in data["text"] if w.strip() != ""])
+            conf_values = [int(c) / 100.0 for c in data["conf"] if c != "-1" and int(c) > 0]
+            confidence = round(sum(conf_values) / len(conf_values), 4) if conf_values else 0.0
 
             return {
                 "success": True,
                 "text": text.strip(),
-                "confidence": 0.85,  # Tesseract doesn't provide easy confidence scores
+                "confidence": confidence,
                 "backend": "tesseract",
                 "mode": "text",
                 "format": "text",
                 "processing_time": 0.8,
-                "metadata": {"language": lang, "config": config},
+                "metadata": {"language": lang, "config": config, "word_count": len(conf_values)},
             }
 
         except Exception as e:

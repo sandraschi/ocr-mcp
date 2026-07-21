@@ -104,12 +104,9 @@ By default the backend does **not** auto-install missing pip packages. To enable
 
 - **URL**: `http://127.0.0.1:10858` (or `localhost`)
 - **Help**: **`/help`** — overview of the **web app** (routes, ports, proxy), **MCP server** (stdio, tools, env), and **OCR backends** (comparison + doc links)
-- **Dashboard** — overview and shortcuts
-- **Import** — upload files; OCR runs in the background
-- **Scanner** — WIA hardware (Windows)
-- **Process** — quality-focused pipelines
-- **Editor** — OCR text for the latest job loads automatically; export JSON/CSV/XML; job IDs optional (advanced / **Status**)
-- **Status** — activity / job debugging
+- **Dashboard** — one-stop shop: scanner selector, backend selector (defaults to Unlimited-OCR), file drop zone, **Quick Scan & OCR** button. Result appears inline with Copy / .txt / .md export. Live KPI cards show server health, tool count, backend availability.
+- **Editor** — standalone text view with export (JSON/CSV/XML). Latest result loads automatically.
+- **Activity** — job status and history for debugging.
 - **Settings** — default OCR backend (browser **localStorage**); **Mistral** API key + base URL + **Test API key** (stored only in the **backend process**); backend and scanner lists; **`POST /api/settings/mistral/test`** validates the key via Mistral **`GET {base}/models`**
 
 ## API (when backend is running)

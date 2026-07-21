@@ -1,6 +1,6 @@
 # OCR-MCP
 
-> FastMCP 3.1 document OCR server: 10+ SOTA backends, sampling, agentic workflow (SEP-1577), prompts, skills resource, WIA scanner (Windows). React web UI.
+> FastMCP 3.4+ document OCR server: 14 SOTA backends, sampling, agentic workflow (SEP-1577), prompts, skills resource, WIA scanner (Windows). React web UI.
 
 ## Core
 
@@ -8,11 +8,13 @@
 - [CHANGELOG](CHANGELOG.md) – Version history and fixes
 - [AI Models](AI_MODELS.md) – OCR backends, benchmarks, VRAM
 - [Master plan](OCR-MCP_MASTER_PLAN.md) – Architecture and roadmap
+- [PRD](PRD.md) – Product requirements document
+- [Status](STATUS.md) – Current project status
 
 ## For LLMs and agents
 
+- [Full reference](llms-full.txt) – Complete documentation for LLMs: all tools, backends, config, endpoints, env vars (read this first)
 - [Placeholder audit](docs/PLACEHOLDER_AUDIT.md) – What is real vs mock
-- [PRD (central docs)](https://github.com/sandraschi/ocr-mcp) – Product summary; see also mcp-central-docs/projects/ocr-mcp/PRD.md
 
 ## Install and run
 

@@ -84,7 +84,7 @@ class TestCompleteWorkflows:
     @pytest.mark.asyncio
     async def test_scan_to_ocr_workflow(self, fastmcp_app, temp_dir):
         """Test complete workflow: scan document -> OCR processing."""
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")
         process_tool = next(t for t in tools if t.name == "document_processing")
 
@@ -127,7 +127,7 @@ class TestCompleteWorkflows:
     @pytest.mark.asyncio
     async def test_batch_scan_workflow(self, fastmcp_app):
         """Test batch scanning workflow."""
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")
 
         result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
@@ -145,7 +145,7 @@ class TestCompleteWorkflows:
     @pytest.mark.asyncio
     async def test_multi_format_processing_workflow(self, fastmcp_app, temp_dir):
         """Test processing multiple document formats."""
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         process_tool = next(t for t in tools if t.name == "document_processing")
 
         img_path = temp_dir / "test.png"
@@ -165,7 +165,7 @@ class TestCompleteWorkflows:
     @pytest.mark.asyncio
     async def test_comic_book_processing_workflow(self, fastmcp_app, temp_dir):
         """Test comic book processing workflow."""
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         process_tool = next(t for t in tools if t.name == "document_processing")
 
         comic_path = temp_dir / "comic_page.png"
@@ -189,7 +189,7 @@ class TestCompleteWorkflows:
     @pytest.mark.asyncio
     async def test_backend_selection_workflow(self, fastmcp_app, temp_dir):
         """Test backend selection and switching."""
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         process_tool = next(t for t in tools if t.name == "process_document")
 
         # Create test image
@@ -211,7 +211,7 @@ class TestCompleteWorkflows:
     @pytest.mark.asyncio
     async def test_error_recovery_workflow(self, fastmcp_app, temp_dir):
         """Test error handling and recovery."""
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         process_tool = next(t for t in tools if t.name == "process_document")
 
         # Test with non-existent file
@@ -236,7 +236,7 @@ class TestCompleteWorkflows:
     @pytest.mark.asyncio
     async def test_performance_workflow(self, fastmcp_app, temp_dir, benchmark):
         """Test performance characteristics."""
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         process_tool = next(t for t in tools if t.name == "process_document")
 
         # Create test image
@@ -259,7 +259,7 @@ class TestCompleteWorkflows:
     @pytest.mark.asyncio
     async def test_health_check_workflow(self, fastmcp_app):
         """Test system health monitoring."""
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         health_tool = next(t for t in tools if t.name == "ocr_health_check")
 
         health_result = await (health_tool.fn if hasattr(health_tool, "fn") else health_tool)()
@@ -275,7 +275,7 @@ class TestCompleteWorkflows:
     @pytest.mark.asyncio
     async def test_scanner_discovery_workflow(self, fastmcp_app):
         """Test scanner discovery and enumeration."""
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         list_scanners_tool = next(t for t in tools if t.name == "list_scanners")
 
         scanners = await (list_scanners_tool.fn if hasattr(list_scanners_tool, "fn") else list_scanners_tool)()
@@ -287,7 +287,7 @@ class TestCompleteWorkflows:
     @pytest.mark.asyncio
     async def test_region_ocr_workflow(self, fastmcp_app, temp_dir):
         """Test region-specific OCR processing."""
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         process_tool = next(t for t in tools if t.name == "process_document")
 
         # Create larger test image
@@ -312,7 +312,7 @@ class TestCompleteWorkflows:
     @pytest.mark.asyncio
     async def test_different_output_formats(self, fastmcp_app, temp_dir):
         """Test different output format handling."""
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         process_tool = next(t for t in tools if t.name == "process_document")
 
         img_path = temp_dir / "format_test.png"
@@ -332,7 +332,7 @@ class TestCompleteWorkflows:
     @pytest.mark.asyncio
     async def test_concurrent_processing_workflow(self, fastmcp_app, temp_dir):
         """Test concurrent document processing."""
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         batch_tool = next(t for t in tools if t.name == "process_batch_documents")
 
         # Create multiple test files
@@ -397,7 +397,7 @@ class TestWorkflowErrorScenarios:
         app = FastMCP("test-failing-ocr-mcp")
         register_sota_tools(app, failing_backend_manager, config)
 
-        tools = await app.get_tools()
+        tools = await fastmcp_app.list_tools()
         batch_tool = next(t for t in tools if t.name == "process_batch_documents")
 
         # Create test files
@@ -427,7 +427,7 @@ class TestWorkflowErrorScenarios:
     @pytest.mark.asyncio
     async def test_scanner_failure_recovery(self, fastmcp_app, temp_dir):
         """Test recovery from scanner failures."""
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         scan_tool = next(t for t in tools if t.name == "scan_document")
 
         # Try scanning with invalid device
@@ -448,7 +448,7 @@ class TestWorkflowErrorScenarios:
     @pytest.mark.asyncio
     async def test_network_timeout_simulation(self, fastmcp_app, temp_dir):
         """Test handling of timeouts and slow operations."""
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         process_tool = next(t for t in tools if t.name == "process_document")
 
         # Create test file
@@ -471,7 +471,7 @@ class TestAdvancedWorkflows:
     @pytest.mark.asyncio
     async def test_preview_then_full_scan_workflow(self, fastmcp_app):
         """Test preview scan followed by full scan."""
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
 
         # Step 1: Preview scan
         preview_tool = next(t for t in tools if t.name == "preview_scan")
@@ -500,7 +500,7 @@ class TestAdvancedWorkflows:
     @pytest.mark.asyncio
     async def test_multi_backend_comparison_workflow(self, fastmcp_app, temp_dir):
         """Test comparing results from different OCR backends."""
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         process_tool = next(t for t in tools if t.name == "process_document")
 
         # Create test image
@@ -530,7 +530,7 @@ class TestAdvancedWorkflows:
     @pytest.mark.asyncio
     async def test_ocr_quality_assessment_workflow(self, fastmcp_app, temp_dir):
         """Test OCR quality assessment across different content types."""
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         process_tool = next(t for t in tools if t.name == "process_document")
 
         # Test different image characteristics

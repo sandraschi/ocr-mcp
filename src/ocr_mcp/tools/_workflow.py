@@ -58,10 +58,52 @@ _STEP_TOOL_MAP = {
 
 
 def get_help_content(level: str = "basic", topic: str | None = None) -> str:
-    """Provides contextual help for OCR-MCP."""
+    """Provides contextual help for OCR-MCP tools and workflows.
+
+    Levels: basic (quick-start), intermediate (workflow guides), advanced (backend details).
+    """
     help_data = {
-        "basic": "# OCR-MCP Help\nUse `document_processing` for OCR tasks.",
-        "advanced": "# Advanced OCR-MCP\nConfiguring backends and pipelines...",
+        "basic": (
+            "# OCR-MCP Help\n\n"
+            "OCR-MCP provides 13 OCR backends for extracting text from images and PDFs.\n\n"
+            "## Quick Start\n"
+            '- **OCR a document**: `process_document(source_path="/path/to/doc.png")`\n'
+            '- **List backends**: `manage_workflow(operation="list_backends")`\n'
+            '- **Check health**: `manage_workflow(operation="ocr_health_check")`\n'
+            '- **Scan**: `operate_scanner(operation="scan_document", output_path="/tmp/scan.png")`\n\n'
+            "## Common Backends\n"
+            "- **tesseract** — Fast CPU OCR, no GPU needed\n"
+            "- **easyocr** — Multi-language DL OCR with bounding boxes\n"
+            "- **olmocr-2** — Best for academic PDFs (7B VLM, needs GPU)\n"
+            "- **paddleocr-vl** — SOTA VL OCR, 109 languages\n"
+            "- **mistral-ocr** — Cloud API, no local GPU\n\n"
+            'Use `get_help(level="advanced")` for backend details and pipeline guides.'
+        ),
+        "advanced": (
+            "# OCR-MCP Advanced\n\n"
+            "## Backend Selection\n"
+            '- Auto-selection: `process_document(source_path="...", backend="auto")`\n'
+            "  uses image quality analysis to pick the best backend\n"
+            '- Manual: `process_document(source_path="...", backend="olmocr-2")`\n\n'
+            "## PDF Processing\n"
+            '- Single-image PDF: `process_document(source_path="file.pdf")`\n'
+            '- Multi-page pipeline: use `manage_workflow(operation="process_batch_intelligent")`\n'
+            '  with `workflow_type="pdf_processing"` — renders all pages via pdf2image\n'
+            "- The olmocr-2 backend has a dedicated `process_pdf()` method for arXiv papers\n\n"
+            "## Pipelines\n"
+            '- Create: `manage_workflow(operation="create_processing_pipeline", ...)`\n'
+            '- Execute: `manage_workflow(operation="execute_pipeline", ...)`\n'
+            "- Valid steps: deskew_image, enhance_image, rotate_image, crop_image,\n"
+            "  process_document, assess_ocr_quality, convert_image_format,\n"
+            "  analyze_document_layout, extract_table_data\n\n"
+            "## Model Management\n"
+            '- Free idle models: `manage_workflow(operation="manage_models")`\n'
+            "- List loaded: use backend_manager or check server logs\n\n"
+            "## Quality Assessment\n"
+            '- `process_document(operation="assess_quality")` — image readiness for OCR\n'
+            '- `process_document(operation="validate_accuracy")` — compare backends\n'
+            '- `process_document(operation="compare_backends")` — side-by-side output'
+        ),
     }
     return help_data.get(level, help_data["basic"])
 
@@ -154,25 +196,45 @@ async def _process_pdf_document(
     save_intermediates: bool,
     backend_manager: Any,
 ) -> dict[str, Any]:
-    """Process PDF document with PDF-specific optimizations."""
+    """Process PDF document — renders pages to images, then OCRs each page."""
     try:
-        # TODO: Implement actual PDF to image conversion
-        # pdf_result = await convert_pdf_to_images(doc_path, None, dpi=300, format="PNG")
-        # For now, mock it or assume simple processing
+        from pathlib import Path
 
-        # Real implementation would look like:
-        # image_paths = pdf_result.get("results", {}).get("files_saved", [])
+        from pdf2image import convert_from_path
 
-        # Fallback for now: Treat as standard doc if we can't extract images yet
-        ocr_result = await backend_manager.process_document(doc_path, output_format="markdown")
+        pages = convert_from_path(doc_path, dpi=200)
+        page_texts = []
+        page_confidences = []
+
+        for i, page_img in enumerate(pages, 1):
+            temp_path = Path(doc_path).parent / f"_ocr_page_{i}.png"
+            page_img.save(str(temp_path), "PNG")
+            try:
+                ocr_result = await backend_manager.process_document(str(temp_path))
+                page_texts.append(ocr_result.get("text", "") if isinstance(ocr_result, dict) else str(ocr_result))
+                conf = ocr_result.get("confidence", 0.0) if isinstance(ocr_result, dict) else 0.0
+                page_confidences.append(conf)
+            finally:
+                if not save_intermediates:
+                    try:
+                        temp_path.unlink()
+                    except OSError:
+                        pass
+
+        combined = "\n\n".join(page_texts)
+        avg_conf = round(sum(page_confidences) / len(page_confidences), 4) if page_confidences else 0.0
 
         return {
-            "success": True,  # ocr_result.get("success", False),
+            "success": True,
             "workflow": "pdf_processing",
-            "ocr_result": ocr_result,
+            "pages_processed": len(pages),
+            "text": combined,
+            "page_texts": page_texts,
+            "confidence": avg_conf,
         }
 
     except Exception as e:
+        logger.error("PDF processing failed: %s", e)
         return {
             "success": False,
             "error": f"PDF processing failed: {e!s}",
@@ -186,19 +248,26 @@ async def _process_image_document(
     save_intermediates: bool,
     backend_manager: Any,
 ) -> dict[str, Any]:
-    """Process image document with image-specific optimizations."""
+    """Process image document — run image quality check first, enhance if needed, then OCR."""
     try:
-        # TODO: Integrate with actual preprocessing checks
-        # quality_result = await analyze_image_quality(doc_path)
-        # preprocessing_needed = quality_result.get("ocr_readiness") != "ready"
+        from . import _quality as quality_mod
 
-        # Determine backend
+        preprocess_applied = False
+        quality_result = await quality_mod.analyze_image_quality(doc_path)
+        if isinstance(quality_result, dict) and quality_result.get("overall_score", 100) < 70:
+            from . import _image as image_mod
+
+            enhanced = await image_mod.preprocess_image(doc_path, operation="enhance")
+            if isinstance(enhanced, dict) and enhanced.get("target_path"):
+                doc_path = enhanced["target_path"]
+                preprocess_applied = True
+
         ocr_result = await backend_manager.process_document(doc_path, output_format="markdown")
 
         return {
             "success": True,
             "workflow": "image_processing",
-            "preprocessing_applied": False,  # placeholder
+            "preprocessing_applied": preprocess_applied,
             "ocr_result": ocr_result,
         }
 
@@ -627,13 +696,33 @@ async def _handle_execute_pipeline(pipeline_config, input_documents, execution_m
     }
 
 
+_batch_registry: dict[str, dict[str, Any]] = {}
+
+
 async def _handle_monitor_batch_progress(batch_id, include_metrics, include_errors):
-    """Handle batch progress monitoring."""
-    return {
+    """Return real-time batch progress from the in-memory batch registry."""
+    if not batch_id or batch_id not in _batch_registry:
+        return {
+            "success": True,
+            "batch_id": batch_id,
+            "status": "unknown",
+            "message": "No batch found with that ID. Batch IDs expire when the server restarts.",
+        }
+    entry = _batch_registry[batch_id]
+    result: dict[str, Any] = {
         "success": True,
-        "monitoring_status": "active",
-        "message": "Batch monitoring active (placeholder)",
+        "batch_id": batch_id,
+        "status": entry.get("status", "unknown"),
+        "total": entry.get("total", 0),
+        "completed": entry.get("completed", 0),
+        "failed": entry.get("failed", 0),
+        "started_at": entry.get("started_at"),
     }
+    if include_metrics and "metrics" in entry:
+        result["metrics"] = entry["metrics"]
+    if include_errors and entry.get("errors"):
+        result["errors"] = entry["errors"]
+    return result
 
 
 async def _handle_optimize_processing(document_paths, quality_threshold):
@@ -668,9 +757,63 @@ async def _handle_list_backends(backend_manager):
 
 
 async def _handle_manage_models(backend_manager, target_free_mb, max_idle_seconds):
-    """Handle model management."""
-    # Placeholder for model management
-    return create_success_response({"message": "Model management executed", "freed_memory_mb": 0})
+    """Unload idle backend models to free GPU/system memory.
+
+    Iterates known backends, checks for unload_model capability, and releases
+    models that have been idle longer than max_idle_seconds.  Reports actual
+    count of freed backends.
+    """
+    freed_count = 0
+    freed_backends: list[str] = []
+    now = time.time()
+
+    for name in sorted(backend_manager.backend_registry.keys()):
+        try:
+            backend = backend_manager.get_backend(name)
+            if not backend or not backend.is_available():
+                continue
+
+            last_used = getattr(backend, "_last_used", None)
+            idle_ok = last_used is None or (now - last_used) > max_idle_seconds
+
+            if idle_ok and hasattr(backend, "unload_model"):
+                backend.unload_model()
+                freed_count += 1
+                freed_backends.append(name)
+            elif idle_ok and hasattr(backend, "_model") and backend._model is not None:
+                backend._model = None
+                if hasattr(backend, "_processor"):
+                    backend._processor = None
+                import gc
+
+                import torch
+
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                gc.collect()
+                freed_count += 1
+                freed_backends.append(name)
+        except Exception:
+            logger.debug("Failed to free model for backend %s", name, exc_info=True)
+
+    if freed_count == 0:
+        return create_success_response(
+            {
+                "message": "No idle backends to free",
+                "freed_count": 0,
+                "freed_backends": [],
+                "freed_memory_mb": 0,
+            }
+        )
+
+    return create_success_response(
+        {
+            "message": f"Freed {freed_count} idle backend(s)",
+            "freed_count": freed_count,
+            "freed_backends": freed_backends,
+            "freed_memory_mb": "unknown (models unloaded, memory returned to OS/GPU driver)",
+        }
+    )
 
 
 def expand_source_dir_to_document_paths(source_dir: str | None) -> list[str] | None:

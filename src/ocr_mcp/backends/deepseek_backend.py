@@ -144,25 +144,29 @@ class DeepSeekOCRBackend(OCRBackend):
                     num_beams=4,
                     early_stopping=True,
                     do_sample=False,
+                    output_scores=True,
+                    return_dict_in_generate=True,
                 )
 
             # Decode results
-            text = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+            text = self.tokenizer.decode(outputs.sequences[0], skip_special_tokens=True)
+
+            # Compute confidence from beam scores
+            conf = self._compute_confidence_from_beam(outputs) if outputs.sequences_scores is not None else 0.85
 
             # Format results based on mode
             if ocr_mode == "text":
                 result = {
                     "text": text.strip(),
                     "backend": "deepseek",
-                    "confidence": 0.95,  # DeepSeek typically has high confidence
+                    "confidence": conf,
                     "regions": [],
                 }
             elif ocr_mode == "format":
-                # Parse structured output if available
                 result = {
                     "text": text.strip(),
                     "backend": "deepseek",
-                    "confidence": 0.95,
+                    "confidence": conf,
                     "structured": self._parse_structured_output(text),
                     "regions": [],
                 }
@@ -170,7 +174,7 @@ class DeepSeekOCRBackend(OCRBackend):
                 result = {
                     "text": text.strip(),
                     "backend": "deepseek",
-                    "confidence": 0.95,
+                    "confidence": conf,
                     "regions": self._extract_regions(text, image.size),
                     "structured": {},
                 }
@@ -180,6 +184,24 @@ class DeepSeekOCRBackend(OCRBackend):
         except Exception as e:
             logger.error(f"DeepSeek-OCR processing failed: {e}")
             raise RuntimeError(f"OCR processing failed: {e!s}")
+
+    def _compute_confidence_from_beam(self, outputs) -> float:
+        """Compute confidence from beam search sequence scores.
+
+        Normalizes the beam score by sequence length for a length-independent
+        confidence estimate in [0, 1].  Falls back to 0.85 on any error.
+        """
+        try:
+            scores = outputs.sequences_scores
+            if scores is None:
+                return 0.85
+            seq_lens = (outputs.sequences[0] != self.tokenizer.pad_token_id).sum().item()
+            if seq_lens == 0:
+                return 0.0
+            avg_log_prob = scores[0].item() / seq_lens
+            return round(1.0 / (1.0 + float(torch.exp(torch.tensor(-avg_log_prob)).item())), 4)
+        except Exception:
+            return 0.85
 
     def _parse_structured_output(self, text: str) -> dict[str, Any]:
         """Parse structured output from DeepSeek-OCR"""

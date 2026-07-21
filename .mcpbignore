@@ -1,9 +1,11 @@
-# MCPB Pack Exclusion List
+# MCPB Pack Exclusion List — MCP server only, no webapp
 tests/
 .git/
 __pycache__/
 *.pyc
 .venv/
+.venv_cpu_stale/
+.venv-gpu/
 dist/
 build/
 target/
@@ -13,4 +15,32 @@ scripts/
 .windsurf/
 .pytest_cache/
 .coverage
+.hypothesis/
+.mypy_cache/
+.ruff_cache/
+node_modules/
+native/
+backend/
+web_sota/
+webapp/
+frontend/
+scans/
+tools/
+test_artifacts/
+test_logs/
+temp_test/
+start.ps1
+start.bat
+*.bak
+*.spec
+poetry.lock
+build.ps1
+src/lib.rs
+Cargo.toml
 Cargo.lock
+extension.toml
+docker-compose.yml
+Dockerfile
+test_ocr_result.txt
+test_scan_result.png
+.github/

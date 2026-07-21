@@ -176,15 +176,20 @@ class NemotronVLBackend(OCRBackend):
                 generation_config=generation_config,
                 **image_features,
             )
+            text_str = text.strip()
+            alpha_chars = sum(1 for c in text_str if c.isalnum() or c in ".,;:!?-()[]{}'\" ")
+            confidence = round(alpha_chars / max(len(text_str), 1), 4) if text_str else 0.0
 
             return {
                 "success": True,
-                "text": text.strip(),
+                "text": text_str,
                 "backend": "nemotron-vl",
                 "model": self.model_name,
                 "mode": mode,
                 "processing_time": time.time() - t0,
-                "confidence": 0.91,  # DocVQA 91.2%
+                "confidence": confidence,
+                "confidence_source": "text_quality_heuristic",
+                "confidence_note": ".chat() API does not expose logits",
                 "metadata": {
                     "device": self._device,
                     "params": "8B",

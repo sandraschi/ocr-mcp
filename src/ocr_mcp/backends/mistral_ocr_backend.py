@@ -160,10 +160,16 @@ class MistralOCRBackend(OCRBackend):
                 usage = result.get("usage_info", {})
                 processing_time = usage.get("total_time", 1.0)  # Seconds if available
 
+                content_str = content.strip()
+                alpha_chars = sum(1 for c in content_str if c.isalnum() or c in ".,;:!?-()[]{}'\" ")
+                heuristic_conf = round(alpha_chars / max(len(content_str), 1), 4) if content_str else 0.0
+
                 return {
                     "success": True,
-                    "text": content.strip(),
-                    "confidence": 0.95,  # Mistral OCR 3 is very accurate
+                    "text": content_str,
+                    "confidence": heuristic_conf,
+                    "confidence_source": "text_quality_heuristic",
+                    "confidence_note": "Cloud API — logits not exposed; based on alphanumeric density",
                     "backend": "mistral-ocr",
                     "model": model,
                     "mode": mode,

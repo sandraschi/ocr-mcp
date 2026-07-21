@@ -5,8 +5,11 @@ import {
   FlaskConical,
   Key,
   Loader2,
+  RefreshCw,
   ScanLine,
   Settings as SettingsIcon,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -27,6 +30,14 @@ interface ScannerInfo {
   max_dpi?: number;
 }
 
+interface LlmProvider {
+  id: string;
+  label: string;
+  base_url: string;
+  models: string[];
+  needs_key: boolean;
+}
+
 interface MistralSettingsResponse {
   key_configured: boolean;
   base_url: string;
@@ -42,6 +53,8 @@ export function Settings() {
     return localStorage.getItem(DEFAULT_BACKEND_KEY) || "auto";
   });
   const [saved, setSaved] = useState(false);
+  const [llmProviders, setLlmProviders] = useState<LlmProvider[]>([]);
+  const [, setLlmProviderMap] = useState<Record<string, LlmProvider>>({});
 
   const [mistralBaseUrl, setMistralBaseUrl] = useState("https://api.mistral.ai/v1");
   const [mistralKeyInput, setMistralKeyInput] = useState("");
@@ -78,6 +91,18 @@ export function Settings() {
       .then((d) => setScanners(d.scanners || []))
       .catch(() => {});
     loadMistral();
+    fetch("/api/llm/providers")
+      .then((r) => r.json())
+      .then((d) => {
+        const list = d.providers || [];
+        setLlmProviders(list);
+        const map: Record<string, LlmProvider> = {};
+        list.forEach((p: LlmProvider) => {
+          map[p.id] = p;
+        });
+        setLlmProviderMap(map);
+      })
+      .catch(() => {});
   }, []);
 
   const saveDefaultBackend = () => {
@@ -418,6 +443,81 @@ export function Settings() {
                 ))}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Local LLM */}
+        <Card className="border-slate-800 bg-slate-950/50">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Cpu className="w-5 h-5 text-cyan-400" /> Local LLM
+            </CardTitle>
+            <CardDescription className="text-slate-400">
+              Auto-detected local inference providers. Use with the AI assistant features.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {llmProviders.length === 0 ? (
+              <div className="text-sm text-slate-500">No providers detected. Start Ollama or LM Studio.</div>
+            ) : (
+              <div className="space-y-2">
+                {llmProviders.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-center justify-between p-3 rounded-md border border-slate-800 bg-slate-900"
+                  >
+                    <div>
+                      <p className="font-medium text-slate-200">{p.label}</p>
+                      <p className="text-xs text-slate-500 font-mono">{p.base_url}</p>
+                      {p.models.length > 0 && (
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Models: {p.models.slice(0, 5).join(", ")}
+                          {p.models.length > 5 ? ` +${p.models.length - 5} more` : ""}
+                        </p>
+                      )}
+                    </div>
+                    <div
+                      className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded border ${
+                        p.models.length > 0
+                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                          : "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
+                      }`}
+                    >
+                      {p.models.length > 0 ? (
+                        <>
+                          <Wifi className="w-3 h-3" /> Online
+                        </>
+                      ) : (
+                        <>
+                          <WifiOff className="w-3 h-3" /> Offline
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  fetch("/api/llm/providers")
+                    .then((r) => r.json())
+                    .then((d) => {
+                      const list = d.providers || [];
+                      setLlmProviders(list);
+                      const map: Record<string, LlmProvider> = {};
+                      list.forEach((p: LlmProvider) => {
+                        map[p.id] = p;
+                      });
+                      setLlmProviderMap(map);
+                    })
+                    .catch(() => {});
+                }}
+                className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors bg-slate-800 hover:bg-slate-700 rounded-md px-3 py-1.5 border border-slate-700"
+              >
+                <RefreshCw className="w-3 h-3" /> Refresh
+              </button>
+            </div>
           </CardContent>
         </Card>
       </div>

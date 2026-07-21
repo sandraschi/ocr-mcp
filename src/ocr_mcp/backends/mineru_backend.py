@@ -149,10 +149,18 @@ class MinerU25Backend(OCRBackend):
                     do_sample=False,
                     use_cache=True,
                 )
+                logits = self._model(output_ids).logits
 
             input_len = inputs["input_ids"].shape[1]
+            generated = output_ids[0][input_len:]
+            confidence = (
+                self._compute_confidence_from_logits(logits, generated, input_len, device)
+                if len(generated) > 0
+                else 0.0
+            )
+
             text = self._processor.decode(
-                output_ids[0][input_len:],
+                generated,
                 skip_special_tokens=True,
             ).strip()
 
@@ -163,13 +171,26 @@ class MinerU25Backend(OCRBackend):
                 "model": _HF_MODEL_ID,
                 "mode": mode,
                 "processing_time": time.time() - t0,
-                "confidence": 0.92,
+                "confidence": confidence,
                 "metadata": {"device": device, "engine": "hf_direct"},
             }
 
         except Exception as e:
             logger.error("MinerU2.5 error: %s", e)
             return {"success": False, "error": str(e), "backend": "mineru-2.5"}
+
+    @staticmethod
+    def _compute_confidence_from_logits(logits, generated_ids, input_len: int, device: str) -> float:
+        import torch
+
+        try:
+            gen_logits = logits[0, input_len - 1 : input_len - 1 + len(generated_ids)]
+            probs = torch.softmax(gen_logits, dim=-1)
+            gen_device = generated_ids.device if isinstance(generated_ids, torch.Tensor) else device
+            token_probs = probs[torch.arange(len(generated_ids), device=gen_device), generated_ids]
+            return round(float(token_probs.prod().item() ** (1.0 / max(len(generated_ids), 1))), 4)
+        except Exception:
+            return 0.85
 
     def get_capabilities(self) -> dict[str, Any]:
         caps = super().get_capabilities()

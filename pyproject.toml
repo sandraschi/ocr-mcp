@@ -27,7 +27,7 @@ classifiers = [
 keywords = ["ocr", "mcp", "fastmcp", "computer-vision", "document-processing", "ai", "ml"]
 
 dependencies = [
-    "fastmcp>=3.2,<4",
+    "fastmcp>=3.4.4,<4",
     "pydantic>=2.0.0",
     "python-dotenv>=1.0.0",
     "click>=8.1.0",

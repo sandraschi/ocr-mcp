@@ -715,17 +715,151 @@ def _detect_orientation(image):
 
 
 async def _extract_table_content(image_path, table_info, ocr_backend, backend_manager=None, config=None):
-    """Extract content from a detected table."""
-    # This would use OCR to extract cell content
-    # Placeholder implementation
-    return {
-        "bbox": table_info["bbox"],
-        "rows": table_info["rows"],
-        "cols": table_info["cols"],
-        "headers": [],  # Would detect headers
-        "data": [],  # Would extract cell data
-        "confidence": table_info["confidence"],
-    }
+    """Extract cell-level content from a detected table region.
+
+    Crops the table bbox, detects grid lines to locate cells, then runs OCR
+    on each cell.  Falls back to row-based OCR if grid detection fails.
+    """
+    import cv2
+    import numpy as np
+    from PIL import Image
+
+    bbox = table_info["bbox"]
+    rows = table_info.get("rows", 0)
+    cols = table_info.get("cols", 0)
+
+    try:
+        img = Image.open(image_path).convert("L")
+        img_np = np.array(img)
+
+        x1, y1, x2, y2 = [int(v) for v in bbox]
+        x1, y1 = max(0, x1), max(0, y1)
+        x2, y2 = min(img_np.shape[1], x2), min(img_np.shape[0], y2)
+        table_crop = img_np[y1:y2, x1:x2]
+        h, w = table_crop.shape
+
+        if h < 10 or w < 10:
+            return {
+                "bbox": bbox,
+                "rows": rows,
+                "cols": cols,
+                "headers": [],
+                "data": [],
+                "confidence": table_info["confidence"],
+            }
+
+        binary = cv2.adaptiveThreshold(
+            table_crop,
+            255,
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY_INV,
+            15,
+            3,
+        )
+
+        row_lines, col_lines = _detect_table_grid_lines(binary)
+        cells = _extract_cells(binary, row_lines, col_lines, x1, y1, image_path, ocr_backend, backend_manager, config)
+
+        headers = cells[0] if cells and len(cells) > 0 else []
+        data = cells[1:] if cells and len(cells) > 1 else []
+        avg_conf = (
+            round(sum(c.get("confidence", 0.0) for row in cells for c in row) / max(sum(len(r) for r in cells), 1), 4)
+            if cells
+            else table_info["confidence"]
+        )
+
+        return {
+            "bbox": bbox,
+            "rows": len(cells),
+            "cols": max((len(r) for r in cells), default=0),
+            "headers": headers,
+            "data": data,
+            "confidence": avg_conf,
+        }
+
+    except Exception:
+        logger.warning("Table content extraction failed for %s", image_path, exc_info=True)
+        return {
+            "bbox": bbox,
+            "rows": rows,
+            "cols": cols,
+            "headers": [],
+            "data": [],
+            "confidence": table_info["confidence"],
+        }
+
+
+def _detect_table_grid_lines(binary):
+    """Detect horizontal and vertical grid lines in a binary table image."""
+    import cv2
+    import numpy as np
+
+    try:
+        h_scale = binary.shape[1] // 30 or 1
+        v_scale = binary.shape[0] // 30 or 1
+
+        h_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (h_scale, 1))
+        v_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, v_scale))
+
+        h_lines_raw = cv2.morphologyEx(binary, cv2.MORPH_OPEN, h_kernel)
+        v_lines_raw = cv2.morphologyEx(binary, cv2.MORPH_OPEN, v_kernel)
+
+        h_proj = np.sum(h_lines_raw, axis=1) / 255
+        v_proj = np.sum(v_lines_raw, axis=0) / 255
+
+        threshold = max(0.1 * binary.shape[1] * 0.3, 10)
+        row_lines = [i for i, v in enumerate(h_proj) if v > threshold]
+        col_lines = [i for i, v in enumerate(v_proj) if v > threshold]
+
+        if not row_lines:
+            h = binary.shape[0]
+            row_lines = [int(h * i / 5) for i in range(6)]
+        if not col_lines:
+            w = binary.shape[1]
+            col_lines = [int(w * i / 3) for i in range(4)]
+
+        return row_lines, col_lines
+    except Exception:
+        h, w = binary.shape
+        return [int(h * i / 5) for i in range(6)], [int(w * i / 3) for i in range(4)]
+
+
+def _extract_cells(binary, row_lines, col_lines, offset_x, offset_y, image_path, ocr_backend, backend_manager, config):
+    """OCR each cell in the grid formed by row/col line intersections."""
+    row_lines = sorted(set(row_lines))
+    col_lines = sorted(set(col_lines))
+    rows_data = []
+
+    for ri in range(len(row_lines) - 1):
+        row_cells = []
+        for ci in range(len(col_lines) - 1):
+            y1 = max(row_lines[ri] - 1, 0)
+            y2 = min(row_lines[ri + 1] + 1, binary.shape[0])
+            x1 = max(col_lines[ci] - 1, 0)
+            x2 = min(col_lines[ci + 1] + 1, binary.shape[1])
+            cell_text = _ocr_cell_region(
+                image_path, offset_x + x1, offset_y + y1, x2 - x1, y2 - y1, ocr_backend, backend_manager, config
+            )
+            row_cells.append(cell_text)
+        rows_data.append(row_cells)
+    return rows_data
+
+
+def _ocr_cell_region(image_path, x, y, w, h, ocr_backend, backend_manager, config):
+    """OCR a single table cell region synchronously."""
+    import pytesseract
+    from PIL import Image
+
+    try:
+        img = Image.open(image_path).convert("L")
+        cell = img.crop((x, y, x + w, y + h))
+        text = pytesseract.image_to_string(cell, config="--psm 7").strip()
+        data = pytesseract.image_to_data(cell, config="--psm 7", output_type=pytesseract.Output.DICT)
+        confs = [int(c) / 100.0 for c in data["conf"] if c != "-1" and int(c) > 0]
+        cell_conf = round(sum(confs) / len(confs), 4) if confs else 0.0
+        return {"text": text, "confidence": cell_conf}
+    except Exception:
+        return {"text": "", "confidence": 0.0}
 
 
 def _detect_checkboxes(image):

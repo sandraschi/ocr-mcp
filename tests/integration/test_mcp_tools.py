@@ -102,7 +102,7 @@ class TestMCPToolsIntegration:
         img.save(test_image)
 
         # Get the tool
-        tools = await registered_app.get_tools()
+        tools = await registered_app.list_tools()
         process_tool = next(t for t in tools if t.name == "document_processing")
 
         # Call the tool
@@ -126,7 +126,7 @@ class TestMCPToolsIntegration:
         img = Image.new("RGB", (100, 100), color="white")
         img.save(test_image)
 
-        tools = await registered_app.get_tools()
+        tools = await registered_app.list_tools()
         process_tool = next(t for t in tools if t.name == "document_processing")
 
         # Test with formatting options
@@ -151,7 +151,7 @@ class TestMCPToolsIntegration:
         img = Image.new("RGB", (200, 200), color="white")
         img.save(test_image)
 
-        tools = await registered_app.get_tools()
+        tools = await registered_app.list_tools()
         process_tool = next(t for t in tools if t.name == "document_processing")
 
         region = [10, 10, 100, 100]
@@ -174,7 +174,7 @@ class TestMCPToolsIntegration:
         img = Image.new("RGB", (500, 700), color="white")  # Comic page proportions
         img.save(test_image)
 
-        tools = await registered_app.get_tools()
+        tools = await registered_app.list_tools()
         process_tool = next(t for t in tools if t.name == "process_document")
 
         result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
@@ -204,7 +204,7 @@ class TestMCPToolsIntegration:
             img.save(img_path)
             test_images.append(str(img_path))
 
-        tools = await registered_app.get_tools()
+        tools = await registered_app.list_tools()
         batch_tool = next(t for t in tools if t.name == "workflow_management")
 
         result = await (batch_tool.fn if hasattr(batch_tool, "fn") else batch_tool)(
@@ -223,7 +223,7 @@ class TestMCPToolsIntegration:
     @pytest.mark.asyncio
     async def test_workflow_management_health_check_tool(self, registered_app):
         """Test OCR health check tool."""
-        tools = await registered_app.get_tools()
+        tools = await registered_app.list_tools()
         workflow_tool = next(t for t in tools if t.name == "workflow_management")
 
         result = await (workflow_tool.fn if hasattr(workflow_tool, "fn") else workflow_tool)(
@@ -238,7 +238,7 @@ class TestMCPToolsIntegration:
     @pytest.mark.asyncio
     async def test_list_backends_tool(self, registered_app):
         """Test list backends tool."""
-        tools = await registered_app.get_tools()
+        tools = await registered_app.list_tools()
         list_tool = next(t for t in tools if t.name == "list_backends")
 
         result = await (list_tool.fn if hasattr(list_tool, "fn") else list_tool)()
@@ -251,7 +251,7 @@ class TestMCPToolsIntegration:
     @pytest.mark.asyncio
     async def test_scanner_operations_list_tool(self, registered_app):
         """Test list scanners tool."""
-        tools = await registered_app.get_tools()
+        tools = await registered_app.list_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")
 
         result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(operation="list_scanners")
@@ -263,7 +263,7 @@ class TestMCPToolsIntegration:
     @pytest.mark.asyncio
     async def test_scanner_operations_properties_tool(self, registered_app):
         """Test scanner properties tool."""
-        tools = await registered_app.get_tools()
+        tools = await registered_app.list_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")
 
         result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
@@ -278,7 +278,7 @@ class TestMCPToolsIntegration:
     @pytest.mark.asyncio
     async def test_scanner_operations_configure_tool(self, registered_app):
         """Test scan configuration tool."""
-        tools = await registered_app.get_tools()
+        tools = await registered_app.list_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")
 
         result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
@@ -299,7 +299,7 @@ class TestMCPToolsIntegration:
     @pytest.mark.asyncio
     async def test_scanner_operations_scan_tool(self, registered_app):
         """Test document scanning tool."""
-        tools = await registered_app.get_tools()
+        tools = await registered_app.list_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")
 
         result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
@@ -318,7 +318,7 @@ class TestMCPToolsIntegration:
     @pytest.mark.asyncio
     async def test_scan_batch_tool(self, registered_app):
         """Test batch scanning tool."""
-        tools = await registered_app.get_tools()
+        tools = await registered_app.list_tools()
         batch_scan_tool = next(t for t in tools if t.name == "scan_batch")
 
         result = await (batch_scan_tool.fn if hasattr(batch_scan_tool, "fn") else batch_scan_tool)(
@@ -336,7 +336,7 @@ class TestMCPToolsIntegration:
     @pytest.mark.asyncio
     async def test_preview_scan_tool(self, registered_app):
         """Test preview scanning tool."""
-        tools = await registered_app.get_tools()
+        tools = await registered_app.list_tools()
         preview_tool = next(t for t in tools if t.name == "preview_scan")
 
         result = await (preview_tool.fn if hasattr(preview_tool, "fn") else preview_tool)(
@@ -373,7 +373,7 @@ class TestToolErrorHandling:
         """Test handling of non-existent files."""
         register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         process_tool = next(t for t in tools if t.name == "document_processing")
 
         result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
@@ -392,7 +392,7 @@ class TestToolErrorHandling:
 
         register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         process_tool = next(t for t in tools if t.name == "process_document")
 
         result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
@@ -407,7 +407,7 @@ class TestToolErrorHandling:
         """Test scanner tools with invalid device IDs."""
         register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")
 
         result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
@@ -433,7 +433,7 @@ class TestToolParameterValidation:
 
         register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         process_tool = next(t for t in tools if t.name == "document_processing")
 
         result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
@@ -448,7 +448,7 @@ class TestToolParameterValidation:
         """Test scan configuration with invalid parameters."""
         register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")
 
         result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
@@ -482,7 +482,7 @@ class TestToolParameterValidation:
         register_sota_tools(fastmcp_app, mock_backend_manager, config)
         register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         tool = next((t for t in tools if t.name == tool_name), None)
 
         if tool:
@@ -509,7 +509,7 @@ class TestToolConcurrency:
 
         register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         workflow_tool = next(t for t in tools if t.name == "workflow_management")
 
         result = await (workflow_tool.fn if hasattr(workflow_tool, "fn") else workflow_tool)(
@@ -528,7 +528,7 @@ class TestToolConcurrency:
         """Test multiple simultaneous scan operations."""
         register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
-        tools = await fastmcp_app.get_tools()
+        tools = await fastmcp_app.list_tools()
         scanner_tool = next(t for t in tools if t.name == "scanner_operations")
 
         # Simulate multiple concurrent scan requests

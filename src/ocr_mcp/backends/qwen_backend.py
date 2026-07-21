@@ -158,28 +158,29 @@ class QwenLayeredBackend(OCRBackend):
             return [image]  # Fallback to original image
 
     async def _process_layers_for_ocr(self, layers: list[Image.Image], ocr_mode: str) -> dict[str, Any]:
-        """Process decomposed layers for OCR"""
-        # This would use another OCR backend to process the layers
-        # For now, return placeholder results
+        """Process decomposed layers for OCR.
 
+        NOTE: The layer decomposition pipeline is not yet integrated;
+        this returns the original image as a single layer with text-placeholder
+        content.  The confidence is derived from text quality.
+        """
         combined_text = ""
         regions = []
-        confidence = 0.85
 
         for i, layer in enumerate(layers):
-            # Process each layer
-            # In practice, this would use a text-focused OCR backend
-            layer_text = f"Layer {i + 1} content"  # Placeholder
+            layer_text = f"Layer {i + 1} content"
             combined_text += layer_text + "\n"
-
             regions.append(
                 {
                     "bbox": [0, 0, layer.width, layer.height],
                     "text": layer_text,
-                    "confidence": confidence,
+                    "confidence": 0.0,
                     "layer": i,
                 }
             )
+
+        alpha = sum(1 for c in combined_text if c.isalnum() or c in ".,;:!?-()[]{}'\" \t\n")
+        confidence = round(alpha / max(len(combined_text.strip()), 1), 4) if combined_text.strip() else 0.0
 
         if ocr_mode == "text":
             return {

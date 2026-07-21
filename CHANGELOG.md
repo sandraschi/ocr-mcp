@@ -1,3 +1,30 @@
+
+## [Unreleased] — 2026-07-21
+
+### Added
+- **Unlimited-OCR backend** (`unlimited_ocr_backend.py`) — Baidu one-shot long-horizon document parsing
+  - 3B params, MIT license, arXiv:2606.23050
+  - Two inference modes: gundam (cropped, 640px) and base (full, 1024px)
+  - Unbounded-length document parsing without image resolution limits
+  - ParseBench: 46.17 mean, 86.81 text content score
+  - Uses custom `model.infer()` API with trust_remote_code=True
+  - Requires: torch>=2.10.0, transformers>=4.57.1, einops, addict, easydict
+  - Backend name: `unlimited-ocr`, aliases: `unlimited`, `baidu`
+  - HF: `baidu/Unlimited-OCR`
+- **Webapp streamlined** — removed legacy `frontend/` directory, reduced sidebar to 5 core pages
+  - Dashboard is now the one-stop shop: file drop zone, scanner selector, backend selector, Quick Scan & OCR button, inline result editor with Copy/.txt/.md export
+  - Live KPI cards from `/api/health` and `/api/backends`
+  - Sidebar collapse toggle moved to top (fleet standard)
+  - Topbar live backend health indicator
+  - Routes removed: `/import`, `/scanner`, `/scan-viewer`, `/process` (functionality absorbed into dashboard)
+  - See `docs/WEBAPP_REDESIGN.md` for full details
+
+- Tauri 2.0 native wrapper with `bundle.resources` + `std::process::Command`
+- PyInstaller frozen backend embedded in NSIS installer
+- CUA-NSIS smoke test (`scripts/cua-smoke.py`, `scripts/cua-nsis-config.json`)
+- `just cua-nsis-test` recipe
+- Tauri CORS: `tauri://localhost` origins for WebView API access
+- `GET /api/v1/diagnostics` endpoint for CUA verification
 # Changelog
 
 All notable changes to OCR-MCP will be documented in this file.

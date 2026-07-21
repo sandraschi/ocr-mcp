@@ -15,6 +15,8 @@ from unittest.mock import Mock
 import pytest
 from PIL import Image
 
+pytest_plugins = ["tests.conftest_advanced"]
+
 # Add project root and src to path for imports
 _project_root = Path(__file__).parent.parent
 if str(_project_root) not in sys.path:
