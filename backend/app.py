@@ -602,6 +602,110 @@ async def get_llm_providers():
     return {"providers": providers}
 
 
+FLEET_APPS: list[dict[str, Any]] = [
+    {
+        "id": "fleet-dashboard",
+        "label": "Fleet Dashboard",
+        "description": "Central management for all MCP servers",
+        "port": 10794,
+        "tags": ["infra", "admin"],
+    },
+    {
+        "id": "advanced-memory",
+        "label": "Advanced Memory",
+        "description": "Semantic knowledge graph and long-term memory",
+        "port": 10704,
+        "tags": ["ai", "memory"],
+    },
+    {
+        "id": "robotics",
+        "label": "Robotics Control",
+        "description": "Physical and virtual robot orchestration",
+        "port": 10706,
+        "tags": ["hardware", "simulation"],
+    },
+    {
+        "id": "osc-mcp",
+        "label": "OSC Orchestrator",
+        "description": "Real-time media and robotics transport",
+        "port": 10766,
+        "tags": ["media", "transport"],
+    },
+    {
+        "id": "obs-mcp",
+        "label": "OBS Dashboard",
+        "description": "Live streaming and recording control",
+        "port": 10818,
+        "tags": ["media", "streaming"],
+    },
+    {
+        "id": "ocr-interface",
+        "label": "OCR Interface",
+        "description": "Document scanning and text extraction",
+        "port": 10858,
+        "tags": ["utilities", "ai"],
+    },
+    {
+        "id": "winrar",
+        "label": "Archive Manager",
+        "description": "File compression and extraction utilities",
+        "port": 10763,
+        "tags": ["utility", "files"],
+    },
+    {
+        "id": "local-llm",
+        "label": "Local LLM Chat",
+        "description": "AI chat with local models via Ollama/LM Studio",
+        "port": 10833,
+        "tags": ["ai", "chat"],
+    },
+    {
+        "id": "calibre-mcp",
+        "label": "Calibre Library",
+        "description": "E-book library management and conversion",
+        "port": 10721,
+        "tags": ["books", "utilities"],
+    },
+    {
+        "id": "email-mcp",
+        "label": "Email MCP",
+        "description": "Email reading, search, and management",
+        "port": 10812,
+        "tags": ["communication"],
+    },
+    {
+        "id": "plex-mcp",
+        "label": "Plex Media",
+        "description": "Media library browsing and streaming",
+        "port": 10741,
+        "tags": ["media", "entertainment"],
+    },
+]
+
+
+@app.get("/api/fleet/apps")
+async def get_fleet_apps():
+    """Dynamically probe known fleet webapp ports and return live apps."""
+    results: list[dict[str, Any]] = []
+
+    async def probe(app_info: dict[str, Any]) -> dict[str, Any] | None:
+        try:
+            async with httpx.AsyncClient(timeout=2.0) as client:
+                resp = await client.get(f"http://127.0.0.1:{app_info['port']}/api/health")
+                if resp.status_code == 200:
+                    return {**app_info, "url": f"http://localhost:{app_info['port']}", "alive": True, "icon": None}
+        except Exception:
+            pass
+        return {**app_info, "url": f"http://localhost:{app_info['port']}", "alive": False, "icon": None}
+
+    tasks = [probe(app) for app in FLEET_APPS]
+    for coro in asyncio.as_completed(tasks):
+        result = await coro
+        if result:
+            results.append(result)
+    return {"apps": results, "count": len(results)}
+
+
 @app.post("/api/backends/test")
 async def post_backend_probe(
     body: BackendProbeRequest,
