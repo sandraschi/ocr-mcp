@@ -7,7 +7,7 @@ name = "ocr-mcp"
 version = "0.2.0-beta"
 description = "FastMCP server providing comprehensive OCR capabilities to the MCP ecosystem"
 authors = [
-    {name = "Sandra", email = "sandra@example.com"}
+    {name = "Sandra", email = "sandraschipal@gmail.com"}
 ]
 license = {text = "MIT"}
 readme = "README.md"

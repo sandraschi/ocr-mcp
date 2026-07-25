@@ -1502,8 +1502,8 @@ async def scan_document(
 
 # ── Scanner watcher (auto-detect documents on flatbed) ──────────────────────
 
-_watcher_scan_fn: callable | None = None
-_watcher_ocr_fn: callable | None = None
+_watcher_scan_fn: "callable | None" = None
+_watcher_ocr_fn: "callable | None" = None
 
 
 def _watcher_scan(device_id: str, settings: dict) -> Any:

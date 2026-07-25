@@ -17,7 +17,15 @@
 ## [Unreleased]
 
 ### Added
-- **Auto-Scan watcher** (`src/ocr_mcp/services/scanner_watcher.py`) — background service that
+- **Form reconstruction spec** (`SPEC.md`, `IMPLEMENTATION_PLAN.md`) — scan paper forms, detect fields (checkboxes, text inputs, radio buttons, signatures), reconstruct as fillable ODT via libreoffice-mcp bridge. Dual print modes: full document or entries-only overlay for physical form overprinting. Cross-repo FormReconstruction Pydantic data contract.
+
+### Fixed (2026-07-25 assfix)
+- **[CRITICAL]** `native/build.ps1` now bundles `.env.example` instead of `.env` (was leaking developer API keys to all users)
+- **[CRITICAL]** `native/tauri.conf.json` resources now reference `.env.example` not `.env`
+- **[CRITICAL]** `scripts/scanner_bridge_server.py` replaced `allow_origins=["*"]` with fleet-standard CORS (Tailscale, LAN, Tauri origins)
+- **[HIGH]** `run_server.py` added CORSMiddleware (was missing entirely; Tauri WebView2 would get CORS errors)
+- `reports/` added to `.gitignore`
+- Help system (`_workflow.py`) updated with form reconstruction workflow documentation
   polls for document placement on flatbed scanners via preview-scan image diff detection.
   Toggle from Dashboard or Settings. When a document is detected, triggers full scan + OCR
   with the configured backend. Two modes: `preview` (universal, image-hash comparison) and

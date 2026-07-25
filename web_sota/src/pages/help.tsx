@@ -1,7 +1,19 @@
 import { BookOpen, Cpu, FolderOpen, HelpCircle, Monitor, Server } from "lucide-react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
+const TABS = [
+  { id: "webapp", label: "Web App", icon: Monitor },
+  { id: "mcp", label: "MCP Server", icon: Server },
+  { id: "backends", label: "OCR Backends", icon: Cpu },
+  { id: "settings", label: "Settings & Docs", icon: FolderOpen },
+] as const;
+
+type TabId = (typeof TABS)[number]["id"];
+
 export function Help() {
+  const [activeTab, setActiveTab] = useState<TabId>("webapp");
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-12">
       <h1 className="text-3xl font-bold tracking-tight text-slate-100 flex items-center gap-3">
@@ -9,312 +21,355 @@ export function Help() {
         Help & Documentation
       </h1>
 
-      <p className="text-slate-400 text-sm -mt-2">
-        OCR-MCP ships as one repo with <strong className="text-slate-300">three</strong> things to know: the{" "}
-        <strong className="text-slate-300">web app</strong> (this UI), the{" "}
-        <strong className="text-slate-300">MCP server</strong> (for Cursor, Claude, etc.), and the{" "}
-        <strong className="text-slate-300">OCR backends</strong> (engines both surfaces use).
-      </p>
+      {/* Horizontal tabs */}
+      <div className="flex gap-1 border-b border-slate-800 pb-px overflow-x-auto">
+        {TABS.map((tab) => {
+          const active = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              data-testid={`help-tab-${tab.id}`}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-md border-b-2 transition-colors whitespace-nowrap ${
+                active
+                  ? "border-blue-500 text-blue-400 bg-blue-500/5"
+                  : "border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-600"
+              }`}
+            >
+              <tab.icon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
 
-      {/* —— Web application —— */}
-      <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl">
-        <CardHeader>
-          <CardTitle className="text-slate-100 flex items-center gap-2">
-            <Monitor className="w-5 h-5 text-sky-400" />
-            Web application
-          </CardTitle>
-          <CardDescription className="text-slate-400">
-            React (Vite) frontend + FastAPI backend — for interactive OCR, scans, and settings in the browser.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 text-sm text-slate-300">
-          <div>
-            <h4 className="text-sky-400 font-medium mb-2">How it runs</h4>
-            <ul className="list-disc pl-5 space-y-1 text-slate-400">
-              <li>
-                <strong className="text-slate-300">Frontend</strong> —{" "}
-                <code className="text-slate-400">http://127.0.0.1:10858</code> (Vite dev server).
-              </li>
-              <li>
-                <strong className="text-slate-300">Backend API</strong> —{" "}
-                <code className="text-slate-400">127.0.0.1:10859</code> (FastAPI / Uvicorn). The UI proxies{" "}
-                <code className="text-slate-400">/api</code> and <code className="text-slate-400">/static</code> to that
-                port (see <code className="text-slate-400">web_sota/vite.config.ts</code>
-                ).
-              </li>
-              <li>
-                From repo root, <code className="text-slate-400">web_sota\start.ps1</code> clears those ports, syncs
-                Python deps, and starts both processes. Same Python env as the MCP package (see repo{" "}
-                <code className="text-slate-400">docs/INSTALL.md</code>).
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-sky-400 font-medium mb-2">Pages in this app</h4>
+      {/* —— Tab: Web App —— */}
+      {activeTab === "webapp" && (
+        <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl">
+          <CardHeader>
+            <CardTitle className="text-slate-100 flex items-center gap-2">
+              <Monitor className="w-5 h-5 text-sky-400" />
+              Web Application
+            </CardTitle>
+            <CardDescription className="text-slate-400">
+              React (Vite) frontend + FastAPI backend — for interactive OCR, scans, and settings in the browser.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-slate-300">
+            <div>
+              <h4 className="text-sky-400 font-medium mb-2">How it runs</h4>
+              <ul className="list-disc pl-5 space-y-1 text-slate-400">
+                <li>
+                  <strong className="text-slate-300">Frontend</strong> —
+                  <code className="text-slate-400">http://127.0.0.1:10858</code> (Vite dev server).
+                </li>
+                <li>
+                  <strong className="text-slate-300">Backend API</strong> —
+                  <code className="text-slate-400">127.0.0.1:10859</code> (FastAPI / Uvicorn). The UI proxies{" "}
+                  <code className="text-slate-400">/api</code> and <code className="text-slate-400">/static</code> to
+                  that port (see <code className="text-slate-400">web_sota/vite.config.ts</code>).
+                </li>
+                <li>
+                  From repo root, <code className="text-slate-400">web_sota\start.ps1</code> clears those ports, syncs
+                  Python deps, and starts both processes. Same Python env as the MCP package (see repo{" "}
+                  <code className="text-slate-400">docs/INSTALL.md</code>).
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-sky-400 font-medium mb-2">Pages in this app</h4>
+              <div className="overflow-x-auto rounded-lg border border-slate-800">
+                <table className="w-full text-left text-xs sm:text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-800 bg-slate-950/80 text-slate-400">
+                      <th className="p-3 font-medium">Page</th>
+                      <th className="p-3 font-medium">Purpose</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    <tr>
+                      <td className="p-3 font-mono text-sky-200">Dashboard</td>
+                      <td className="p-3 text-slate-400">
+                        Quick Scan & OCR — drop a file or use a scanner, select a backend, and run. Result appears
+                        inline. Copy or export as .txt/.md. Live KPIs show health and availability.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-mono text-sky-200">Book Pipeline</td>
+                      <td className="p-3 text-slate-400">
+                        Full book scanning: OCR pages, detect chapters, assemble EPUB, upload to Calibre.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-mono text-sky-200">Editor</td>
+                      <td className="p-3 text-slate-400">
+                        Standalone text view with export (JSON, CSV, XML). Latest result loads automatically.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-mono text-sky-200">Activity</td>
+                      <td className="p-3 text-slate-400">Job status and history for debugging.</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-mono text-sky-200">Settings</td>
+                      <td className="p-3 text-slate-400">
+                        Default OCR backend, Mistral API key + test, backend/scanner status.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-mono text-sky-200">Chat</td>
+                      <td className="p-3 text-slate-400">AI assistant with OCR tool access and local LLM integration.</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-mono text-sky-200">Help</td>
+                      <td className="p-3 text-slate-400">This page.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <p className="text-xs text-slate-500">
+              Tip: the Dashboard handles the full scan/upload to OCR to read workflow in one place.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* —— Tab: MCP Server —— */}
+      {activeTab === "mcp" && (
+        <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl">
+          <CardHeader>
+            <CardTitle className="text-slate-100 flex items-center gap-2">
+              <Server className="w-5 h-5 text-violet-400" />
+              MCP Server
+            </CardTitle>
+            <CardDescription className="text-slate-400">
+              FastMCP 3.1 server — stdio transport for agentic IDEs (Cursor, Claude Desktop, Windsurf, etc.). Same OCR
+              engines as the web API, different entrypoint.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-slate-300">
+            <div>
+              <h4 className="text-violet-400 font-medium mb-2">What it is</h4>
+              <p className="text-slate-400 mb-2">
+                The MCP server exposes <strong className="text-slate-300">tools</strong>,{" "}
+                <strong className="text-slate-300">resources</strong>,{" "}
+                <strong className="text-slate-300">prompts</strong>, and (where the client supports it){" "}
+                <strong className="text-slate-300">sampling</strong> so an LLM can drive OCR, preprocessing, scanner
+                ops, and batch workflows without using this browser UI.
+              </p>
+              <ul className="list-disc pl-5 space-y-1 text-slate-400">
+                <li>
+                  <strong className="text-slate-300">Run:</strong>{" "}
+                  <code className="text-slate-400">uv run ocr-mcp</code> or{" "}
+                  <code className="text-slate-400">python -m ocr_mcp.server</code> from the project venv (see{" "}
+                  <code className="text-slate-400">docs/INSTALL.md</code> for client JSON snippets).
+                </li>
+                <li>
+                  <strong className="text-slate-300">Config:</strong> env vars such as{" "}
+                  <code className="text-slate-400">MISTRAL_API_KEY</code>,{" "}
+                  <code className="text-slate-400">MISTRAL_BASE_URL</code>,{" "}
+                  <code className="text-slate-400">OCR_DEVICE</code>,{" "}
+                  <code className="text-slate-400">OCR_CACHE_DIR</code>,{" "}
+                  <code className="text-slate-400">OCR_AUTO_INSTALL_DEPS</code>,{" "}
+                  <code className="text-slate-400">OCR_AUTO_BOOTSTRAP</code> (full matrix in repo docs).
+                </li>
+                <li>
+                  <strong className="text-slate-300">Mistral note:</strong> the key you set under{" "}
+                  <strong className="text-slate-300">Settings</strong> in the web UI applies to the FastAPI process
+                  only. The MCP server started by your IDE uses{" "}
+                  <strong className="text-slate-300">environment variables</strong> unless you add a shared config
+                  layer. Set <code className="text-slate-400">MISTRAL_API_KEY</code> in the MCP client config if you use{" "}
+                  <code className="text-slate-400">mistral-ocr</code> from the agent.
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-violet-400 font-medium mb-2">Portmanteau tools (high level)</h4>
+              <ul className="list-disc pl-5 space-y-1 text-slate-400">
+                <li>
+                  <code className="text-slate-300">document_processing</code> — OCR, layout/analysis, quality checks (
+                  <code className="text-slate-400">operation</code> parameter).
+                </li>
+                <li>
+                  <code className="text-slate-300">image_management</code> — preprocess, convert, image pipeline steps.
+                </li>
+                <li>
+                  <code className="text-slate-300">scanner_operations</code> — list scanners, scan (WIA on Windows).
+                </li>
+                <li>
+                  <code className="text-slate-300">workflow_management</code> — batches, pipelines, system-style
+                  workflow ops.
+                </li>
+                <li>
+                  <code className="text-slate-300">agentic_document_workflow</code> — SEP-1577-style orchestration with
+                  sampling when the client supports it.
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-violet-400 font-medium mb-2">Resources & prompts</h4>
+              <p className="text-slate-400">
+                Examples: <code className="text-slate-400">resource://ocr/logs</code>,{" "}
+                <code className="text-slate-400">resource://ocr/capabilities</code>, skills/capability text for LLMs,
+                and prompts for batch, scanner, quality, and agentic workflows. See{" "}
+                <code className="text-slate-400">src/ocr_mcp/server.py</code> and{" "}
+                <code className="text-slate-400">docs/AI_FEATURES.md</code>.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* —— Tab: OCR Backends —— */}
+      {activeTab === "backends" && (
+        <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl">
+          <CardHeader>
+            <CardTitle className="text-slate-100 flex items-center gap-2">
+              <Cpu className="w-5 h-5 text-amber-400" />
+              OCR Backends
+            </CardTitle>
+            <CardDescription className="text-slate-400">
+              Engines shared by the <strong>web API</strong> and the <strong>MCP server</strong>. Live status appears
+              under <strong>Settings</strong>. Choose per flow or set a browser default.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6 text-slate-300 text-sm">
             <div className="overflow-x-auto rounded-lg border border-slate-800">
               <table className="w-full text-left text-xs sm:text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-slate-800 bg-slate-950/80 text-slate-400">
-                    <th className="p-3 font-medium">Area</th>
-                    <th className="p-3 font-medium">Purpose</th>
+                    <th className="p-3 font-medium">Backend</th>
+                    <th className="p-3 font-medium">Best for</th>
+                    <th className="p-3 font-medium">Trade-offs</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
                   <tr>
-                    <td className="p-3 font-mono text-slate-200">Dashboard</td>
+                    <td className="p-3 font-mono text-amber-200/90">unlimited-ocr</td>
+                    <td className="p-3">Long-horizon documents, one-shot parsing (newest — Jul 2026).</td>
+                    <td className="p-3 text-slate-400">3B params, ~6GB VRAM. MIT license.</td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 font-mono text-amber-200/90">paddleocr-vl</td>
+                    <td className="p-3">Documents, tables, formulas, charts, many languages; strong VL OCR.</td>
                     <td className="p-3 text-slate-400">
-                      <strong className="text-slate-300">Quick Scan & OCR</strong> — drop a file or use a scanner,
-                      select a backend (default: Unlimited-OCR), and click one button. Result appears inline. Copy or
-                      export as .txt/.md. Live KPI cards show server health and backend availability.
+                      GPU + VRAM; install <strong>flash-attn</strong> on NVIDIA to avoid huge memory use. Needs
+                      torch/transformers stack.
                     </td>
                   </tr>
                   <tr>
-                    <td className="p-3 font-mono text-slate-200">Editor</td>
+                    <td className="p-3 font-mono text-amber-200/90">mistral-ocr</td>
+                    <td className="p-3">High-quality cloud OCR, structured output, mixed layouts.</td>
                     <td className="p-3 text-slate-400">
-                      Standalone text view with export (JSON, CSV, XML). Latest result loads automatically.
+                      Requires API key (web <strong>Settings</strong> and/or{" "}
+                      <code className="text-slate-500">MISTRAL_API_KEY</code> for MCP); not offline; usage costs.
                     </td>
                   </tr>
                   <tr>
-                    <td className="p-3 font-mono text-slate-200">Activity</td>
-                    <td className="p-3 text-slate-400">Job status and history for debugging.</td>
-                  </tr>
-                  <tr>
-                    <td className="p-3 font-mono text-slate-200">Settings</td>
+                    <td className="p-3 font-mono text-amber-200/90">nemotron-vl</td>
+                    <td className="p-3">
+                      NVIDIA document intelligence VLM (8B). Best-in-class structured docs: invoices, forms, charts,
+                      diagrams.
+                    </td>
                     <td className="p-3 text-slate-400">
-                      Default OCR backend (browser), Mistral API key + test, backend and scanner status.
+                      English only; needs <strong>timm, einops, open-clip-torch</strong>; NVIDIA Open Model License; ~16GB VRAM or ~5GB AWQ.
                     </td>
                   </tr>
                   <tr>
-                    <td className="p-3 font-mono text-slate-200">Help</td>
-                    <td className="p-3 text-slate-400">This page.</td>
+                    <td className="p-3 font-mono text-amber-200/90">olmocr-2</td>
+                    <td className="p-3">Academic PDFs, math, multi-column (7B-class model).</td>
+                    <td className="p-3 text-slate-400">Very large; needs strong GPU for practical speed.</td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 font-mono text-amber-200/90">deepseek-ocr2</td>
+                    <td className="p-3">Structured markdown extraction, Visual Causal Flow architecture.</td>
+                    <td className="p-3 text-slate-400">3B params, ~8GB VRAM. API or local.</td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 font-mono text-amber-200/90">mineru-2.5</td>
+                    <td className="p-3">Academic/technical documents, coarse-to-fine parsing VLM.</td>
+                    <td className="p-3 text-slate-400">1.2B params, ~4GB VRAM.</td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 font-mono text-amber-200/90">dots-ocr</td>
+                    <td className="p-3">Tables, forms, structured documents.</td>
+                    <td className="p-3 text-slate-400">Less ideal for plain continuous text only.</td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 font-mono text-amber-200/90">pp-ocrv5</td>
+                    <td className="p-3">Fast printed text, industrial / batch scenarios.</td>
+                    <td className="p-3 text-slate-400">
+                      Paddle CPU/CUDA wheel must match your machine; weak on handwriting.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 font-mono text-amber-200/90">qwen-layered</td>
+                    <td className="p-3">Layered graphics, comics, mixed visual content.</td>
+                    <td className="p-3 text-slate-400">diffusers + GPU; not the default for simple scans.</td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 font-mono text-amber-200/90">got-ocr</td>
+                    <td className="p-3">General OCR (GOT-OCR2 lineage), relatively lean HF model.</td>
+                    <td className="p-3 text-slate-400">Older stack vs newest VL options; still needs torch.</td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 font-mono text-emerald-200/90">tesseract</td>
+                    <td className="p-3">Quick CPU OCR, many languages, no GPU.</td>
+                    <td className="p-3 text-slate-400">
+                      Weaker on complex layout/handwriting vs VL models; needs Tesseract binary.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 font-mono text-emerald-200/90">easyocr</td>
+                    <td className="p-3">Handwriting and many languages; simple API.</td>
+                    <td className="p-3 text-slate-400">First run downloads models; slower; GPU optional via torch.</td>
                   </tr>
                 </tbody>
               </table>
             </div>
-          </div>
-          <p className="text-xs text-slate-500">
-            Tip: the Dashboard handles the full scan/upload → OCR → read workflow. You don&apos;t need to visit multiple
-            pages for a single document.
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* —— MCP server —— */}
-      <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl">
-        <CardHeader>
-          <CardTitle className="text-slate-100 flex items-center gap-2">
-            <Server className="w-5 h-5 text-violet-400" />
-            MCP server
-          </CardTitle>
-          <CardDescription className="text-slate-400">
-            FastMCP 3.1 server — stdio transport for agentic IDEs (Cursor, Claude Desktop, Windsurf, etc.). Same OCR
-            engines as the web API, different entrypoint.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 text-sm text-slate-300">
-          <div>
-            <h4 className="text-violet-400 font-medium mb-2">What it is</h4>
-            <p className="text-slate-400 mb-2">
-              The MCP server exposes <strong className="text-slate-300">tools</strong>,{" "}
-              <strong className="text-slate-300">resources</strong>, <strong className="text-slate-300">prompts</strong>
-              , and (where the client supports it) <strong className="text-slate-300">sampling</strong> so an LLM can
-              drive OCR, preprocessing, scanner ops, and batch workflows without using this browser UI.
+            <p className="text-xs text-slate-500">
+              Install matrices, env vars, and bootstrap:{" "}
+              <code className="text-slate-400">docs/OCR_BACKEND_REQUIREMENTS.md</code>,{" "}
+              <code className="text-slate-400">docs/BACKEND_DEPS.md</code>,{" "}
+              <code className="text-slate-400">docs/OCR_MODELS.md</code>.
             </p>
-            <ul className="list-disc pl-5 space-y-1 text-slate-400">
-              <li>
-                <strong className="text-slate-300">Run:</strong> <code className="text-slate-400">uv run ocr-mcp</code>{" "}
-                or <code className="text-slate-400">python -m ocr_mcp.server</code> from the project venv (see{" "}
-                <code className="text-slate-400">docs/INSTALL.md</code> for client JSON snippets).
-              </li>
-              <li>
-                <strong className="text-slate-300">Config:</strong> env vars such as{" "}
-                <code className="text-slate-400">MISTRAL_API_KEY</code>,{" "}
-                <code className="text-slate-400">MISTRAL_BASE_URL</code>,{" "}
-                <code className="text-slate-400">OCR_DEVICE</code>,{" "}
-                <code className="text-slate-400">OCR_CACHE_DIR</code>,{" "}
-                <code className="text-slate-400">OCR_AUTO_INSTALL_DEPS</code>,{" "}
-                <code className="text-slate-400">OCR_AUTO_BOOTSTRAP</code> (full matrix in repo docs).
-              </li>
-              <li>
-                <strong className="text-slate-300">Mistral note:</strong> the key you set under{" "}
-                <strong className="text-slate-300">Settings</strong> in the web UI applies to the FastAPI process only.
-                The MCP server started by your IDE uses{" "}
-                <strong className="text-slate-300">environment variables</strong> unless you add a shared config layer —
-                set <code className="text-slate-400">MISTRAL_API_KEY</code> in the MCP client config if you use{" "}
-                <code className="text-slate-400">mistral-ocr</code> from the agent.
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-violet-400 font-medium mb-2">Portmanteau tools (high level)</h4>
-            <ul className="list-disc pl-5 space-y-1 text-slate-400">
-              <li>
-                <code className="text-slate-300">document_processing</code> — OCR, layout/analysis, quality checks (
-                <code className="text-slate-400">operation</code> parameter).
-              </li>
-              <li>
-                <code className="text-slate-300">image_management</code> — preprocess, convert, image pipeline steps.
-              </li>
-              <li>
-                <code className="text-slate-300">scanner_operations</code> — list scanners, scan (WIA on Windows).
-              </li>
-              <li>
-                <code className="text-slate-300">workflow_management</code> — batches, pipelines, system-style workflow
-                ops.
-              </li>
-              <li>
-                <code className="text-slate-300">agentic_document_workflow</code> — SEP-1577-style orchestration with
-                sampling when the client supports it.
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-violet-400 font-medium mb-2">Resources & prompts</h4>
-            <p className="text-slate-400">
-              Examples: <code className="text-slate-400">resource://ocr/logs</code>,{" "}
-              <code className="text-slate-400">resource://ocr/capabilities</code>, skills/capability text for LLMs, and
-              prompts for batch, scanner, quality, and agentic workflows. See{" "}
-              <code className="text-slate-400">src/ocr_mcp/server.py</code> and{" "}
-              <code className="text-slate-400">docs/AI_FEATURES.md</code>.
+          </CardContent>
+        </Card>
+      )}
+
+      {/* —— Tab: Settings & Docs —— */}
+      {activeTab === "settings" && (
+        <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl">
+          <CardHeader>
+            <CardTitle className="text-slate-100 flex items-center gap-2">
+              <FolderOpen className="w-5 h-5 text-emerald-400" />
+              Settings & Further Reading
+            </CardTitle>
+            <CardDescription className="text-slate-400">In-app options and repository documentation.</CardDescription>
+          </CardHeader>
+          <CardContent className="prose prose-invert prose-slate max-w-none text-sm">
+            <p className="text-slate-300">
+              <strong className="text-slate-200">Settings</strong> today: default OCR backend (browser localStorage),
+              Mistral key + base URL + test connection (server memory), backend/scanner status.
             </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* —— OCR backends —— */}
-      <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl">
-        <CardHeader>
-          <CardTitle className="text-slate-100 flex items-center gap-2">
-            <Cpu className="w-5 h-5 text-amber-400" />
-            OCR backends
-          </CardTitle>
-          <CardDescription className="text-slate-400">
-            Engines shared by the <strong>web API</strong> and the <strong>MCP server</strong>. Live status appears
-            under <strong>Settings</strong>. Choose per flow or set a browser default; MCP uses tool parameters /
-            auto-routing. The name <strong>florence-2</strong> in some tools may map to the current VL stack (
-            <strong>paddleocr-vl</strong>) in this project.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6 text-slate-300 text-sm">
-          <div className="overflow-x-auto rounded-lg border border-slate-800">
-            <table className="w-full text-left text-xs sm:text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-slate-800 bg-slate-950/80 text-slate-400">
-                  <th className="p-3 font-medium">Backend</th>
-                  <th className="p-3 font-medium">Best for</th>
-                  <th className="p-3 font-medium">Trade-offs</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800">
-                <tr>
-                  <td className="p-3 font-mono text-amber-200/90">paddleocr-vl</td>
-                  <td className="p-3">Documents, tables, formulas, charts, many languages; strong VL OCR.</td>
-                  <td className="p-3 text-slate-400">
-                    GPU + VRAM; install <strong>flash-attn</strong> on NVIDIA to avoid huge memory use. Needs
-                    torch/transformers stack.
-                  </td>
-                </tr>
-                <tr>
-                  <td className="p-3 font-mono text-amber-200/90">mistral-ocr</td>
-                  <td className="p-3">High-quality cloud OCR, structured output, mixed layouts.</td>
-                  <td className="p-3 text-slate-400">
-                    Requires API key (web <strong>Settings</strong> and/or{" "}
-                    <code className="text-slate-500">MISTRAL_API_KEY</code> for MCP); not offline; usage costs.
-                  </td>
-                </tr>
-                <tr>
-                  <td className="p-3 font-mono text-amber-200/90">nemotron-vl</td>
-                  <td className="p-3">
-                    NVIDIA document intelligence VLM (8B). Best-in-class structured docs: invoices, forms, charts,
-                    diagrams. DocVQA 91.2%, ChartQA 86.3%.
-                  </td>
-                  <td className="p-3 text-slate-400">
-                    English only; needs <strong>timm</strong>, <strong>einops</strong>, <strong>open-clip-torch</strong>
-                    ; NVIDIA Open Model License (not Apache); ~16GB VRAM or ~5GB AWQ 4-bit.
-                  </td>
-                </tr>
-                <tr>
-                  <td className="p-3 font-mono text-amber-200/90">olmocr-2</td>
-                  <td className="p-3">Academic PDFs, math, multi-column (7B-class model).</td>
-                  <td className="p-3 text-slate-400">Very large; needs strong GPU for practical speed.</td>
-                </tr>
-                <tr>
-                  <td className="p-3 font-mono text-amber-200/90">dots-ocr</td>
-                  <td className="p-3">Tables, forms, structured documents.</td>
-                  <td className="p-3 text-slate-400">Less ideal for plain continuous text only.</td>
-                </tr>
-                <tr>
-                  <td className="p-3 font-mono text-amber-200/90">pp-ocrv5</td>
-                  <td className="p-3">Fast printed text, industrial / batch scenarios.</td>
-                  <td className="p-3 text-slate-400">
-                    Paddle CPU/CUDA wheel must match your machine; weak on handwriting vs specialized models.
-                  </td>
-                </tr>
-                <tr>
-                  <td className="p-3 font-mono text-amber-200/90">qwen-layered</td>
-                  <td className="p-3">Layered graphics, comics, mixed visual content.</td>
-                  <td className="p-3 text-slate-400">diffusers + GPU; not the default for simple scans.</td>
-                </tr>
-                <tr>
-                  <td className="p-3 font-mono text-amber-200/90">got-ocr</td>
-                  <td className="p-3">General OCR (GOT-OCR2 lineage), relatively lean HF model.</td>
-                  <td className="p-3 text-slate-400">Older stack vs newest VL options; still needs torch.</td>
-                </tr>
-                <tr>
-                  <td className="p-3 font-mono text-emerald-200/90">tesseract</td>
-                  <td className="p-3">Quick CPU OCR, many languages, no GPU.</td>
-                  <td className="p-3 text-slate-400">
-                    Weaker on complex layout/handwriting vs VL models; needs Tesseract binary (auto on Windows when
-                    possible).
-                  </td>
-                </tr>
-                <tr>
-                  <td className="p-3 font-mono text-emerald-200/90">easyocr</td>
-                  <td className="p-3">Handwriting and many languages; simple API.</td>
-                  <td className="p-3 text-slate-400">First run downloads models; slower; GPU optional via torch.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <p className="text-xs text-slate-500">
-            Install matrices, env vars, and bootstrap:{" "}
-            <code className="text-slate-400">docs/OCR_BACKEND_REQUIREMENTS.md</code>,{" "}
-            <code className="text-slate-400">docs/BACKEND_DEPS.md</code>,{" "}
-            <code className="text-slate-400">docs/OCR_MODELS.md</code>.
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* —— Settings + repo docs —— */}
-      <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl">
-        <CardHeader>
-          <CardTitle className="text-slate-100 flex items-center gap-2">
-            <FolderOpen className="w-5 h-5 text-emerald-400" />
-            Settings & further reading
-          </CardTitle>
-          <CardDescription className="text-slate-400">In-app options and repository documentation.</CardDescription>
-        </CardHeader>
-        <CardContent className="prose prose-invert prose-slate max-w-none text-sm">
-          <p className="text-slate-300">
-            <strong className="text-slate-200">Settings</strong> today: default OCR backend (browser localStorage),
-            Mistral key + base URL + test connection (server memory), backend/scanner status.
-          </p>
-          <p className="text-slate-400 text-sm">
-            Roadmap ideas: Tesseract/EasyOCR language defaults, advanced paths (Poppler, Tesseract exe), refresh
-            backends, privacy note for cloud backends, default export format.
-          </p>
-          <hr className="border-slate-800 my-4" />
-          <p className="text-slate-400 text-sm flex items-start gap-2">
-            <BookOpen className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-            <span>
-              Repo: <code className="text-slate-500">README.md</code> (overview),{" "}
-              <code className="text-slate-500">docs/INSTALL.md</code> (web + MCP),{" "}
-              <code className="text-slate-500">docs/TECHNICAL.md</code> (architecture),{" "}
-              <code className="text-slate-500">docs/AI_FEATURES.md</code> (sampling / agentic).
-            </span>
-          </p>
-        </CardContent>
-      </Card>
+            <p className="text-slate-400 text-sm">
+              Roadmap: Tesseract/EasyOCR language defaults, advanced paths (Poppler, Tesseract exe), refresh backends,
+              privacy note for cloud backends, default export format.
+            </p>
+            <hr className="border-slate-800 my-4" />
+            <p className="text-slate-400 text-sm flex items-start gap-2">
+              <BookOpen className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <span>
+                Repo: <code className="text-slate-500">README.md</code> (overview),{" "}
+                <code className="text-slate-500">docs/INSTALL.md</code> (web + MCP),{" "}
+                <code className="text-slate-500">docs/TECHNICAL.md</code> (architecture),{" "}
+                <code className="text-slate-500">docs/AI_FEATURES.md</code> (sampling / agentic).
+              </span>
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

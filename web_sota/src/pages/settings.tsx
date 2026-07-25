@@ -358,13 +358,11 @@ export function Settings() {
                 title="Default OCR Backend"
               >
                 <option value="auto">Auto (best available)</option>
-                {backends
-                  .filter((b) => b.available)
-                  .map((b) => (
-                    <option key={b.name} value={b.name}>
-                      {b.name}
-                    </option>
-                  ))}
+                {backends.map((b) => (
+                  <option key={b.name} value={b.name}>
+                    {b.name}{b.available ? "" : " (offline)"}
+                  </option>
+                ))}
               </select>
               <Button onClick={saveDefaultBackend} className="bg-purple-600 hover:bg-purple-700 text-white">
                 {saved ? (

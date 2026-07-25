@@ -253,13 +253,11 @@ export function Scanner() {
                   title="Select OCR Backend"
                 >
                   <option value="auto">Auto (best available)</option>
-                  {backends
-                    .filter((b) => b.available)
-                    .map((b) => (
-                      <option key={b.name} value={b.name}>
-                        {b.name}
-                      </option>
-                    ))}
+                  {backends.map((b) => (
+                    <option key={b.name} value={b.name}>
+                      {b.name}{b.available ? "" : " (offline)"}
+                    </option>
+                  ))}
                 </select>
               </div>
 

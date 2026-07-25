@@ -192,3 +192,6 @@ Thumbs.db
 
 
 _dashboard/
+
+# Assessment reports
+reports/

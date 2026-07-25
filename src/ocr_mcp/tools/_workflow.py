@@ -65,12 +65,16 @@ def get_help_content(level: str = "basic", topic: str | None = None) -> str:
     help_data = {
         "basic": (
             "# OCR-MCP Help\n\n"
-            "OCR-MCP provides 13 OCR backends for extracting text from images and PDFs.\n\n"
+            "OCR-MCP provides 14 OCR backends for extracting text from images and PDFs,\n"
+            "plus form field detection, layout analysis, and form reconstruction.\n\n"
             "## Quick Start\n"
             '- **OCR a document**: `process_document(source_path="/path/to/doc.png")`\n'
             '- **List backends**: `manage_workflow(operation="list_backends")`\n'
             '- **Check health**: `manage_workflow(operation="ocr_health_check")`\n'
-            '- **Scan**: `operate_scanner(operation="scan_document", output_path="/tmp/scan.png")`\n\n'
+            '- **Scan**: `operate_scanner(operation="scan_document", output_path="/tmp/scan.png")`\n'
+            '- **Detect form fields**: `process_document(operation="detect_forms", source_path="form.png")`\n'
+            '- **Reconstruct form**: `process_document(operation="reconstruct_form", source_path="form.png")`\n'
+            "- **Form workflow**: reconstruct_form -> libreoffice-mcp build_form_document -> fill & print\n\n"
             "## Common Backends\n"
             "- **tesseract** — Fast CPU OCR, no GPU needed\n"
             "- **easyocr** — Multi-language DL OCR with bounding boxes\n"
@@ -102,7 +106,20 @@ def get_help_content(level: str = "basic", topic: str | None = None) -> str:
             "## Quality Assessment\n"
             '- `process_document(operation="assess_quality")` — image readiness for OCR\n'
             '- `process_document(operation="validate_accuracy")` — compare backends\n'
-            '- `process_document(operation="compare_backends")` — side-by-side output'
+            '- `process_document(operation="compare_backends")` — side-by-side output\n\n'
+            "## Form Reconstruction\n"
+            "The form reconstruction pipeline bridges ocr-mcp with libreoffice-mcp:\n\n"
+            "1. **Scan** the form: `operate_scanner(operation='scan_document', ...)`\n"
+            "2. **Detect fields**: `process_document(operation='detect_forms', source_path='...')`\n"
+            "   Returns checkboxes, text fields, radio buttons, signatures with bbox coords.\n"
+            "3. **Reconstruct**: `process_document(operation='reconstruct_form', source_path='...')`\n"
+            "   Assembles detected fields + layout analysis + OCR text into FormReconstruction JSON\n"
+            "   with mm-precise coordinates (converted from pixel bbox via scan DPI).\n\n"
+            "4. **Send to libreoffice-mcp**: Pass the JSON path to libreoffice_mcp `build_form_document`.\n"
+            "   This generates a fillable ODT with positioned fields matching the original form layout.\n\n"
+            "5. **Fill & print**: Fill in LibreOffice, then print the complete form or just your entries\n"
+            "   (entries-only overlay for printing onto the physical paper form).\n\n"
+            "The FormReconstruction JSON is a cross-repo contract. Both servers use the same Pydantic models."
         ),
     }
     return help_data.get(level, help_data["basic"])

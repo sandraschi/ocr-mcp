@@ -27,9 +27,9 @@
         "active": true,
         "targets": ["nsis"],
         "icon": ["icons/icon.png", "icons/icon.ico"],
-        "resources": [
+"resources": [
             "resources/ocr-mcp-backend.exe",
-            "resources/.env"],
+            "resources/.env.example"],
         "windows": {
             "webviewInstallMode": {
                 "type": "skip"

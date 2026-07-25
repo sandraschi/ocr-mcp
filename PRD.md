@@ -1,8 +1,8 @@
 # OCR-MCP — Product Requirements Document
 
-**Version:** 1.1
+**Version:** 1.2
 **Status:** Active
-**Last Updated:** 2026-07-21
+**Last Updated:** 2026-07-25
 
 ## 1. Product Overview
 
@@ -22,6 +22,7 @@ OCR-MCP is a unified OCR platform with two surfaces: a **streamlined web applica
 - **14 OCR backends:** From lightweight (Tesseract, EasyOCR) to SOTA VLMs (Unlimited-OCR, PaddleOCR-VL, Nemotron VL).
 - **Same backends, two surfaces:** What works in the webapp also works in the MCP server.
 - **Local-first:** All models run on your hardware (GPU optional). No cloud dependency unless you choose Mistral OCR.
+- **Form reconstruction:** Scan a paper form -> detect fields -> reconstruct as fillable ODT (via libreoffice-mcp) -> fill & print.
 
 ## 2. Functional Requirements
 
@@ -47,28 +48,9 @@ OCR-MCP is a unified OCR platform with two surfaces: a **streamlined web applica
 | Portmanteau tools | P0 | `process_document`, `manage_image`, `operate_scanner`, `manage_workflow`, `manage_corpus` |
 | Dual transport | P0 | stdio (Claude Desktop, Cursor) + HTTP (`MCP_TRANSPORT=http`). |
 | Auto backend selection | P0 | Intelligent fallback chain (14 backends). |
+| Form reconstruction | P1 | `process_document(operation="reconstruct_form")` — assemble detected fields into structured JSON consumable by libreoffice-mcp. |
 | Resources | P1 | `resource://ocr/logs`, `resource://ocr/capabilities`. |
 | Sampling | P2 | `ctx.sample()` for agentic document workflows (Ollama or client LLM). |
-
-### 2.4 Book Pipeline (New)
-
-| Feature | Priority | Description |
-|---------|----------|-------------|
-| Chapter detection | P1 | Rules-based heading detection across OCR page text (supports EN/FR/DE/ES) |
-| EPUB assembly | P1 | Build valid EPUB with auto-generated TOC from chapters |
-| Metadata extraction | P2 | Auto-detect title/author from first 3 pages |
-| Full pipeline | P1 | One-shot: OCR pages -> detect chapters -> assemble EPUB |
-| Calibre integration | P2 | Send finished EPUB to calibre-mcp for library ingest |
-
-### 2.5 Auto-Scan Watcher (New)
-
-| Feature | Priority | Description |
-|---------|----------|-------------|
-| Preview-poll mode | P1 | Detect document placement on flatbed via low-res preview + image hash diff |
-| Button mode | P2 | Detect WIA scan button events |
-| Auto-OCR | P1 | Automatically scan + OCR when document detected |
-| Dashboard toggle | P1 | Start/stop watcher from Dashboard, see live scan count |
-| Settings config | P2 | Configure mode, interval, backend from Settings page |
 
 ### 2.3 OCR Backends
 
@@ -81,6 +63,37 @@ OCR-MCP is a unified OCR platform with two surfaces: a **streamlined web applica
 | **Lean VLM** | GOT-OCR 2.0, Qwen2.5-VL, DOTS.OCR | Fast inference, moderate VRAM |
 | **Legacy** | PP-OCRv5, EasyOCR | High throughput, CJK, handwriting |
 | **Backstop** | Tesseract | CPU-only, always available |
+
+### 2.4 Book Pipeline
+
+| Feature | Priority | Description |
+|---------|----------|-------------|
+| Chapter detection | P1 | Rules-based heading detection across OCR page text (supports EN/FR/DE/ES) |
+| EPUB assembly | P1 | Build valid EPUB with auto-generated TOC from chapters |
+| Metadata extraction | P2 | Auto-detect title/author from first 3 pages |
+| Full pipeline | P1 | One-shot: OCR pages -> detect chapters -> assemble EPUB |
+| Calibre integration | P2 | Send finished EPUB to calibre-mcp for library ingest |
+
+### 2.5 Auto-Scan Watcher
+
+| Feature | Priority | Description |
+|---------|----------|-------------|
+| Preview-poll mode | P1 | Detect document placement on flatbed via low-res preview + image hash diff |
+| Button mode | P2 | Detect WIA scan button events |
+| Auto-OCR | P1 | Automatically scan + OCR when document detected |
+| Dashboard toggle | P1 | Start/stop watcher from Dashboard, see live scan count |
+| Settings config | P2 | Configure mode, interval, backend from Settings page |
+
+### 2.6 Form Reconstruction Pipeline (New)
+
+| Feature | Priority | Description |
+|---------|----------|-------------|
+| Enhanced form detection | P1 | Return DPI + associated label text per detected field |
+| `reconstruct_form` operation | P1 | Assemble detect_forms + layout analysis + OCR text into FormReconstruction JSON |
+| px->mm coordinate conversion | P1 | Convert pixel bbox to mm using scan DPI |
+| Cross-repo bridge to libreoffice-mcp | P1 | FormReconstruction JSON consumed by libreoffice-mcp `build_form_document` |
+| Fillable ODT generation | P1 | Build ODT with positioned fields, labels, tables, and optional background guide (in libreoffice-mcp) |
+| Dual print modes | P2 | Print full form or entries-only overlay for physical form overprinting (in libreoffice-mcp) |
 
 ## 3. Technical Requirements
 
@@ -137,6 +150,20 @@ OCR-MCP is a unified OCR platform with two surfaces: a **streamlined web applica
 
 **Acceptance:** Backend dropdown on dashboard. Changing it and clicking Quick Scan re-processes with the new backend.
 
+### 4.4 Form reconstruction
+
+> **A -- City office overprint:** As a Vienna resident, I want to scan blank Magistrat forms, type my data, and print only the entries onto the physical form so the Amt receives a perfectly legible typed document.
+
+> **B -- Full reconstruction:** As a user, I want to scan any paper form, get a complete editable LibreOffice version with all labels and fields reproduced, fill it in, and print the full document or save it as a digital archive.
+
+**Acceptance:**
+1. Scan blank form (scanner at home, or photo from phone)
+2. `reconstruct_form` detects all fields and positions, produces structured JSON
+3. libreoffice-mcp generates fillable ODT with all labels, field positions, and optional background layer
+4. User types answers (from personal data once, or full form fill)
+5. **Mode A -- entries only:** `print_entries_only` prints just the filled values at field positions, aligned to the blank form in the printer tray. Result: clean typed Amt form, no handwriting, no rejection.
+6. **Mode B -- full document:** `print_filled_form` prints the complete reconstructed form. The blank ODT template (generated by `build_form_document`) can be saved and reused for multiple fills -- scan the form once, fill different data for each instance.
+
 ## 5. Roadmap
 
 | Phase | Status | Features |
@@ -151,6 +178,7 @@ OCR-MCP is a unified OCR platform with two surfaces: a **streamlined web applica
 | Book pipeline | Done | Chapter detection, EPUB assembly, webapp page |
 | Auto-Scan watcher | Done | Preview-poll + button event detection |
 | Agentic workflows | Done | ctx.sample() + sample_step() fallback |
+| Form reconstruction | Planned | detect_forms enhancement, reconstruct_form assembly, libreoffice-mcp bridge, dual print modes |
 | Production packaging | In Progress | Tauri NSIS installer, PyInstaller sidecar |
 | CUA-NSIS smoke tests | In Progress | Install -> launch -> verify -> uninstall |
 | Folder watcher (CZUR) | Future | Watch directory for new scan images |
@@ -165,5 +193,7 @@ OCR-MCP is a unified OCR platform with two surfaces: a **streamlined web applica
 | Backend availability | 14 backends registered, at least 1 always available |
 | Webapp page load | < 2 seconds |
 | Quick Scan button clicks to result | 1 click, 0 page navigations |
+| Form field detection accuracy | > 90% for checkbox + text field types |
+| Form reconstruction end-to-end time | < 60 seconds (scan + detect + reconstruct) |
 | TypeScript compilation | Zero errors |
 | Python lint | Zero errors (ruff) |

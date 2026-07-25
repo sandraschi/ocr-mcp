@@ -77,23 +77,25 @@ export function Dashboard() {
       const data = await res.json().catch(() => ({}));
       const list = data.scanners || [];
       setScanners(list);
+      if (data.error) setError(data.error);
       if (data.default_scanner && !selectedScanner) {
         setSelectedScanner(data.default_scanner);
       } else if (list.length > 0 && !selectedScanner) {
         setSelectedScanner(list[0].device_id);
       }
     } catch {
-      /* noop */
+      setError("Failed to reach backend — is it running?");
     }
   }, [selectedScanner]);
 
   const fetchBackends = useCallback(async () => {
     try {
       const res = await fetch("/api/backends");
-      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(`Backend API error: ${res.status}`); return; }
+      const data = await res.json();
       setBackends(data.backends || []);
     } catch {
-      /* noop */
+      setError("Failed to reach backend — is it running?");
     }
   }, []);
 
@@ -413,13 +415,11 @@ export function Dashboard() {
                 data-testid="backend-select"
               >
                 <option value="auto">Auto (best available)</option>
-                {backends
-                  .filter((b) => b.available)
-                  .map((b) => (
-                    <option key={b.name} value={b.name}>
-                      {b.name}
-                    </option>
-                  ))}
+                {backends.map((b) => (
+                  <option key={b.name} value={b.name}>
+                    {b.name}{b.available ? "" : " (offline)"}
+                  </option>
+                ))}
               </select>
             </div>
 
