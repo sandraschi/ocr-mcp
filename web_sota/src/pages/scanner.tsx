@@ -58,7 +58,10 @@ export function Scanner() {
     setError(null);
     try {
       const res = await fetch("/api/scanners");
-      const data = await res.json().catch(() => ({}));
+      const data = await res.json().catch(() => {
+        console.error("scanner: failed to parse scanners response");
+        return {};
+      });
       setScanners(data.scanners || []);
       if (data.error) {
         setError(data.error);
@@ -83,7 +86,7 @@ export function Scanner() {
     fetch("/api/backends")
       .then((r) => r.json())
       .then((d) => setBackends(d.backends || []))
-      .catch(() => {});
+      .catch((e) => console.error("scanner: failed to fetch backends", e));
   }, []);
 
   const [ocrLoading, setOcrLoading] = useState(false);

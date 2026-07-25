@@ -162,7 +162,7 @@ def get_ocr_capabilities() -> str:
         try:
             backends = _runtime["backend_manager"].get_available_backends()
         except Exception:
-            pass
+            logger.warning("Failed to get available backends", exc_info=True)
     if not backends:
         backends = ["deepseek-ocr", "paddleocr-vl", "pp-ocrv5", "tesseract", "easyocr"]
 

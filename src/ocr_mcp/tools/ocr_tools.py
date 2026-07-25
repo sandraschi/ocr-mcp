@@ -34,6 +34,7 @@ precise, schema-aware operational tools.
 """
 
 import logging
+import os
 from typing import Any, Literal
 
 from ..core.config import OCRConfig
@@ -125,6 +126,14 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
         - validate_accuracy: Calculate CER/WER against ground truth. (Requires: ocr_result, ground_truth)
         - compare_backends: Benchmarking multi-model performance. (Requires: source_path)
         - analyze_image_quality: Pre-OCR assessment (blur, noise, DPI). (Requires: source_path)
+
+        ## Return Format
+        {"success": bool, "operation": str, "result": dict, "summary": str, "next_steps": list, "suggestions": list}
+
+        ## Examples
+        process_document(source_path="/path/to/doc.png")
+        process_document(operation="detect_forms", source_path="form.png")
+        process_document(operation="analyze_layout", source_path="page.pdf", analysis_type="comprehensive")
 
         COMMON ERRORS:
         - BACKEND_NOT_AVAILABLE: Ensure the requested OCR engine is downloaded (use status() to check).
@@ -283,6 +292,13 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
         - pdf_to_images: Explode PDF pages into separate images.
         - embed_text: Create a searchable PDF/A by embedding an invisible text layer.
 
+        ## Return Format
+        {"success": bool, "operation": str, "result": dict, "summary": str, "next_steps": list}
+
+        ## Examples
+        manage_image(operation="preprocess", source_path="scan.png", deskew=True, denoise=True)
+        manage_image(operation="pdf_to_images", source_path="doc.pdf", target_path="./pages/")
+
         RECOVERY:
         - If 'deskew' fails, ensure the image contains significant horizontal text lines.
         - Large PDFs (>100MB) may timeout during 'pdf_to_images'.
@@ -379,6 +395,13 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
         - scan_batch: Acquire multiple pages using ADF.
         - diagnostics: Test scanner connectivity and capabilities.
 
+        ## Return Format
+        {"success": bool, "operation": str, "result": dict, "summary": str}
+
+        ## Examples
+        operate_scanner(operation="list_scanners")
+        operate_scanner(operation="scan_document", resolution=300, color_mode="color")
+
         RECOVERY:
         - SCANNER_NOT_FOUND: Ensure hardware is ON and Windows WIA service is running.
         - SCANNER_BUSY: Wait for current job to finish or restart physical device.
@@ -439,6 +462,13 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
         - create_processing_pipeline: Define sequential tools (e.g. crop -> deskew -> OCR).
         - execute_pipeline: Run a defined pipeline on a series of documents.
         - list_backends: Show hardware acceleration and download status for all OCR engines.
+
+        ## Return Format
+        {"success": bool, "operation": str, "result": dict, "summary": str}
+
+        ## Examples
+        manage_workflow(operation="list_backends")
+        manage_workflow(operation="ocr_health_check")
         """
         backend_manager, _ = _resolve()
         if not backend_manager:
@@ -484,6 +514,13 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
         - register: Add a new file to the local index.
         - search: Full-text search across indexed documents and OCR excerpts.
         - attach_ocr_result: Link extracted text to an existing index entry.
+
+        ## Return Format
+        {"success": bool, "operation": str, "result": dict, "summary": str}
+
+        ## Examples
+        manage_corpus(operation="register", source_path="/path/to/doc.png", title="Invoice 123")
+        manage_corpus(operation="search", query="invoice")
         """
         _, cfg = _resolve()
         tag_list = [t.strip() for t in tags.split(",") if t.strip()] if tags and tags.strip() else None
@@ -513,12 +550,28 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
 
     @app.tool()
     async def get_help(level: Literal["basic", "intermediate", "advanced"] = "basic", topic: str | None = None) -> str:
-        """Contextual documentation for OCR operations and tool configurations."""
+        """Contextual documentation for OCR operations and tool configurations.
+
+        ## Return Format
+        Markdown-formatted help string.
+
+        ## Examples
+        get_help()
+        get_help(level="advanced")
+        """
         return _workflow.get_help_content(level, topic)
 
     @app.tool()
     async def get_status(level: Literal["basic", "detailed"] = "basic") -> ToolResponse:
-        """Real-time system health, backend availability, and resource utilization."""
+        """Real-time system health, backend availability, and resource utilization.
+
+        ## Return Format
+        {"success": bool, "operation": str, "result": {"status": str, "backends": list}, "summary": str}
+
+        ## Examples
+        get_status()
+        get_status(level="detailed")
+        """
         backend_manager, _ = _resolve()
         if not backend_manager:
             return ToolResponse(success=False, operation="get_status", summary="Server not init.")
@@ -529,6 +582,27 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
             result=res_data,
             summary="System status retrieved.",
         )
+
+    @app.tool()
+    async def shutdown_server(confirm: bool = False) -> ToolResponse:
+        """Gracefully shut down the OCR-MCP server.
+
+        Requires confirm=True to prevent accidental termination.
+
+        ## Return Format
+        {"success": bool, "message": str}
+
+        ## Examples
+        shutdown_server(confirm=True)
+        """
+        if not confirm:
+            return ToolResponse(
+                success=False,
+                operation="shutdown_server",
+                summary="Confirmation required. Set confirm=True to shut down.",
+            )
+        logger.warning("Server shutting down via shutdown_server tool")
+        os._exit(0)
 
 
 # Aliases for backward compatibility

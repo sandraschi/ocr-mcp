@@ -82,7 +82,7 @@ export function BookPipeline() {
           }
           if (jobData.status === "failed") break;
         }
-        pageTexts.push({ page_number: i + 1, text, confidence: text ? 0.85 : 0 });
+        pageTexts.push({ page_number: i + 1, text, confidence: text ? (jobData.result?.confidence || 0.85) : 0 });
       }
 
       setProgress(80);

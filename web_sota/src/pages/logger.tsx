@@ -44,7 +44,7 @@ export function Logger() {
     if (stickToEnd && bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [stickToEnd]);
+  }, [stickToEnd, lines]);
 
   return (
     <div className="space-y-6">

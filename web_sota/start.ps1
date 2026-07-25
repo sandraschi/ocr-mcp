@@ -57,7 +57,18 @@ Write-Host "Backend (new window) + Vite here. Backend: http://127.0.0.1:$Backend
 $cmd = "cd '$ProjectRoot'; `$env:PYTHONPATH='$ProjectRoot'; uv run uvicorn backend.app:app --host 127.0.0.1 --port $BackendPort"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $cmd -WindowStyle Normal
 
-Start-Sleep -Seconds 8
+Start-Process powershell -ArgumentList "-NoExit", "-Command", $cmd -WindowStyle Normal
+
+# TCP health poll: wait up to 60s for backend readiness
+Write-Host "Waiting for backend at http://127.0.0.1:${BackendPort}/health ..." -ForegroundColor Yellow
+for ($i = 0; $i -lt 60; $i++) {
+    try {
+        $r = Invoke-WebRequest -Uri "http://127.0.0.1:${BackendPort}/health" -TimeoutSec 2 -UseBasicParsing -ErrorAction SilentlyContinue
+        if ($r.StatusCode -eq 200) { Write-Host "Backend ready after ${i}s" -ForegroundColor Green; break }
+    } catch {}
+    Start-Sleep -Seconds 1
+}
+if ($i -ge 60) { Write-Host "WARNING: Backend did not respond within 60s" -ForegroundColor DarkYellow }
 Write-Host "Starting Vite (new window)..." -ForegroundColor Green
 $viteCmd = "cd '$PSScriptRoot'; npm run dev -- --port $WebPort --host"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $viteCmd -WindowStyle Normal

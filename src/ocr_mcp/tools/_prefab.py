@@ -25,6 +25,12 @@ def register_prefab_tools(app, runtime: dict[str, Any]):
 
         Shows live status from the backend manager: available backends, total tools,
         and server health indicators.
+
+        ## Return Format
+        ToolResult with structured PrefabApp content and plain text fallback.
+
+        ## Examples
+        show_health_card()
         """
         bm = runtime.get("backend_manager")
         backends_info = {}
@@ -37,7 +43,8 @@ def register_prefab_tools(app, runtime: dict[str, Any]):
                 backends_info = info.get("backends", {})
                 tool_count = info.get("total_count", 14)
             except Exception:
-                pass
+                logger.exception("Failed to list backends for health card")
+                tool_count = 14
 
         available = {k: v for k, v in backends_info.items() if v.get("available")}
         with PrefabApp(title="OCR-MCP Health") as app:
@@ -60,6 +67,12 @@ def register_prefab_tools(app, runtime: dict[str, Any]):
 
         Shows each backend's status (available/offline), model size, supported modes,
         and key strengths. Useful for choosing the right backend for a task.
+
+        ## Return Format
+        ToolResult with structured PrefabApp content and plain text fallback.
+
+        ## Examples
+        show_backends_card()
         """
         bm = runtime.get("backend_manager")
         backends_info = {}
@@ -68,7 +81,7 @@ def register_prefab_tools(app, runtime: dict[str, Any]):
                 info = bm.list_backends()
                 backends_info = info.get("backends", {})
             except Exception:
-                pass
+                logger.exception("Failed to list backends for backends card")
 
         with PrefabApp(title="OCR Backends") as app:
             Heading("Registered Backends")

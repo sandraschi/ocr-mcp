@@ -1,0 +1,15 @@
+{
+    "hooks": {
+        "SessionStart": [
+            {
+                "matcher": "",
+                "hooks": [
+                    {
+                        "type": "text",
+                        "text": "## Session Context (OCR-MCP)\n\nYou have access to a FastMCP 3.4+ OCR server with 14 backends for document text extraction, form detection, layout analysis, and scanner control.\n\n**Before starting work:**\n1. Check registered backends: manage_workflow(operation=\"list_backends\")\n2. Check server health: get_status(level=\"basic\")\n\n**At end of work:**\n- OCR results are persisted in the job queue for review"
+                    }
+                ]
+            }
+        ]
+    }
+}

@@ -24,8 +24,15 @@
 - **[CRITICAL]** `native/tauri.conf.json` resources now reference `.env.example` not `.env`
 - **[CRITICAL]** `scripts/scanner_bridge_server.py` replaced `allow_origins=["*"]` with fleet-standard CORS (Tailscale, LAN, Tauri origins)
 - **[HIGH]** `run_server.py` added CORSMiddleware (was missing entirely; Tauri WebView2 would get CORS errors)
+- **[HIGH]** 13 sites in scanner.tsx, dashboard.tsx, settings.tsx: replaced silent `.catch(() => {})` and `.json().catch(() => ({}))` with `console.error()` -- backend errors now visible in console
+- Session injection: added `.claude-plugin/plugin.json`, `hooks/hooks.json`, `.windsurfrules`, `.opencode/skills/ocr-mcp/SKILL.md`, `.github/copilot-instructions.md`
+- `shutdown_server` MCP tool added (requires confirm=True)
+- `_error_response()` auto-logging helper added to `error_handler.py`
+- `web_sota/start.ps1` replaced fixed 8s sleep with TCP health poll (60s retry loop)
+- Fixed bare `# type: ignore[return-value]` at `transport.py:169`
+- 7 `except Exception: pass` locations replaced with `logger.exception()` / `logger.warning()`
+- Pre-existing `scanner_watcher.py` lint issues fixed (unused ImageChops import, zip strict=False)
 - `reports/` added to `.gitignore`
-- Help system (`_workflow.py`) updated with form reconstruction workflow documentation
   polls for document placement on flatbed scanners via preview-scan image diff detection.
   Toggle from Dashboard or Settings. When a document is detected, triggers full scan + OCR
   with the configured backend. Two modes: `preview` (universal, image-hash comparison) and

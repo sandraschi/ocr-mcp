@@ -1,0 +1,6 @@
+{
+    "name": "ocr-mcp",
+    "version": "0.1.0",
+    "description": "OCR-MCP session context — tool awareness for the OCR server",
+    "hooks": "../hooks/hooks.json"
+}

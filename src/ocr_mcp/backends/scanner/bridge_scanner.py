@@ -32,6 +32,7 @@ class BridgeScannerBackend:
             else:
                 self._available = False
         except Exception:
+            logger.warning("Bridge scanner health check failed", exc_info=True)
             self._available = False
 
     def is_available(self) -> bool:

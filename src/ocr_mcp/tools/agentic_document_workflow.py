@@ -76,6 +76,12 @@ def register_agentic_document_workflow(app):
         - manage_corpus: SQLite document indexing and search.
         - manage_workflow: Batch orchestration and system health.
 
+        ## Return Format
+        {"success": bool, "result": {"iterations": int, "final_state": str}, "summary": str}
+
+        ## Examples
+        execute_agentic_workflow(workflow_prompt="OCR all files in ./scans/ and register them in the corpus")
+
         RECOVERY:
         - If the LLM loops or fails, simplify the workflow_prompt or reduce
           the number of available_tools to focus the agent.

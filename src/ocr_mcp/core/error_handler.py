@@ -509,3 +509,18 @@ def create_success_response(results: Any, metadata: dict[str, Any] | None = None
         response["metadata"] = metadata
 
     return response
+
+
+def error_response(error: str, error_type: str = "general", **kwargs) -> dict[str, Any]:
+    """Auto-logging error response with traceback.
+
+    Call from inside except blocks. The active exception traceback is
+    captured and logged before returning the structured dict.
+    """
+    logger.exception("Tool error: %s [%s]", error, error_type)
+    return {
+        "success": False,
+        "error": error,
+        "error_type": error_type,
+        **kwargs,
+    }

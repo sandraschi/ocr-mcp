@@ -85,14 +85,14 @@ export function Settings() {
         setMistralHint(d.key_hint);
         if (d.base_url) setMistralBaseUrl(d.base_url);
       })
-      .catch(() => {});
+      .catch((e) => console.error("settings: failed to load mistral settings", e));
   };
 
   const loadWatcherStatus = () => {
     fetch("/api/scanner/watch/status")
       .then((r) => r.json())
       .then((d) => setWatcherStatus(d))
-      .catch(() => {});
+      .catch((e) => console.error("settings: failed to load watcher status", e));
   };
 
   useEffect(() => {
@@ -100,7 +100,7 @@ export function Settings() {
     fetch("/api/scanners")
       .then((r) => r.json())
       .then((d) => setScanners(d.scanners || []))
-      .catch(() => {});
+      .catch((e) => console.error("settings: failed to load scanners", e));
     loadMistral();
     loadWatcherStatus();
     fetch("/api/llm/providers")
@@ -114,7 +114,7 @@ export function Settings() {
         });
         setLlmProviderMap(map);
       })
-      .catch(() => {});
+      .catch((e) => console.error("settings: failed to load LLM providers", e));
   }, []);
 
   const saveDefaultBackend = () => {
@@ -173,8 +173,10 @@ export function Settings() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await r.json().catch(() => ({}));
-      if (r.status === 400) {
+      const data = await r.json().catch(() => {
+        console.error("settings: failed to parse test-mistral response");
+        return {};
+      });
         const d = data.detail;
         const msg = typeof d === "string" ? d : Array.isArray(d) ? String(d[0]) : "Bad request";
         setMistralTestOk(false);
@@ -205,9 +207,11 @@ export function Settings() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ api_key: "" }),
       });
-      const data = await r.json().catch(() => ({}));
+      const data = await r.json().catch(() => {
+        console.error("settings: failed to parse clear-mistral response");
+        return {};
+      });
       if (!r.ok) {
-        setMistralError(typeof data.detail === "string" ? data.detail : "Remove failed");
         return;
       }
       setMistralKeyInput("");
@@ -574,7 +578,7 @@ export function Settings() {
                       });
                       setLlmProviderMap(map);
                     })
-                    .catch(() => {});
+      .catch((e) => console.error("settings: failed to load backends", e));
                 }}
                 className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors bg-slate-800 hover:bg-slate-700 rounded-md px-3 py-1.5 border border-slate-700"
               >

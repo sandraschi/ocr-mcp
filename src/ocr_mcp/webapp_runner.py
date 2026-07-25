@@ -27,5 +27,5 @@ def main():
                 traceback.print_exc(file=f)
             sys.stderr.write(f"Traceback written to {crash_file}\n")
         except Exception:
-            pass
+            sys.stderr.write("Failed to write crash file\n")
         sys.exit(1)

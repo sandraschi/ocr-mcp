@@ -482,7 +482,7 @@ class BackendManager:
                 try:
                     capabilities = backend.get_capabilities()
                 except Exception:
-                    pass
+                    logger.exception("Failed to get capabilities for backend %s", name)
             backends_info[name] = {
                 "name": name,
                 "available": available,

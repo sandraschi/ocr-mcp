@@ -74,7 +74,10 @@ export function Dashboard() {
   const fetchScanners = useCallback(async () => {
     try {
       const res = await fetch("/api/scanners");
-      const data = await res.json().catch(() => ({}));
+      const data = await res.json().catch(() => {
+        console.error("dashboard: failed to parse scanners response");
+        return {};
+      });
       const list = data.scanners || [];
       setScanners(list);
       if (data.error) setError(data.error);

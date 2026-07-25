@@ -20,7 +20,7 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 try:
-    from PIL import Image, ImageChops
+    from PIL import Image
 
     PIL_OK = True
 except ImportError:
@@ -82,7 +82,7 @@ class ScannerWatcher:
             return 1.0
         b1 = bin(int(h1, 16))[2:].zfill(64)
         b2 = bin(int(h2, 16))[2:].zfill(64)
-        return sum(1 for a, b in zip(b1, b2) if a != b) / max(len(b1), 1)
+        return sum(1 for a, b in zip(b1, b2, strict=False) if a != b) / max(len(b1), 1)
 
     async def _take_preview(self) -> Image.Image | None:
         """Take a low-res preview scan."""

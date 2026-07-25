@@ -179,7 +179,7 @@ def _sampling_messages_to_openai(
         if msg.role == "user":
             tool_results = [b for b in blocks if isinstance(b, ToolResultContent)]
             texts = [b for b in blocks if isinstance(b, TextContent)]
-            non_text = [b for b in blocks if not isinstance(b, (TextContent, ToolResultContent))]
+            non_text = [b for b in blocks if not isinstance(b, TextContent | ToolResultContent)]
             for tr in tool_results:
                 out.append(
                     {
@@ -202,7 +202,7 @@ def _sampling_messages_to_openai(
         elif msg.role == "assistant":
             tool_uses = [b for b in blocks if isinstance(b, ToolUseContent)]
             texts = [b for b in blocks if isinstance(b, TextContent)]
-            non_text = [b for b in blocks if not isinstance(b, (TextContent, ToolUseContent))]
+            non_text = [b for b in blocks if not isinstance(b, TextContent | ToolUseContent)]
             if tool_uses:
                 tool_calls = []
                 for tu in tool_uses:
@@ -385,7 +385,7 @@ class OCRSamplingHandler:
             try:
                 err_body = e.response.text[:2000]
             except Exception:
-                pass
+                self.logger.warning("Failed to read error response body", exc_info=True)
             msg = (
                 f"[OCR-MCP sampling] HTTP {e.response.status_code} from {url}. "
                 f"Check Ollama is running, OCR_SAMPLING_MODEL is pulled, URL/base path, "

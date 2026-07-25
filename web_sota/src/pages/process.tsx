@@ -275,7 +275,11 @@ export function Process() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [quality, setQuality] = useState("0.8");
+  const [quality, setQuality] = useState(() => localStorage.getItem("ocr-quality") || "0.8");
+
+  useEffect(() => {
+    localStorage.setItem("ocr-quality", quality);
+  }, [quality]);
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [backends, setBackends] = useState<BackendInfo[]>([]);
 
@@ -353,7 +357,6 @@ export function Process() {
               className="block text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-purple-500/10 file:text-purple-400 hover:file:bg-purple-500/20"
               accept="image/*,.pdf"
               title="Choose file for optimization"
-              placeholder="No file chosen"
             />
           </div>
           <div className="max-w-xs space-y-1">
