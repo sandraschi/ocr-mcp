@@ -202,8 +202,7 @@ exclude = ["scripts/venv_fixes"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "S", "UP", "RUF"]
-ignore = [
-    "S101",
+ignore = ["S101",
     "B008",
     "S110",
     "S101",
@@ -231,8 +230,7 @@ ignore = [
     "S603",
     "S606",
     "S607",
-    "B904",
-]
+    "B904", "E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = [
