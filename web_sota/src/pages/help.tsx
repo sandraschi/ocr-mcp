@@ -118,7 +118,9 @@ export function Help() {
                     </tr>
                     <tr>
                       <td className="p-3 font-mono text-sky-200">Chat</td>
-                      <td className="p-3 text-slate-400">AI assistant with OCR tool access and local LLM integration.</td>
+                      <td className="p-3 text-slate-400">
+                        AI assistant with OCR tool access and local LLM integration.
+                      </td>
                     </tr>
                     <tr>
                       <td className="p-3 font-mono text-sky-200">Help</td>
@@ -273,7 +275,8 @@ export function Help() {
                       diagrams.
                     </td>
                     <td className="p-3 text-slate-400">
-                      English only; needs <strong>timm, einops, open-clip-torch</strong>; NVIDIA Open Model License; ~16GB VRAM or ~5GB AWQ.
+                      English only; needs <strong>timm, einops, open-clip-torch</strong>; NVIDIA Open Model License;
+                      ~16GB VRAM or ~5GB AWQ.
                     </td>
                   </tr>
                   <tr>

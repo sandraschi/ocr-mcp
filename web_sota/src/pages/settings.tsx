@@ -177,6 +177,7 @@ export function Settings() {
         console.error("settings: failed to parse test-mistral response");
         return {};
       });
+      if (r.status === 400) {
         const d = data.detail;
         const msg = typeof d === "string" ? d : Array.isArray(d) ? String(d[0]) : "Bad request";
         setMistralTestOk(false);
@@ -207,7 +208,7 @@ export function Settings() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ api_key: "" }),
       });
-      const data = await r.json().catch(() => {
+      const _data = await r.json().catch(() => {
         console.error("settings: failed to parse clear-mistral response");
         return {};
       });
@@ -364,7 +365,8 @@ export function Settings() {
                 <option value="auto">Auto (best available)</option>
                 {backends.map((b) => (
                   <option key={b.name} value={b.name}>
-                    {b.name}{b.available ? "" : " (offline)"}
+                    {b.name}
+                    {b.available ? "" : " (offline)"}
                   </option>
                 ))}
               </select>
@@ -430,8 +432,8 @@ export function Settings() {
               <Eye className="w-5 h-5 text-emerald-400" /> Auto-Scan
             </CardTitle>
             <CardDescription className="text-slate-400">
-              Automatically detect documents on the flatbed via preview-scan polling.
-              When content change is detected, scan + OCR triggers automatically.
+              Automatically detect documents on the flatbed via preview-scan polling. When content change is detected,
+              scan + OCR triggers automatically.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -451,7 +453,9 @@ export function Settings() {
                         mode: "preview",
                         backend: defaultBackend === "auto" ? "unlimited-ocr" : defaultBackend,
                       }),
-                    }).then(loadWatcherStatus).catch(() => {});
+                    })
+                      .then(loadWatcherStatus)
+                      .catch(() => {});
                   } else if (!next) {
                     fetch("/api/scanner/watch/stop", { method: "POST" }).catch(() => {});
                   }
@@ -462,12 +466,14 @@ export function Settings() {
                 role="switch"
                 aria-checked={autoScan}
               >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  autoScan ? "translate-x-6" : "translate-x-1"
-                }`} />
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    autoScan ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
               </button>
             </div>
-            {watcherStatus && watcherStatus.running && (
+            {watcherStatus?.running && (
               <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 p-3 rounded-md border border-emerald-500/20">
                 <Eye className="h-3.5 w-3.5" />
                 Watcher active - {watcherStatus.scans_triggered} scans - interval {watcherStatus.interval_s}s
@@ -578,7 +584,7 @@ export function Settings() {
                       });
                       setLlmProviderMap(map);
                     })
-      .catch((e) => console.error("settings: failed to load backends", e));
+                    .catch((e) => console.error("settings: failed to load backends", e));
                 }}
                 className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors bg-slate-800 hover:bg-slate-700 rounded-md px-3 py-1.5 border border-slate-700"
               >

@@ -94,7 +94,10 @@ export function Dashboard() {
   const fetchBackends = useCallback(async () => {
     try {
       const res = await fetch("/api/backends");
-      if (!res.ok) { setError(`Backend API error: ${res.status}`); return; }
+      if (!res.ok) {
+        setError(`Backend API error: ${res.status}`);
+        return;
+      }
       const data = await res.json();
       setBackends(data.backends || []);
     } catch {
@@ -122,7 +125,9 @@ export function Dashboard() {
         setWatcherActive(data.running);
         setWatcherScans(data.scans_triggered || 0);
       }
-    } catch { /* noop */ }
+    } catch {
+      /* noop */
+    }
   }, []);
 
   const toggleWatcher = useCallback(async () => {
@@ -148,7 +153,10 @@ export function Dashboard() {
     fetchWatcherStatus();
     const interval = setInterval(fetchHealth, 30000);
     const watcherInterval = setInterval(fetchWatcherStatus, 5000);
-    return () => { clearInterval(interval); clearInterval(watcherInterval); };
+    return () => {
+      clearInterval(interval);
+      clearInterval(watcherInterval);
+    };
   }, [fetchScanners, fetchBackends, fetchHealth, fetchWatcherStatus]);
 
   // Poll job status
@@ -420,7 +428,8 @@ export function Dashboard() {
                 <option value="auto">Auto (best available)</option>
                 {backends.map((b) => (
                   <option key={b.name} value={b.name}>
-                    {b.name}{b.available ? "" : " (offline)"}
+                    {b.name}
+                    {b.available ? "" : " (offline)"}
                   </option>
                 ))}
               </select>

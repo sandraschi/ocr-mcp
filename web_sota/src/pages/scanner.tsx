@@ -258,7 +258,8 @@ export function Scanner() {
                   <option value="auto">Auto (best available)</option>
                   {backends.map((b) => (
                     <option key={b.name} value={b.name}>
-                      {b.name}{b.available ? "" : " (offline)"}
+                      {b.name}
+                      {b.available ? "" : " (offline)"}
                     </option>
                   ))}
                 </select>

@@ -1,4 +1,15 @@
-import { Archive, Book, Brain, LayoutGrid, Mail, MonitorPlay, MessageSquare, Activity, Robot, Scan, FileArchive } from "lucide-react";
+import {
+  Activity,
+  Archive,
+  Book,
+  Brain,
+  LayoutGrid,
+  Mail,
+  MessageSquare,
+  MonitorPlay,
+  Robot,
+  Scan,
+} from "lucide-react";
 
 export interface AppEntry {
   id: string;
@@ -18,10 +29,10 @@ const iconMap: Record<string, any> = {
   "email-mcp": Mail,
   "plex-mcp": MonitorPlay,
   "osc-mcp": Activity,
-  "robotics": Robot,
+  robotics: Robot,
   "obs-mcp": MonitorPlay,
   "ocr-interface": Scan,
-  "winrar": Archive,
+  winrar: Archive,
 };
 
 export function getAppIcon(id: string): any {

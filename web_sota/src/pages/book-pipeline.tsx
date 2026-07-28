@@ -1,13 +1,5 @@
-import {
-  BookOpen,
-  CheckCircle2,
-  FileText,
-  Loader2,
-  ScanLine,
-  Upload,
-  XCircle,
-} from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { BookOpen, CheckCircle2, FileText, Loader2, ScanLine, Upload, XCircle } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface Chapter {
@@ -20,7 +12,7 @@ interface Chapter {
 
 export function BookPipeline() {
   const [files, setFiles] = useState<File[]>([]);
-  const [backend, setBackend] = useState("unlimited-ocr");
+  const [backend, _setBackend] = useState("unlimited-ocr");
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [running, setRunning] = useState(false);
@@ -82,7 +74,7 @@ export function BookPipeline() {
           }
           if (jobData.status === "failed") break;
         }
-        pageTexts.push({ page_number: i + 1, text, confidence: text ? (jobData.result?.confidence || 0.85) : 0 });
+        pageTexts.push({ page_number: i + 1, text, confidence: text ? jobData.result?.confidence || 0.85 : 0 });
       }
 
       setProgress(80);
@@ -123,12 +115,18 @@ export function BookPipeline() {
         body: JSON.stringify({
           title: title || detectedTitle,
           author: author || detectedAuthor,
-          chapters: chapters.length > 0 ? chapters.map((ch) => {
-            const start = ch.start_page;
-            const end = ch.end_page ?? pageTexts.length;
-            const chText = pageTexts.slice(start - 1, end).map((p) => p.text).join("\n");
-            return { chapter_number: ch.chapter_number, title: ch.title, text: chText };
-          }) : [{ chapter_number: 1, title: "Chapter 1", text: pageTexts.map((p) => p.text).join("\n") }],
+          chapters:
+            chapters.length > 0
+              ? chapters.map((ch) => {
+                  const start = ch.start_page;
+                  const end = ch.end_page ?? pageTexts.length;
+                  const chText = pageTexts
+                    .slice(start - 1, end)
+                    .map((p) => p.text)
+                    .join("\n");
+                  return { chapter_number: ch.chapter_number, title: ch.title, text: chText };
+                })
+              : [{ chapter_number: 1, title: "Chapter 1", text: pageTexts.map((p) => p.text).join("\n") }],
         }),
       });
 
@@ -152,9 +150,7 @@ export function BookPipeline() {
         <BookOpen className="h-8 w-8 text-amber-400" />
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-100">Book Pipeline</h1>
-          <p className="text-sm text-slate-400">
-            Scan pages &rarr; OCR &rarr; detect chapters &rarr; assemble EPUB
-          </p>
+          <p className="text-sm text-slate-400">Scan pages &rarr; OCR &rarr; detect chapters &rarr; assemble EPUB</p>
         </div>
       </div>
 
@@ -165,14 +161,7 @@ export function BookPipeline() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <input
-            ref={fileRef}
-            type="file"
-            multiple
-            accept="image/*"
-            className="hidden"
-            onChange={handleFiles}
-          />
+          <input ref={fileRef} type="file" multiple accept="image/*" className="hidden" onChange={handleFiles} />
           <button
             onClick={() => fileRef.current?.click()}
             className="flex w-full items-center justify-center gap-3 rounded-lg border-2 border-dashed border-slate-700 p-8 text-slate-400 hover:border-slate-500 hover:text-slate-300 transition-colors"
@@ -183,9 +172,7 @@ export function BookPipeline() {
               <p className="text-xs">page_001.png, page_002.png, ... (sorted alphabetically)</p>
             </div>
           </button>
-          {files.length > 0 && (
-            <p className="text-sm text-slate-400">{files.length} pages selected</p>
-          )}
+          {files.length > 0 && <p className="text-sm text-slate-400">{files.length} pages selected</p>}
         </CardContent>
       </Card>
 
@@ -204,9 +191,7 @@ export function BookPipeline() {
               placeholder={detectedTitle || "Book title"}
               className="w-full rounded-md border-0 py-2 px-3 bg-slate-950 text-slate-100 ring-1 ring-inset ring-slate-700 focus:ring-2 focus:ring-blue-600 text-sm"
             />
-            {detectedTitle && !title && (
-              <p className="text-xs text-emerald-400 mt-1">Detected: {detectedTitle}</p>
-            )}
+            {detectedTitle && !title && <p className="text-xs text-emerald-400 mt-1">Detected: {detectedTitle}</p>}
           </div>
           <div>
             <label className="text-xs font-medium text-slate-400 mb-1 block">Author</label>
@@ -216,9 +201,7 @@ export function BookPipeline() {
               placeholder={detectedAuthor || "Author name"}
               className="w-full rounded-md border-0 py-2 px-3 bg-slate-950 text-slate-100 ring-1 ring-inset ring-slate-700 focus:ring-2 focus:ring-blue-600 text-sm"
             />
-            {detectedAuthor && !author && (
-              <p className="text-xs text-emerald-400 mt-1">Detected: {detectedAuthor}</p>
-            )}
+            {detectedAuthor && !author && <p className="text-xs text-emerald-400 mt-1">Detected: {detectedAuthor}</p>}
           </div>
         </CardContent>
       </Card>
@@ -228,20 +211,13 @@ export function BookPipeline() {
         disabled={running || files.length === 0}
         className="inline-flex items-center gap-2 rounded-lg bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 text-sm font-semibold transition-colors w-full justify-center"
       >
-        {running ? (
-          <Loader2 className="h-5 w-5 animate-spin" />
-        ) : (
-          <BookOpen className="h-5 w-5" />
-        )}
+        {running ? <Loader2 className="h-5 w-5 animate-spin" /> : <BookOpen className="h-5 w-5" />}
         {running ? status : "Run Pipeline (OCR + Chapter Detect + EPUB)"}
       </button>
 
       {(running || progress > 0) && (
         <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
-          <div
-            className="h-full bg-amber-500 transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
+          <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${progress}%` }} />
         </div>
       )}
 
@@ -275,9 +251,11 @@ export function BookPipeline() {
                     {ch.title}
                   </span>
                   <span className="text-xs text-slate-500">p.{ch.start_page}</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded ${
-                    ch.confidence > 0.7 ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"
-                  }`}>
+                  <span
+                    className={`text-xs px-1.5 py-0.5 rounded ${
+                      ch.confidence > 0.7 ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"
+                    }`}
+                  >
                     {Math.round(ch.confidence * 100)}%
                   </span>
                 </div>

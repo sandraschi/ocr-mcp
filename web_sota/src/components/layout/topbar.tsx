@@ -3,8 +3,8 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ExternalLink, HelpCircle, LayoutGrid } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { fetchFleetApps, getAppIcon } from "@/common/apps-catalog";
 import type { AppEntry } from "@/common/apps-catalog";
+import { fetchFleetApps, getAppIcon } from "@/common/apps-catalog";
 
 export function Topbar() {
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);

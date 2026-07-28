@@ -182,7 +182,8 @@ function PipelineCard({ pipeline, backends }: PipelineCardProps) {
             <option value="auto">Auto (best available)</option>
             {backends.map((b) => (
               <option key={b.name} value={b.name}>
-                {b.name}{b.available ? "" : " (offline)"}
+                {b.name}
+                {b.available ? "" : " (offline)"}
               </option>
             ))}
           </select>
