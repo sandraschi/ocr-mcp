@@ -165,10 +165,8 @@ def test_concurrent_processing(concurrent_jobs, backend_manager):
 ```python
 from hypothesis import given, strategies as st
 
-@given(
-    text=st.text(min_size=1, max_size=1000),
-    width=st.integers(min_value=10, max_value=2000)
-)
+
+@given(text=st.text(min_size=1, max_size=1000), width=st.integers(min_value=10, max_value=2000))
 def test_ocr_with_random_inputs(text, width):
     # Test OCR with random inputs
     pass
@@ -216,7 +214,7 @@ def realistic_document_scenarios():
         "invoice": {
             "text": "Invoice content...",
             "expected_elements": ["invoice", "table", "totals"],
-            "complexity": "medium"
+            "complexity": "medium",
         }
     }
 ```
@@ -243,6 +241,7 @@ Tests cover:
 """
 
 import pytest
+
 
 class TestOCRFeature:
     """Test cases for OCR feature."""

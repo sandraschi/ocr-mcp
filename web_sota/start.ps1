@@ -1,77 +1,36 @@
-Param([switch]$Headless)
-$SkipFrontend = $Headless
+﻿# Fleet unified launcher - do not edit logic here.
+# Change fleet-start.config.ps1 at the repo root instead.
+param(
+    [switch]$Headless,
+    [switch]$BackendOnly,
+    [switch]$FrontendOnly,
+    [switch]$NoBrowser,
+    [switch]$ReuseIfRunning
+)
 
-# --- SOTA Headless Standard ---
-if ($Headless -and ($Host.UI.RawUI.WindowTitle -notmatch 'Hidden')) {
-    Start-Process pwsh -ArgumentList '-NoProfile', '-File', $PSCommandPath, '-Headless' -WindowStyle Hidden
-    exit
-}
-$WindowStyle = if ($Headless) { 'Hidden' } else { 'Normal' }
-# ------------------------------
-
-# ocr-mcp webapp: backend (10859) + Vite (10858). Run from ocr-mcp repo.
-$WebPort = 10858
-$BackendPort = 10859
-$FleetStartPath = Join-Path $ProjectRoot "scripts\FleetStartMode.ps1"
-if (-not (Test-Path -LiteralPath $FleetStartPath)) {
-    Write-Host "ERROR: Missing vendored launcher helper: $FleetStartPath" -ForegroundColor Red
+$ErrorActionPreference = 'Stop'
+$ReposRoot = if ($env:FLEET_REPOS_ROOT) { $env:FLEET_REPOS_ROOT } else { 'D:\Dev\repos' }
+$EnginePath = Join-Path $ReposRoot 'mcp-central-docs\scripts\Invoke-FleetWebappStart.ps1'
+if (-not (Test-Path -LiteralPath $EnginePath)) {
+    Write-Host "ERROR: Missing fleet start engine: $EnginePath" -ForegroundColor Red
     exit 1
 }
-. $FleetStartPath
+. $EnginePath
 
-$ProjectRoot = Split-Path -Parent $PSScriptRoot
-
-# Ensure uv prefers CUDA torch when a GPU is available
-$env:UV_EXTRA_INDEX_URL = "https://download.pytorch.org/whl/cu126"
-
-if (-not (Test-Path (Join-Path $ProjectRoot "backend\app.py"))) {
-    Write-Host "ERROR: Run from ocr-mcp repo. Backend not found." -ForegroundColor Red
+$configCandidates = @(
+    (Join-Path $PSScriptRoot 'fleet-start.config.ps1'),
+    (Join-Path (Split-Path -Parent $PSScriptRoot) 'fleet-start.config.ps1')
+)
+$configPath = $null
+foreach ($candidate in $configCandidates) {
+    if (Test-Path -LiteralPath $candidate) {
+        $configPath = $candidate
+        break
+    }
+}
+if (-not $configPath) {
+    Write-Host 'ERROR: Missing fleet-start.config.ps1 (repo root or beside start.ps1).' -ForegroundColor Red
     exit 1
 }
 
-# Kill processes on our ports
-$pids = Get-NetTCPConnection -LocalPort $WebPort, $BackendPort -ErrorAction SilentlyContinue | Where-Object { $_.OwningProcess -gt 4 } | Select-Object -ExpandProperty OwningProcess -Unique
-foreach ($p in @($pids)) {
-    Write-Host "Killing PID $p on port $WebPort or $BackendPort..." -ForegroundColor Yellow
-    try { Stop-Process -Id $p -Force -ErrorAction Stop } catch { }
-}
-
-# Sync Python deps (pyyaml, transformers, etc.) so backend has everything
-Write-Host "Syncing Python deps (uv sync)..." -ForegroundColor Cyan
-Set-Location $ProjectRoot
-uv pip uninstall yaml 2>$null
-uv sync
-$ensureYaml = Join-Path $ProjectRoot "scripts\ensure_pyyaml_init.py"
-if (Test-Path $ensureYaml) { uv run python $ensureYaml 2>$null }
-$yamlCheck = uv run python -c "import yaml; ok = hasattr(yaml,'dump'); print('OK' if ok else 'MISSING'); print(yaml.__file__)" 2>&1
-if (($yamlCheck | Out-String) -notmatch "OK") {
-    Write-Host "WARNING: PyYAML not usable in backend env. PaddleOCR-VL will fail. Fix: uv sync then restart backend." -ForegroundColor Yellow
-} else {
-    Write-Host "PyYAML OK (backend env)" -ForegroundColor Green
-}
-Set-Location $PSScriptRoot
-
-if (-not (Test-Path "node_modules")) { npm install }
-
-Write-Host "Backend (new window) + Vite here. Backend: http://127.0.0.1:$BackendPort  Frontend: http://localhost:$WebPort" -ForegroundColor Cyan
-$cmd = "cd '$ProjectRoot'; `$env:PYTHONPATH='$ProjectRoot'; uv run uvicorn backend.app:app --host 127.0.0.1 --port $BackendPort"
-Start-Process powershell -ArgumentList "-NoExit", "-Command", $cmd -WindowStyle Normal
-
-Start-Process powershell -ArgumentList "-NoExit", "-Command", $cmd -WindowStyle Normal
-
-# TCP health poll: wait up to 60s for backend readiness
-Write-Host "Waiting for backend at http://127.0.0.1:${BackendPort}/health ..." -ForegroundColor Yellow
-for ($i = 0; $i -lt 60; $i++) {
-    try {
-        $r = Invoke-WebRequest -Uri "http://127.0.0.1:${BackendPort}/health" -TimeoutSec 2 -UseBasicParsing -ErrorAction SilentlyContinue
-        if ($r.StatusCode -eq 200) { Write-Host "Backend ready after ${i}s" -ForegroundColor Green; break }
-    } catch {}
-    Start-Sleep -Seconds 1
-}
-if ($i -ge 60) { Write-Host "WARNING: Backend did not respond within 60s" -ForegroundColor DarkYellow }
-Write-Host "Starting Vite (new window)..." -ForegroundColor Green
-$viteCmd = "cd '$PSScriptRoot'; npm run dev -- --port $WebPort --host"
-Start-Process powershell -ArgumentList "-NoExit", "-Command", $viteCmd -WindowStyle Normal
-Start-Sleep -Seconds 5
-Start-Process "http://localhost:$WebPort"
-Write-Host "Frontend opened in browser. Backend and Vite run in separate windows." -ForegroundColor Cyan
+Start-FleetWebapp @PSBoundParameters -ConfigPath $configPath -LauncherRoot $PSScriptRoot
