@@ -71,7 +71,6 @@ dependencies = [
     "scikit-image>=0.22.0",
     "pdf2image>=1.17.0",
     "watchfiles>=0.21.0",
-    "ruff>=0.15.0",
     "prefab-ui>=0.14.0",
 ]
 
@@ -108,7 +107,7 @@ dev = [
     "pytest-xdist>=3.5.0",
     "pytest-html>=4.1.0",
     "pytest-benchmark>=4.0.0",
-    "ruff>=0.1.0",
+    "ruff>=0.16.0,<0.17",
     "mypy>=1.8.0",
     "pip-audit>=2.7.0",
     "bandit[toml]>=1.7.0",
