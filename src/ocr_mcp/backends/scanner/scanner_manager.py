@@ -33,9 +33,9 @@ Orchestrates WIA, TWAIN, and other scanner control systems with a unified API.
 """
 
 import logging
+import os
 from typing import Any
 
-from .bridge_scanner import BridgeScannerBackend
 from .wia_scanner import ScannerInfo, ScannerProperties, ScanSettings, WIABackend
 
 logger = logging.getLogger(__name__)
@@ -50,12 +50,16 @@ class ScannerManager:
     """
 
     def __init__(self):
-        self.backends = {
+        self.backends: dict[str, Any] = {
             "wia": WIABackend(),
-            "bridge": BridgeScannerBackend(),
-            # Future: "twain": TWAINBackend(),
-            # Future: "sane": SANEBackend(),
         }
+
+        # Bridge backend is opt-in: only created when OCR_SCANNER_BRIDGE_URL is set.
+        _bridge_url = os.getenv("OCR_SCANNER_BRIDGE_URL")
+        if _bridge_url:
+            from .bridge_scanner import BridgeScannerBackend
+
+            self.backends["bridge"] = BridgeScannerBackend(_bridge_url)
         self._discovered_scanners = {}
         self._last_discovery = None
 

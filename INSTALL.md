@@ -52,7 +52,7 @@ If you prefer not to use `just`:
    uv run python -m ocr_mcp.server
 
    # HTTP mode (for web dashboard)
-   uv run uvicorn ocr_mcp.server:app --port 10859
+   uv run uvicorn ocr_mcp.server:http_app --port 10859
    ```
 
 5. Open `http://localhost:10859` or the frontend URL.

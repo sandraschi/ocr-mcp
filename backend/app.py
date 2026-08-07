@@ -83,6 +83,9 @@ FILE_LIST_DEPENDENCY = File()
 # Max jobs to retain (prevents unbounded growth)
 MAX_PROCESSING_JOBS = 500
 
+# Server start timestamp for uptime reporting
+_SERVER_START_TS = time.time()
+
 
 def _prune_old_jobs():
     """Remove oldest completed/failed jobs when over limit."""
@@ -205,6 +208,15 @@ app = FastAPI(
     version="0.1.0",
 )
 
+# Mount FastMCP streamable HTTP endpoint (dual transport: REST + MCP on one port)
+try:
+    from ocr_mcp.server import app as _mcp
+
+    app.mount("/mcp", _mcp.http_app(), name="mcp")
+    logger.info("MCP streamable HTTP mounted at /mcp")
+except Exception as _mcp_err:
+    logger.warning("Failed to mount MCP HTTP endpoint: %s", _mcp_err)
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
@@ -225,7 +237,7 @@ app.add_middleware(
 # Get the correct path relative to this script's location
 script_dir = Path(__file__).parent
 project_root = script_dir.parent
-dist_dir = project_root / "frontend" / "dist"
+dist_dir = project_root / "web_sota" / "dist"
 
 # React app will be mounted at the end of the file after all API routes
 
@@ -324,6 +336,83 @@ async def health_check():
         "scanner_initialized": scanner_manager is not None,
         "demo_mode": False,
         "version": "0.1.0",
+    }
+
+
+@app.get("/api/v1/health")
+async def health_check_v1():
+    """Health check endpoint (CUA-NSIS smoke standard shape)."""
+    if demo_mode:
+        return {"status": "ok", "server": "ocr-mcp", "version": "0.1.0", "demo_mode": True}
+
+    return {
+        "status": "ok" if backend_manager else "degraded",
+        "server": "ocr-mcp",
+        "version": "0.1.0",
+        "uptime_seconds": int(time.time() - _SERVER_START_TS),
+        "tool_count": await _count_mcp_tools(),
+        "providers": {
+            "wia": bool(scanner_manager and scanner_manager.is_available()),
+            "backend_initialized": backend_manager is not None,
+        },
+    }
+
+
+@app.get("/api/v1/system/info")
+async def system_info_v1():
+    """System info (CUA feature smoke path)."""
+    import platform
+
+    return {
+        "success": True,
+        "server": "ocr-mcp",
+        "version": "0.1.0",
+        "platform": platform.platform(),
+        "python": platform.python_version(),
+        "backend_initialized": backend_manager is not None,
+        "scanner_initialized": scanner_manager is not None,
+        "uptime_seconds": int(time.time() - _SERVER_START_TS),
+    }
+
+
+async def _count_mcp_tools() -> int:
+    try:
+        from ocr_mcp.server import app as _mcp
+
+        return len(await _mcp.list_tools())
+    except Exception:
+        return 0
+
+
+@app.get("/api/v1/diagnostics")
+async def diagnostics_v1():
+    """Tool list + system info (CUA-NSIS smoke standard)."""
+    import platform
+
+    try:
+        from ocr_mcp.server import app as _mcp
+
+        tools = await _mcp.list_tools()
+        tool_names = [getattr(t, "name", str(t)) for t in tools]
+        tool_count = len(tool_names)
+    except Exception as e:
+        tool_names = []
+        tool_count = 0
+        logger.warning("Diagnostics tool list failed: %s", e)
+
+    return {
+        "status": "ok",
+        "server": "ocr-mcp",
+        "version": "0.1.0",
+        "uptime_seconds": int(time.time() - _SERVER_START_TS),
+        "tool_count": tool_count,
+        "tools": [{"name": n} for n in sorted(tool_names)],
+        "system": {
+            "windows": platform.system().lower() == "windows",
+            "platform": platform.platform(),
+            "python": platform.python_version(),
+        },
+        "errors": [],
     }
 
 
@@ -543,6 +632,49 @@ async def get_backends():
     except Exception as e:
         logger.error(f"Failed to get backends: {e}")
         raise HTTPException(status_code=500, detail=f"{e!s}") from e
+
+
+@app.get("/api/tools")
+async def get_tools():
+    """Dynamic MCP tool list (SOTA Tools Hub)."""
+    try:
+        from ocr_mcp.server import app as _mcp
+
+        tools = await _mcp.list_tools()
+        result = []
+        for t in tools:
+            result.append(
+                {
+                    "name": getattr(t, "name", str(t)),
+                    "description": getattr(t, "description", ""),
+                    "parameters": getattr(t, "parameters", None),
+                }
+            )
+        return {"tools": result, "count": len(result)}
+    except Exception as e:
+        logger.warning("Tool list failed: %s", e)
+        return {"tools": [], "count": 0, "error": str(e)}
+
+
+@app.get("/api/skills")
+async def get_skills():
+    """List available skills (SOTA Skills page)."""
+    skills = []
+    skills_dir = project_root / "src" / "ocr_mcp" / "skills"
+    if skills_dir.is_dir():
+        for skill_dir in sorted(skills_dir.iterdir()):
+            if skill_dir.is_dir() and (skill_dir / "SKILL.md").is_file():
+                skills.append({"name": skill_dir.name})
+    return {"skills": skills, "count": len(skills)}
+
+
+@app.get("/api/skills/{skill_name}")
+async def get_skill_content(skill_name: str):
+    """Return the raw SKILL.md content for a skill."""
+    skill_file = project_root / "src" / "ocr_mcp" / "skills" / skill_name / "SKILL.md"
+    if not skill_file.is_file():
+        return {"success": False, "error": f"Skill '{skill_name}' not found", "content": ""}
+    return {"success": True, "name": skill_name, "content": skill_file.read_text(encoding="utf-8")}
 
 
 @app.get("/api/llm/providers")

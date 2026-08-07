@@ -214,7 +214,7 @@ if ($Compress) {
     }
 }
 
-Write-Host "âœ… OCR-MCP MCPB package created successfully!" -ForegroundColor Green
+Write-Host "âœ... OCR-MCP MCPB package created successfully!" -ForegroundColor Green
 Write-Host "Package location: $PackageDir" -ForegroundColor Cyan
 
 if ($Compress) {

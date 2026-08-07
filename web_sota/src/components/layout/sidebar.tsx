@@ -4,10 +4,14 @@ import {
   ChevronLeft,
   ChevronRight,
   FileEdit,
+  GraduationCap,
   HelpCircle,
   LayoutDashboard,
+  MessageSquare,
   ScanText,
+  ScrollText,
   Settings,
+  Wrench,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/common/utils";
@@ -25,6 +29,10 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { href: "/book-pipeline", label: "Book Pipeline", icon: BookOpen, testId: "nav-book-pipeline" },
     { href: "/editor", label: "Editor", icon: FileEdit, testId: "nav-editor" },
     { href: "/status", label: "Activity", icon: Activity, testId: "nav-activity" },
+    { href: "/chat", label: "Chat", icon: MessageSquare, testId: "nav-chat" },
+    { href: "/tools", label: "Tools", icon: Wrench, testId: "nav-tools" },
+    { href: "/skills", label: "Skills", icon: GraduationCap, testId: "nav-skills" },
+    { href: "/logs", label: "Logs", icon: ScrollText, testId: "nav-logs" },
     { href: "/settings", label: "Settings", icon: Settings, testId: "nav-settings" },
     { href: "/help", label: "Help", icon: HelpCircle, testId: "nav-help" },
   ];

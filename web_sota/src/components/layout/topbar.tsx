@@ -1,13 +1,40 @@
 "use client";
 
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { ExternalLink, HelpCircle, LayoutGrid } from "lucide-react";
+import { ExternalLink, HelpCircle, LayoutGrid, Moon, Sun } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { AppEntry } from "@/common/apps-catalog";
 import { fetchFleetApps, getAppIcon } from "@/common/apps-catalog";
 
+// EXPERIMENTAL light mode (invert hack). Not fleet standard - see index.css.
+// Toggling `.dark` off the root flips the invert filter; persisted so the
+// choice survives reloads. Delete this + the CSS block to revert.
+const THEME_KEY = "ocr-light-mode";
+
+function useExperimentalTheme() {
+  const [light, setLight] = useState(() => {
+    try {
+      return localStorage.getItem(THEME_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", !light);
+    try {
+      localStorage.setItem(THEME_KEY, light ? "1" : "0");
+    } catch {
+      // ignore storage errors
+    }
+  }, [light]);
+
+  return { light, toggle: () => setLight((v) => !v) };
+}
+
 export function Topbar() {
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
+  const { light, toggle } = useExperimentalTheme();
   const [fleetApps, setFleetApps] = useState<AppEntry[]>([]);
   const [appsLoading, setAppsLoading] = useState(true);
 
@@ -46,6 +73,17 @@ export function Topbar() {
       </div>
 
       <div className="flex items-center gap-2">
+        {/* Day mode toggle */}
+        <button
+          type="button"
+          onClick={toggle}
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-800 bg-slate-900/50 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+          title={light ? "Switch to dark (experimental light mode)" : "Switch to light (experimental, ugly)"}
+          aria-label="Toggle light mode (experimental)"
+        >
+          {light ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+        </button>
+
         {/* Backend Health Indicator */}
         <div
           data-testid="backend-dot"

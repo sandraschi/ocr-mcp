@@ -208,7 +208,7 @@ export function Settings() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ api_key: "" }),
       });
-      const _data = await r.json().catch(() => {
+      await r.json().catch(() => {
         console.error("settings: failed to parse clear-mistral response");
         return {};
       });

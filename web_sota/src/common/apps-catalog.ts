@@ -7,7 +7,7 @@ import {
   Mail,
   MessageSquare,
   MonitorPlay,
-  Robot,
+  Bot,
   Scan,
 } from "lucide-react";
 
@@ -29,7 +29,7 @@ const iconMap: Record<string, any> = {
   "email-mcp": Mail,
   "plex-mcp": MonitorPlay,
   "osc-mcp": Activity,
-  robotics: Robot,
+  robotics: Bot,
   "obs-mcp": MonitorPlay,
   "ocr-interface": Scan,
   winrar: Archive,

@@ -47,6 +47,7 @@ from pathlib import Path
 
 from fastmcp import FastMCP
 from fastmcp.server import create_proxy
+from starlette.middleware.cors import CORSMiddleware
 
 from .core.backend_manager import BackendManager
 from .core.config import OCRConfig
@@ -139,6 +140,25 @@ if MCP_BRIDGE_URLS:
         url = url.strip()
         if url:
             app.add_provider(create_proxy(url))
+
+
+# ASGI app for uvicorn (fleet standard: serve mcp.http_app(), never the raw FastMCP object)
+http_app = CORSMiddleware(
+    app.http_app(),
+    allow_origins=[
+        "http://localhost:10858",
+        "http://127.0.0.1:10858",
+        "http://localhost:10859",
+        "http://127.0.0.1:10859",
+        "http://tauri.localhost",
+        "https://tauri.localhost",
+        "tauri://localhost",
+    ],
+    allow_origin_regex=r"https?://(?:[a-zA-Z0-9-]+\.ts\.net|.*?\.tail-[a-f0-9]+\.ts\.net|tauri\.localhost|localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|100\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::\d+)?$|^tauri://localhost$",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # Resources

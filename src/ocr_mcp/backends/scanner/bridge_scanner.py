@@ -1,6 +1,7 @@
 import base64
 import io
 import logging
+import os
 from dataclasses import asdict
 from typing import Any
 
@@ -11,17 +12,23 @@ from .wia_scanner import ScannerInfo, ScannerProperties, ScanSettings
 
 logger = logging.getLogger(__name__)
 
+_DEFAULT_BRIDGE_URL = os.getenv("OCR_SCANNER_BRIDGE_URL", "http://127.0.0.1:15002")
+
 
 class BridgeScannerBackend:
     """
     Scanner Backend that proxies requests to a remote Bridge Server.
     Used to access Windows Host scanners from within Docker container.
+
+    The bridge URL is configurable via the OCR_SCANNER_BRIDGE_URL env var.
+    Defaults to http://127.0.0.1:15002 for native Windows usage.
+    Set to http://host.docker.internal:15002 when ocr-mcp runs inside Docker.
     """
 
-    def __init__(self, bridge_url: str = "http://host.docker.internal:15002"):
-        self.bridge_url = bridge_url.rstrip("/")
+    def __init__(self, bridge_url: str | None = None):
+        self.bridge_url = (bridge_url or _DEFAULT_BRIDGE_URL).rstrip("/")
         self._available = False
-        self.check_availability()
+        self._checked = False
 
     def check_availability(self):
         try:
@@ -32,20 +39,13 @@ class BridgeScannerBackend:
             else:
                 self._available = False
         except Exception:
-            logger.warning("Bridge scanner health check failed", exc_info=True)
             self._available = False
+        self._checked = True
 
     def is_available(self) -> bool:
-        # Check periodically or assume available if it was once?
-        # For now, let's re-check lazy to avoid startup blocking, or just return last state?
-        # Let's do a quick check if we think it's down, otherwise trust it?
-        # Better: just return existing state, but maybe have a refresh method?
-        # Simple approach: actively check on discover is better.
-        # But 'is_available' is called often.
-        # Let's perform a lightweight check here or just return True if configured?
-        # We will try to ping if not previously available.
-        if not self._available:
+        if not self._checked:
             self.check_availability()
+            self._checked = True
         return self._available
 
     def discover_scanners(self) -> list[ScannerInfo]:

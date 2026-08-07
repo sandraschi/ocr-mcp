@@ -49,6 +49,8 @@ def _win_candidate_dirs() -> list[Path]:
         for folder in sorted(pkg.glob("*Poppler*")):
             for sub in (folder / "Library" / "bin", folder / "poppler" / "Library" / "bin"):
                 out.append(sub)
+            for sub in folder.glob("*/Library/bin"):
+                out.append(sub)
     return out
 
 

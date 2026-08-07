@@ -1,7 +1,7 @@
 ﻿set windows-shell := ["powershell.exe", "-NoProfile", "-Command"]
 import 'scripts/just/fleet.just'
 
-# â”€â”€ Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# --- Dashboard ---
 
 # Open the interactive recipe dashboard in the browser
 default:
@@ -14,7 +14,7 @@ bootstrap:
     uv run pre-commit install
     Set-Location web_sota; npm ci; if ($LASTEXITCODE -ne 0) { npm install }
     Write-Host "Pre-commit hooks installed." -ForegroundColor Green
-# â”€â”€ Quality â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# --- Quality ---
 
 # Execute Ruff SOTA v13.1 linting
 lint:
@@ -31,7 +31,7 @@ fix:
     Set-Location '{{justfile_directory()}}\web_sota'
     npx @biomejs/biome check --write .
 
-# â”€â”€ Hardening â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# --- Hardening ---
 
 # Execute Bandit security audit
 check-sec:
@@ -43,7 +43,7 @@ audit-deps:
     Set-Location '{{justfile_directory()}}'
     uv run safety check
 
-# OCR-MCP Justfile â€“ justfiles standard (https://github.com/casey/just)
+# OCR-MCP Justfile - justfiles standard (https://github.com/casey/just)
 # Run with: just <recipe> or just --list
 
 # Repo statistics (Markdown, tools, FastMCP, MCP tools)
@@ -91,3 +91,5 @@ setup-dev:
 # Pre-commit run on all files
 check:
     uv run pre-commit run --all-files
+
+# Bootstrap: install dev deps + pre-commit hook

@@ -63,6 +63,7 @@ export function BookPipeline() {
 
         // Poll job
         let text = "";
+        let jobConfidence = 0;
         for (let poll = 0; poll < 60; poll++) {
           await new Promise((r) => setTimeout(r, 2000));
           const jobRes = await fetch(`/api/job/${jobId}`);
@@ -70,11 +71,12 @@ export function BookPipeline() {
           const jobData = await jobRes.json();
           if (jobData.status === "completed") {
             text = jobData.result?.text || jobData.text || "";
+            jobConfidence = jobData.result?.confidence || 0.85;
             break;
           }
           if (jobData.status === "failed") break;
         }
-        pageTexts.push({ page_number: i + 1, text, confidence: text ? jobData.result?.confidence || 0.85 : 0 });
+        pageTexts.push({ page_number: i + 1, text, confidence: text ? jobConfidence : 0 });
       }
 
       setProgress(80);
