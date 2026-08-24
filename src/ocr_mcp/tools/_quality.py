@@ -396,12 +396,25 @@ async def validate_ocr_accuracy(
             accuracy_grade = "F"
             assessment = "Unacceptable - Requires complete reprocessing"
 
+        import difflib
+
+        diff_lines = list(
+            difflib.unified_diff(
+                expected_clean.splitlines(keepends=True),
+                ocr_clean.splitlines(keepends=True),
+                fromfile="expected_ground_truth",
+                tofile="ocr_output",
+            )
+        )
+        diff_patch = "".join(diff_lines)
+
         return {
             "success": True,
             "validation_type": validation_type,
             "accuracy_metrics": accuracy_metrics,
             "semantic_analysis": semantic_analysis,
             "error_analysis": error_analysis,
+            "diff_patch": diff_patch if diff_patch else "No differences found.",
             "overall_accuracy": round(overall_accuracy, 2),
             "accuracy_grade": accuracy_grade,
             "assessment": assessment,

@@ -1,7 +1,7 @@
 # OCR-MCP — Project Status
 
-**Last Updated:** 2026-07-21
-**Version:** 0.2.0-beta
+**Last Updated:** 2026-08-25
+**Version:** 0.3.0-beta
 **Status:** Beta
 
 ## Current Build
@@ -11,7 +11,7 @@
 | Python lint (ruff) | Pass |
 | TypeScript (tsc --noEmit) | Pass |
 | Vite build | Pass |
-| Tests | Pass |
+| Tests | Pass (156 unit tests) |
 | NSIS build | Pass |
 | CUA smoke test | Pass |
 | Pre-commit hooks | Configured (ruff, file hygiene) |
@@ -25,7 +25,7 @@
 - Live KPI cards from `/api/health` (server, tool count, backend availability)
 - Backend health indicator in topbar (green ping / red / gray)
 - Sidebar: 6 items (Dashboard, **Book Pipeline**, Editor, Activity, Settings, Help)
-- **Book Pipeline page**: select page images, OCR batch, detect chapters, assemble EPUB
+- **Book Pipeline page**: select page images, OCR batch, detect chapters, assemble EPUB & Markdown
 - Editor page: standalone text view with JSON/CSV/XML export
 - Activity page: job status polling and history
 - Settings: default backend, Mistral API key + test, backend and scanner lists, **Auto-Scan settings**
@@ -38,7 +38,7 @@
 - 5 parameterized prompts (process-instructions, quality-assessment, scanner-workflow, batch-processing, agentic-workflow)
 - 3 resources (`resource://ocr/logs`, `resource://ocr/capabilities`, `resource://ocr/skills`)
 - **Skills directory** with `skill://{name}` parameterized resource
-- 14 OCR backends with lazy loading + auto-selection
+- 14 OCR backends with fast dependency-spec probing + lazy loading + auto-selection
 
 ### OCR Backends
 - 14 backends registered: Unlimited-OCR, PaddleOCR-VL-1.5, MinerU2.5-Pro, Nemotron VL 8B, DeepSeek-OCR-2, olmOCR-2, Mistral OCR, Qwen2.5-VL, GOT-OCR 2.0, DOTS.OCR, PP-OCRv5, EasyOCR, Tesseract

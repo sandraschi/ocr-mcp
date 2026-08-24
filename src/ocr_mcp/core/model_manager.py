@@ -398,7 +398,9 @@ class ModelManager:
         memory_usage_ratio = gpu_info.used_memory / gpu_info.total_memory
 
         if memory_usage_ratio > self.memory_threshold:
-            logger.warning(".2f")
+            logger.warning(
+                f"Memory pressure high ({memory_usage_ratio * 100:.1f}% GPU memory used), optimizing models..."
+            )
             self.optimize_memory(target_free_mb=int(gpu_info.total_memory * 0.15))
 
     def _get_system_memory_info(self) -> dict[str, Any]:

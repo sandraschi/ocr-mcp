@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 
 
 class PaddleOCRVLBackend(OCRBackend):
-    """PaddleOCR-VL-1.5 backend — January 2026 SOTA for document parsing."""
+    """PaddleOCR-VL-1.5 backend - January 2026 SOTA for document parsing."""
 
     def __init__(self, config: OCRConfig):
         super().__init__("paddleocr-vl", config)
@@ -114,7 +114,7 @@ class PaddleOCRVLBackend(OCRBackend):
             has_flash = self._check_flash_attn()
             if not has_flash and self._device == "cuda":
                 logger.warning(
-                    "flash-attn not installed — PaddleOCR-VL-1.5 will use ~40GB VRAM. "
+                    "flash-attn not installed - PaddleOCR-VL-1.5 will use ~40GB VRAM. "
                     "Install: pip install flash-attn --no-build-isolation"
                 )
 
@@ -263,7 +263,7 @@ class PaddleOCRVLBackend(OCRBackend):
         caps.update(
             {
                 "name": "PaddleOCR-VL-1.5",
-                "description": "Baidu PaddleOCR-VL-1.5 — Jan 2026 SOTA, 94.5% OmniDocBench",
+                "description": "Baidu PaddleOCR-VL-1.5 - Jan 2026 SOTA, 94.5% OmniDocBench",
                 "modes": ["text", "table", "formula", "chart", "ocr"],
                 "output_formats": ["text", "markdown", "latex"],
                 "language_count": 109,

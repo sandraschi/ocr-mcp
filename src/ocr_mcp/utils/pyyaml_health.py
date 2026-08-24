@@ -129,7 +129,7 @@ def ensure_pyyaml_distribution_healthy(*, repair: bool = True) -> tuple[bool, st
     Ensure PyYAML is usable for transformers' dependency check.
 
     Returns:
-        (ok, message) — message set when not ok or after repair attempt.
+        (ok, message) - message set when not ok or after repair attempt.
     """
     if yaml_module_has_dump() and pyyaml_metadata_healthy():
         return True, None

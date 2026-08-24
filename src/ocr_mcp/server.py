@@ -133,7 +133,7 @@ Always provide technical, actionable responses including confidence scores and r
 )
 
 
-# MCP Bridge — proxy remote MCP servers via ProxyProvider
+# MCP Bridge - proxy remote MCP servers via ProxyProvider
 MCP_BRIDGE_URLS = os.environ.get("MCP_BRIDGE_URLS", "")
 if MCP_BRIDGE_URLS:
     for url in MCP_BRIDGE_URLS.split(","):

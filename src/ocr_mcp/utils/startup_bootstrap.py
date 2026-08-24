@@ -4,9 +4,9 @@ Single entry for OCR-MCP process startup: fix PyYAML dist-info, Tesseract, Poppl
 Call once after ``OCRConfig()`` and before ``BackendManager`` (or heavy imports).
 
 Env:
-- ``OCR_AUTO_BOOTSTRAP=0`` — skip PyYAML/Tesseract/Poppler/ML hints.
+- ``OCR_AUTO_BOOTSTRAP=0`` - skip PyYAML/Tesseract/Poppler/ML hints.
   Pip auto-install still runs if ``OCR_AUTO_INSTALL_DEPS=1``.
-- ``OCR_AUTO_INSTALL_DEPS=1`` — pip/uv ML stack + optional Paddle (may restart process).
+- ``OCR_AUTO_INSTALL_DEPS=1`` - pip/uv ML stack + optional Paddle (may restart process).
 """
 
 from __future__ import annotations

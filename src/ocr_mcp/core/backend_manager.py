@@ -30,6 +30,7 @@
 OCR Backend Manager: Manages multiple OCR backends with unified interface
 """
 
+import asyncio
 import inspect
 import logging
 import tempfile
@@ -194,19 +195,19 @@ class BackendManager:
                 "module": "..backends.paddleocr_vl_backend",
                 "class": "PaddleOCRVLBackend",
                 "model_size": "~1.8GB (0.9B params)",
-                "description": "Baidu PaddleOCR-VL-1.5 — Jan 2026 SOTA, 94.5% OmniDocBench",
+                "description": "Baidu PaddleOCR-VL-1.5 - Jan 2026 SOTA, 94.5% OmniDocBench",
             },
             "deepseek-ocr2": {
                 "module": "..backends.deepseek_ocr2_backend",
                 "class": "DeepSeekOCR2Backend",
                 "model_size": "~6GB (3B params)",
-                "description": "DeepSeek-OCR-2 — Jan 2026, Visual Causal Flow",
+                "description": "DeepSeek-OCR-2 - Jan 2026, Visual Causal Flow",
             },
             "olmocr-2": {
                 "module": "..backends.olmocr_backend",
                 "class": "OlmOCR2Backend",
                 "model_size": "~14GB (7B params)",
-                "description": "Allen AI olmOCR-2 — Oct 2025, best for academic PDFs",
+                "description": "Allen AI olmOCR-2 - Oct 2025, best for academic PDFs",
             },
             "dots-ocr": {
                 "module": "..backends.dots_backend",
@@ -236,7 +237,7 @@ class BackendManager:
                 "module": "..backends.mineru_backend",
                 "class": "MinerU25Backend",
                 "model_size": "~2.5GB (1.2B params)",
-                "description": "MinerU2.5-Pro — Apr 2026, opendatalab coarse-to-fine doc parsing VLM",
+                "description": "MinerU2.5-Pro - Apr 2026, opendatalab coarse-to-fine doc parsing VLM",
             },
             "got-ocr": {
                 "module": "..backends.got_ocr_backend",
@@ -248,13 +249,13 @@ class BackendManager:
                 "module": "..backends.nemotron_vl_backend",
                 "class": "NemotronVLBackend",
                 "model_size": "~16GB (8B params)",
-                "description": "NVIDIA Nemotron Nano VL 8B — Jun 2025, best-in-class document intelligence",
+                "description": "NVIDIA Nemotron Nano VL 8B - Jun 2025, best-in-class document intelligence",
             },
             "unlimited-ocr": {
                 "module": "..backends.unlimited_ocr_backend",
                 "class": "UnlimitedOCRBackend",
                 "model_size": "~6GB (3B params)",
-                "description": "Baidu Unlimited-OCR — Jul 2026, one-shot long-horizon parsing, MIT license",
+                "description": "Baidu Unlimited-OCR - Jul 2026, one-shot long-horizon parsing, MIT license",
             },
             "tesseract": {
                 "module": "..backends.tesseract_backend",
@@ -311,12 +312,33 @@ class BackendManager:
             self.backends[backend_name] = mock_backend
             return mock_backend
 
+    def _is_backend_available(self, name: str) -> bool:
+        """Check if backend is available without triggering heavy module imports if not loaded."""
+        if self.backends.get(name) is not None:
+            backend = self.backends[name]
+            return bool(backend and backend.is_available())
+
+        import importlib.util
+
+        if name not in self.backend_registry:
+            return False
+
+        if name == "tesseract":
+            return importlib.util.find_spec("pytesseract") is not None
+        elif name == "easyocr":
+            return importlib.util.find_spec("easyocr") is not None and importlib.util.find_spec("torch") is not None
+        elif name in ("deepseek-ocr", "mistral-ocr"):
+            return importlib.util.find_spec("httpx") is not None or importlib.util.find_spec("requests") is not None
+        else:
+            has_torch = importlib.util.find_spec("torch") is not None
+            has_transformers = importlib.util.find_spec("transformers") is not None
+            return has_torch and has_transformers
+
     def get_available_backends(self) -> list[str]:
         """Get list of available backend names (lazy loading compatible)."""
         available = []
         for name in self.backends.keys():
-            backend = self.get_backend(name)  # This triggers lazy loading if needed
-            if backend and backend.is_available():
+            if self._is_backend_available(name):
                 available.append(name)
         return available
 
@@ -383,9 +405,10 @@ class BackendManager:
                 "nemotron-vl",
             ]
             for backend_name in preference_order:
-                backend = self.get_backend(backend_name)
-                if backend and backend.is_available():
-                    return backend
+                if self._is_backend_available(backend_name):
+                    backend = self.get_backend(backend_name)
+                    if backend and backend.is_available():
+                        return backend
 
             # No backends available
             return None
@@ -422,7 +445,10 @@ class BackendManager:
                     or (hasattr(backend, "pipeline") and backend.pipeline is None)
                 ):
                     logger.info(f"Automatically loading model/engine for {backend.name}")
-                    loaded = await backend.load_model()
+                    if asyncio.iscoroutinefunction(backend.load_model):
+                        loaded = await backend.load_model()
+                    else:
+                        loaded = await asyncio.to_thread(backend.load_model)
                     if loaded is False:
                         return {
                             "success": False,
@@ -436,17 +462,22 @@ class BackendManager:
 
             # Call the appropriate processing method
             if hasattr(backend, "process_document"):
-                # New backend interface
-                import inspect
-
                 sig = inspect.signature(backend.process_document)
-                if "ocr_mode" in sig.parameters:
-                    result = await backend.process_document(image_path, ocr_mode=mode, **kwargs)
+                if asyncio.iscoroutinefunction(backend.process_document):
+                    if "ocr_mode" in sig.parameters:
+                        result = await backend.process_document(image_path, ocr_mode=mode, **kwargs)
+                    else:
+                        result = await backend.process_document(image_path, mode=mode, **kwargs)
                 else:
-                    result = await backend.process_document(image_path, mode=mode, **kwargs)
+                    if "ocr_mode" in sig.parameters:
+                        result = await asyncio.to_thread(backend.process_document, image_path, ocr_mode=mode, **kwargs)
+                    else:
+                        result = await asyncio.to_thread(backend.process_document, image_path, mode=mode, **kwargs)
             elif hasattr(backend, "process_image"):
-                # Legacy backend interface
-                result = await backend.process_image(image_path, mode, **kwargs)
+                if asyncio.iscoroutinefunction(backend.process_image):
+                    result = await backend.process_image(image_path, mode, **kwargs)
+                else:
+                    result = await asyncio.to_thread(backend.process_image, image_path, mode, **kwargs)
             else:
                 return {
                     "success": False,

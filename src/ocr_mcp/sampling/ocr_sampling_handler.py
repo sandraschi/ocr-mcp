@@ -284,7 +284,7 @@ def _degraded_response_text(
         )
     )
     return (
-        "[OCR-MCP sampling — HTTP LLM not used]\n\n"
+        "[OCR-MCP sampling - HTTP LLM not used]\n\n"
         f"{tool_note}\n\n"
         "Heuristic OCR backend suggestions (verify against your install): "
         f"{', '.join(hints) or 'auto'}.\n"

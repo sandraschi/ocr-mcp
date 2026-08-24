@@ -32,7 +32,7 @@ Built on Llama-3.1-8B-Instruct with C-RADIOv2-H vision encoder.
 Best-in-class document intelligence: DocVQA 91.2%, ChartQA 86.3%, AI2D 85.0%.
 HF: nvidia/Llama-3.1-Nemotron-Nano-VL-8B-V1
 
-Uses AutoModel + AutoImageProcessor + .chat() API — different from standard
+Uses AutoModel + AutoImageProcessor + .chat() API - different from standard
 AutoModelForCausalLM + AutoProcessor used by other VLM backends.
 Requires: transformers, accelerate, timm, einops, open-clip-torch.
 """
@@ -63,7 +63,7 @@ _NEMOTRON_TABLE_PROMPT = (
 
 
 class NemotronVLBackend(OCRBackend):
-    """Llama Nemotron Nano VL 8B — NVIDIA document intelligence VLM (June 2025)."""
+    """Llama Nemotron Nano VL 8B - NVIDIA document intelligence VLM (June 2025)."""
 
     def __init__(self, config: OCRConfig):
         super().__init__("nemotron-vl", config)
@@ -85,9 +85,9 @@ class NemotronVLBackend(OCRBackend):
         if all([self._torch_ok, self._transformers_ok]):
             self._available = True
             if not self._timm_ok:
-                logger.warning("Nemotron VL: 'timm' not installed — required for vision encoder")
+                logger.warning("Nemotron VL: 'timm' not installed - required for vision encoder")
             if not self._open_clip_ok:
-                logger.warning("Nemotron VL: 'open-clip-torch' not installed — required for vision encoder")
+                logger.warning("Nemotron VL: 'open-clip-torch' not installed - required for vision encoder")
         else:
             self._available = False
             logger.warning("Nemotron VL: torch or transformers not available")
@@ -213,7 +213,7 @@ class NemotronVLBackend(OCRBackend):
             {
                 "name": "Llama Nemotron Nano VL 8B",
                 "description": (
-                    "NVIDIA Llama Nemotron Nano VL (Jun 2025) — "
+                    "NVIDIA Llama Nemotron Nano VL (Jun 2025) - "
                     "best-in-class document intelligence, OCR, and chart understanding"
                 ),
                 "modes": ["text", "table", "format"],
@@ -221,17 +221,17 @@ class NemotronVLBackend(OCRBackend):
                 "gpu_support": True,
                 "model_size": "~16GB (8B params, bfloat16); ~5GB AWQ 4-bit",
                 "strengths": [
-                    "DocVQA 91.2% — best-in-class document Q&A",
-                    "ChartQA 86.3% — top chart understanding",
-                    "AI2D 85.0% — scientific diagram parsing",
-                    "OCRBench 839 — strong general OCR",
-                    "InfoVQA 77.4% — infographic understanding",
-                    "Document intelligence specialist — forms, invoices, reports",
+                    "DocVQA 91.2% - best-in-class document Q&A",
+                    "ChartQA 86.3% - top chart understanding",
+                    "AI2D 85.0% - scientific diagram parsing",
+                    "OCRBench 839 - strong general OCR",
+                    "InfoVQA 77.4% - infographic understanding",
+                    "Document intelligence specialist - forms, invoices, reports",
                     "Structured data extraction with layout preservation",
                     "Deployable on edge via AWQ 4-bit (Jetson Orin)",
                 ],
                 "limitations": [
-                    "English only — no multilingual OCR",
+                    "English only - no multilingual OCR",
                     "16K token context (input+output combined)",
                     "Single image only per call",
                     "Requires timm + open-clip-torch deps",

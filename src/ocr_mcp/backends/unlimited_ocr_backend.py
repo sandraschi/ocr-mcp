@@ -1,5 +1,5 @@
 """
-Unlimited-OCR Backend — July 2026, Baidu Inc.
+Unlimited-OCR Backend - July 2026, Baidu Inc.
 
 Extends DeepSeek-OCR's one-shot long-horizon parsing to handle
 unbounded-length documents without image resolution limits.
@@ -31,7 +31,7 @@ _HF_MODEL_ID = "baidu/Unlimited-OCR"
 
 
 class UnlimitedOCRBackend(OCRBackend):
-    """Unlimited-OCR backend — July 2026, Baidu one-shot long-horizon parsing."""
+    """Unlimited-OCR backend - July 2026, Baidu one-shot long-horizon parsing."""
 
     def __init__(self, config: OCRConfig):
         super().__init__("unlimited-ocr", config)
@@ -228,7 +228,7 @@ class UnlimitedOCRBackend(OCRBackend):
         caps.update(
             {
                 "name": "Unlimited-OCR",
-                "description": "Baidu Unlimited-OCR — Jul 2026, one-shot long-horizon document parsing",
+                "description": "Baidu Unlimited-OCR - Jul 2026, one-shot long-horizon document parsing",
                 "modes": ["text", "format", "ocr"],
                 "output_formats": ["text", "markdown"],
                 "gpu_support": True,
@@ -237,7 +237,7 @@ class UnlimitedOCRBackend(OCRBackend):
                     "Unbounded-length document parsing without image resolution limits",
                     "Two inference modes: gundam (cropped, 640px) and base (full, 1024px)",
                     "ParseBench 46.17 mean / 86.81 text content score",
-                    "MIT license — fully open source",
+                    "MIT license - fully open source",
                     "Built on DeepSeek-OCR lineage with Baidu's long-horizon improvements",
                     "Multi-page and PDF support via infer_multi",
                 ],

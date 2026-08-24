@@ -67,7 +67,7 @@ _PAGE_PROMPT = (
 
 
 class OlmOCR2Backend(OCRBackend):
-    """olmOCR-2 backend — October 2025, best for academic/scientific documents."""
+    """olmOCR-2 backend - October 2025, best for academic/scientific documents."""
 
     def __init__(self, config: OCRConfig):
         super().__init__("olmocr-2", config)
@@ -151,7 +151,7 @@ class OlmOCR2Backend(OCRBackend):
             conf = float(token_probs.prod().item() ** (1.0 / len(generated)))
             return round(conf, 4)
         except Exception:
-            logger.debug("Confidence computation failed — falling back to 0.85", exc_info=True)
+            logger.debug("Confidence computation failed - falling back to 0.85", exc_info=True)
             return 0.85
 
     def _build_messages(
@@ -239,7 +239,7 @@ class OlmOCR2Backend(OCRBackend):
         custom_prompt: str | None = None,
         **kwargs,
     ) -> dict[str, Any]:
-        """Process a document — auto-routes PDFs to the page-rendering pipeline.
+        """Process a document - auto-routes PDFs to the page-rendering pipeline.
 
         Single images go through process_image; PDFs go through the
         pdf2image→page-by-page→markdown pipeline.
@@ -317,7 +317,7 @@ class OlmOCR2Backend(OCRBackend):
     ) -> dict[str, Any]:
         """Render PDF pages via pdf2image, OCR each page, assemble markdown.
 
-        This is the PDF pipeline that olmOCR is designed for — not a
+        This is the PDF pipeline that olmOCR is designed for - not a
         single-image fallback.  Each page is rendered and processed
         independently; results are joined with page separators.
         """
@@ -391,7 +391,7 @@ class OlmOCR2Backend(OCRBackend):
         caps.update(
             {
                 "name": "olmOCR-2",
-                "description": "Allen AI olmOCR-2 (Oct 2025) — PDF pipeline with real confidence",
+                "description": "Allen AI olmOCR-2 (Oct 2025) - PDF pipeline with real confidence",
                 "modes": ["text", "format", "pdf"],
                 "output_formats": ["text", "markdown", "latex"],
                 "gpu_support": True,

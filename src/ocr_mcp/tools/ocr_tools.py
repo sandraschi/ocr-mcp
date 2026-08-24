@@ -227,8 +227,13 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
                     config=config,
                 )
             elif operation == "validate_accuracy":
+                ocr_text_val = ""
+                if isinstance(ocr_result, dict):
+                    ocr_text_val = ocr_result.get("text", "")
+                elif isinstance(ocr_result, str):
+                    ocr_text_val = ocr_result
                 res_data = await _quality.validate_ocr_accuracy(
-                    ocr_text=ocr_result.get("text") if ocr_result else "",
+                    ocr_text=ocr_text_val,
                     expected_text=ground_truth if ground_truth else "",
                     validation_type=validation_type,
                 )

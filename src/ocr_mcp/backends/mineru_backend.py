@@ -27,7 +27,7 @@
 #
 
 """
-MinerU2.5 Backend — September 2025 / April 2026, opendatalab.
+MinerU2.5 Backend - September 2025 / April 2026, opendatalab.
 
 Coarse-to-fine document parsing VLM (1.2B params).  Uses the direct
 HuggingFace Transformers inference path.
@@ -37,7 +37,7 @@ HF models:
   - opendatalab/MinerU2.5-2509-1.2B      (v2.5, September 2025)
 
 Full document pipeline (PDF/DOCX/PPTX/XLSX) requires `pip install mineru`
-and is not integrated here yet — open a PR if you need it.
+and is not integrated here yet - open a PR if you need it.
 """
 
 import logging
@@ -53,7 +53,7 @@ _HF_MODEL_ID = "opendatalab/MinerU2.5-Pro-2604-1.2B"
 
 
 class MinerU25Backend(OCRBackend):
-    """MinerU2.5 backend — coarse-to-fine document parsing VLM (1.2B params)."""
+    """MinerU2.5 backend - coarse-to-fine document parsing VLM (1.2B params)."""
 
     def __init__(self, config: OCRConfig):
         super().__init__("mineru-2.5", config)
@@ -197,7 +197,7 @@ class MinerU25Backend(OCRBackend):
         caps.update(
             {
                 "name": "MinerU2.5",
-                "description": "MinerU2.5-Pro — Apr 2026, opendatalab coarse-to-fine document parsing VLM",
+                "description": "MinerU2.5-Pro - Apr 2026, opendatalab coarse-to-fine document parsing VLM",
                 "modes": ["text", "format"],
                 "output_formats": ["text", "markdown"],
                 "gpu_support": True,

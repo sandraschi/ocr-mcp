@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class DeepSeekOCR2Backend(OCRBackend):
-    """DeepSeek-OCR-2 backend — January 2026, Visual Causal Flow architecture."""
+    """DeepSeek-OCR-2 backend - January 2026, Visual Causal Flow architecture."""
 
     def __init__(self, config: OCRConfig):
         super().__init__("deepseek-ocr2", config)
@@ -176,7 +176,7 @@ class DeepSeekOCR2Backend(OCRBackend):
         caps.update(
             {
                 "name": "DeepSeek-OCR-2",
-                "description": "DeepSeek-OCR-2 — Jan 2026, Visual Causal Flow architecture",
+                "description": "DeepSeek-OCR-2 - Jan 2026, Visual Causal Flow architecture",
                 "modes": ["text", "format", "ocr"],
                 "output_formats": ["text", "markdown"],
                 "gpu_support": True,

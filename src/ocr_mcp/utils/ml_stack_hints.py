@@ -27,7 +27,7 @@ def emit_ml_stack_hints() -> None:
         if torch.cuda.is_available():
             if importlib.util.find_spec("flash_attn") is None:
                 logger.info(
-                    "GPU detected but flash-attn is not installed — large VLM backends (e.g. "
+                    "GPU detected but flash-attn is not installed - large VLM backends (e.g. "
                     "paddleocr-vl) may need much more VRAM. Optional: pip install flash-attn "
                     "(see docs/OCR_BACKEND_REQUIREMENTS.md)."
                 )

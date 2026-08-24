@@ -76,11 +76,11 @@ def get_help_content(level: str = "basic", topic: str | None = None) -> str:
             '- **Reconstruct form**: `process_document(operation="reconstruct_form", source_path="form.png")`\n'
             "- **Form workflow**: reconstruct_form -> libreoffice-mcp build_form_document -> fill & print\n\n"
             "## Common Backends\n"
-            "- **tesseract** — Fast CPU OCR, no GPU needed\n"
-            "- **easyocr** — Multi-language DL OCR with bounding boxes\n"
-            "- **olmocr-2** — Best for academic PDFs (7B VLM, needs GPU)\n"
-            "- **paddleocr-vl** — SOTA VL OCR, 109 languages\n"
-            "- **mistral-ocr** — Cloud API, no local GPU\n\n"
+            "- **tesseract** - Fast CPU OCR, no GPU needed\n"
+            "- **easyocr** - Multi-language DL OCR with bounding boxes\n"
+            "- **olmocr-2** - Best for academic PDFs (7B VLM, needs GPU)\n"
+            "- **paddleocr-vl** - SOTA VL OCR, 109 languages\n"
+            "- **mistral-ocr** - Cloud API, no local GPU\n\n"
             'Use `get_help(level="advanced")` for backend details and pipeline guides.'
         ),
         "advanced": (
@@ -92,7 +92,7 @@ def get_help_content(level: str = "basic", topic: str | None = None) -> str:
             "## PDF Processing\n"
             '- Single-image PDF: `process_document(source_path="file.pdf")`\n'
             '- Multi-page pipeline: use `manage_workflow(operation="process_batch_intelligent")`\n'
-            '  with `workflow_type="pdf_processing"` — renders all pages via pdf2image\n'
+            '  with `workflow_type="pdf_processing"` - renders all pages via pdf2image\n'
             "- The olmocr-2 backend has a dedicated `process_pdf()` method for arXiv papers\n\n"
             "## Pipelines\n"
             '- Create: `manage_workflow(operation="create_processing_pipeline", ...)`\n'
@@ -104,9 +104,9 @@ def get_help_content(level: str = "basic", topic: str | None = None) -> str:
             '- Free idle models: `manage_workflow(operation="manage_models")`\n'
             "- List loaded: use backend_manager or check server logs\n\n"
             "## Quality Assessment\n"
-            '- `process_document(operation="assess_quality")` — image readiness for OCR\n'
-            '- `process_document(operation="validate_accuracy")` — compare backends\n'
-            '- `process_document(operation="compare_backends")` — side-by-side output\n\n'
+            '- `process_document(operation="assess_quality")` - image readiness for OCR\n'
+            '- `process_document(operation="validate_accuracy")` - compare backends\n'
+            '- `process_document(operation="compare_backends")` - side-by-side output\n\n'
             "## Form Reconstruction\n"
             "The form reconstruction pipeline bridges ocr-mcp with libreoffice-mcp:\n\n"
             "1. **Scan** the form: `operate_scanner(operation='scan_document', ...)`\n"
@@ -213,7 +213,7 @@ async def _process_pdf_document(
     save_intermediates: bool,
     backend_manager: Any,
 ) -> dict[str, Any]:
-    """Process PDF document — renders pages to images, then OCRs each page."""
+    """Process PDF document - renders pages to images, then OCRs each page."""
     try:
         from pathlib import Path
 
@@ -265,7 +265,7 @@ async def _process_image_document(
     save_intermediates: bool,
     backend_manager: Any,
 ) -> dict[str, Any]:
-    """Process image document — run image quality check first, enhance if needed, then OCR."""
+    """Process image document - run image quality check first, enhance if needed, then OCR."""
     try:
         from . import _quality as quality_mod
 

@@ -1,4 +1,4 @@
-"""Book pipeline portmanteau tool — ingest scanned pages to EPUB.
+"""Book pipeline portmanteau tool - ingest scanned pages to EPUB.
 
 Operations:
 - detect_chapters: Find chapter boundaries in OCR page text.
@@ -52,12 +52,12 @@ def register_book_pipeline_tool(app, backend_manager: BackendManager | None, con
         """Ingest scanned book pages to EPUB via chapter detection + assembly.
 
         ## Operations
-        - detect_chapters: Pass pages=[{page_number, text, confidence}] — returns
+        - detect_chapters: Pass pages=[{page_number, text, confidence}] - returns
           chapter boundaries with title, start_page, end_page, confidence.
-        - detect_metadata: Pass pages=[...] from first 3 pages — returns title, author.
+        - detect_metadata: Pass pages=[...] from first 3 pages - returns title, author.
         - assemble_epub: Pass chapters=[{chapter_number, title, text}] plus title/author.
           Returns path, size_bytes, chapter_count.
-        - full_pipeline: Pass image_paths=[...] — OCRs all pages, detects chapters,
+        - full_pipeline: Pass image_paths=[...] - OCRs all pages, detects chapters,
           assembles EPUB, returns the path.
 
         ## Return Format
@@ -82,7 +82,9 @@ def register_book_pipeline_tool(app, backend_manager: BackendManager | None, con
                 )
 
             if op == "full_pipeline":
-                return await _handle_full_pipeline(image_paths, backend, title, author, output_path, language, ctx)
+                return await _handle_full_pipeline(
+                    image_paths, backend, title, author, output_path, language, ctx, backend_manager
+                )
 
             return ToolResponse(success=False, operation=op, summary=f"Unknown operation: {op}")
 
@@ -151,13 +153,15 @@ async def _handle_assemble_epub(
     return ToolResponse(success=False, operation="assemble_epub", summary=result.get("error", "Assembly failed"))
 
 
-async def _handle_full_pipeline(image_paths, backend, title, author, output_path, language, ctx) -> ToolResponse:
+async def _handle_full_pipeline(
+    image_paths, backend, title, author, output_path, language, ctx, backend_manager=None
+) -> ToolResponse:
     if not SERVICES_OK:
         return ToolResponse(success=False, operation="full_pipeline", summary="Services not available")
     if not image_paths:
         return ToolResponse(success=False, operation="full_pipeline", summary="No image paths provided")
 
-    bm = getattr(ctx, "_backend_manager", None)
+    bm = backend_manager or getattr(ctx, "_backend_manager", None)
     if not bm:
         return ToolResponse(
             success=False, operation="full_pipeline", summary="Backend manager not available in context"

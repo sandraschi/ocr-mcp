@@ -213,6 +213,49 @@ class DocumentProcessor:
 
         return images_info
 
+    def extract_pdf_digital_text(self, pdf_path: str | Path) -> dict[str, Any] | None:
+        """Inspect PDF for embedded digital text.
+
+        If text density across pages is >= 95%, returns extracted text directly,
+        allowing callers to bypass visual VLM / OCR processing.
+        """
+        if not PYMUPDF_AVAILABLE:
+            return None
+
+        try:
+            doc = fitz.open(str(pdf_path))
+            total_pages = len(doc)
+            if total_pages == 0:
+                doc.close()
+                return None
+
+            page_texts = []
+            non_empty_count = 0
+            for page in doc:
+                text = page.get_text().strip()
+                page_texts.append(text)
+                if len(text) > 20:
+                    non_empty_count += 1
+
+            doc.close()
+
+            density = non_empty_count / total_pages
+            if density >= 0.95:
+                combined_text = "\n\n".join(page_texts)
+                return {
+                    "success": True,
+                    "is_digital_pdf": True,
+                    "digital_text_density": round(density, 2),
+                    "text": combined_text,
+                    "confidence": 0.99,
+                    "page_count": total_pages,
+                    "pages": [{"page_number": i + 1, "text": t} for i, t in enumerate(page_texts)],
+                }
+            return None
+        except Exception as e:
+            logger.warning("Digital PDF text extraction check failed: %s", e)
+            return None
+
     def _extract_cbz_images(self, cbz_path: Path, **kwargs) -> list[dict[str, Any]]:
         """Extract images from CBZ (ZIP) comic archive."""
         images_info = []

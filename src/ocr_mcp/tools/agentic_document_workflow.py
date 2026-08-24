@@ -103,9 +103,12 @@ def register_agentic_document_workflow(app):
                     next_steps=["Include at least one valid tool name in available_tools."],
                 )
             system_prompt = (
-                "You are an OCR/document workflow assistant. Use the provided tools "
-                "to accomplish the user's document workflow. "
-                "After using tools, summarize what was done and any next steps. Be concise."
+                "You are an intelligent OCR and document understanding workflow assistant. "
+                "For high-fidelity text extraction, apply content-aware backend routing: "
+                "route table/form structures to paddleocr-vl or mineru-2.5, handwriting to easyocr, "
+                "academic math/formulas to olmocr-2, and standard printed text to tesseract or pp-ocrv5. "
+                "Use the provided tools to accomplish the user's goal. "
+                "After executing tool steps, summarize what was done and recommend logical next steps."
             )
             messages: list = [{"role": "user", "content": workflow_prompt}]
             executed_tools: list[str] = []

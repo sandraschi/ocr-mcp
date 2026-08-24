@@ -169,7 +169,7 @@ class MistralOCRBackend(OCRBackend):
                     "text": content_str,
                     "confidence": heuristic_conf,
                     "confidence_source": "text_quality_heuristic",
-                    "confidence_note": "Cloud API — logits not exposed; based on alphanumeric density",
+                    "confidence_note": "Cloud API - logits not exposed; based on alphanumeric density",
                     "backend": "mistral-ocr",
                     "model": model,
                     "mode": mode,

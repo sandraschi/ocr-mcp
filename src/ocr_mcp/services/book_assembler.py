@@ -109,3 +109,54 @@ def assemble_epub(
         "size_bytes": size,
         "chapter_count": len(chapters),
     }
+
+
+def assemble_markdown(
+    title: str,
+    author: str,
+    chapters: list[dict[str, Any]],
+    output_path: str | Path = "",
+) -> dict[str, Any]:
+    """Build a consolidated Markdown document from chapters.
+
+    Args:
+        title: Book title.
+        author: Author name.
+        chapters: List of {chapter_number, title, text} dicts.
+        output_path: Output file path. If empty, auto-generate.
+
+    Returns:
+        {success, path, size_bytes, chapter_count, format}
+    """
+    if not chapters:
+        return {"success": False, "error": "No chapters provided"}
+
+    parts = [f"# {title.strip() or 'Untitled'}\n"]
+    if author:
+        parts.append(f"**Author**: {author.strip()}\n\n---\n")
+
+    for ch in chapters:
+        chap_title = ch.get("title", f"Chapter {ch.get('chapter_number', 1)}")
+        chap_text = ch.get("text", "")
+        parts.append(f"\n## {chap_title}\n\n{chap_text.strip()}\n")
+
+    full_md = "\n".join(parts)
+
+    if not output_path:
+        safe_title = "".join(c for c in title if c.isalnum() or c in " -_").strip() or "book"
+        output_path = f"{safe_title[:60]}.md"
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(full_md, encoding="utf-8")
+    size = output_path.stat().st_size
+
+    logger.info("Markdown written: %s (%d bytes, %d chapters)", output_path, size, len(chapters))
+
+    return {
+        "success": True,
+        "path": str(output_path),
+        "size_bytes": size,
+        "chapter_count": len(chapters),
+        "format": "markdown",
+    }

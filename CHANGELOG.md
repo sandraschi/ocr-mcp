@@ -1,4 +1,21 @@
 
+## [0.3.0-beta] — 2026-08-25
+
+### Added
+- **Digital PDF Fast Text Extraction**: `extract_pdf_digital_text()` in `DocumentProcessor` checks PDF text density. If $\ge 95\%$ digital text is found, native text is extracted directly via PyMuPDF (`fitz`), bypassing visual OCR and reducing execution time significantly.
+- **Multi-Format Book Export**: Added `assemble_markdown()` to `book_assembler.py` to allow exporting scanned books to consolidated Markdown documents in addition to EPUB.
+- **Hybrid Content Auto-Routing**: Added domain-specific backend routing instructions (tables $\rightarrow$ PaddleOCR-VL/MinerU, math $\rightarrow$ olmOCR, handwriting $\rightarrow$ EasyOCR, body text $\rightarrow$ PP-OCRv5/Tesseract) to `execute_agentic_workflow`.
+- **Corpus Auto-Indexing**: Added `auto_index=True` option to `process_document` to automatically index extracted text into SQLite `manage_corpus`.
+- **Unified Ground Truth Diff Generator**: Added `diff_patch` generation to `validate_ocr_accuracy()` in `_quality.py`.
+
+### Fixed
+- **[CRITICAL] Backend Lazy Loading Probing**: Refactored `BackendManager._is_backend_available()` to probe module specs (`importlib.util.find_spec`) without instantiating backend classes or triggering premature PyTorch imports on startup.
+- **[CRITICAL] `ingest_book(full_pipeline)` Context Bug**: Fixed context resolution by passing `backend_manager` instance directly to `_handle_full_pipeline`.
+- **[HIGH] Async Event Loop Non-Blocking**: Offloaded synchronous model engine loading and tensor inference to worker threads via `asyncio.to_thread`.
+- **[HIGH] FastAPI Lifespan Handler**: Replaced deprecated `@app.on_event` startup/shutdown handlers in `backend/app.py` with FastAPI `asynccontextmanager` `app_lifespan`.
+- **[MEDIUM] `validate_accuracy` Input Safety**: Updated `ocr_result` handling in `ocr_tools.py` to safely process both `dict` and `str` inputs.
+- **[MEDIUM] VRAM Memory Protection**: Fixed logger format string bug in `ModelManager._check_memory_pressure()` to reliably trigger LRU model unloading when VRAM usage exceeds 85%.
+
 ## [0.2.0-beta] — 2026-07-21
 
 ### Added

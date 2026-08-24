@@ -1,4 +1,4 @@
-"""Scanner watcher service — auto-detect documents on flatbed.
+"""Scanner watcher service - auto-detect documents on flatbed.
 
 Two detection modes:
   - preview: Poll low-res preview, detect content changes via image hash (universal).

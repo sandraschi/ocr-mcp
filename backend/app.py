@@ -40,6 +40,7 @@ import os
 import tempfile
 import time
 import uuid
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -201,11 +202,38 @@ _mem_handler.addFilter(_RingNoiseFilter())
 _mem_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
 logging.getLogger().addHandler(_mem_handler)
 
+
+@asynccontextmanager
+async def app_lifespan(app_instance: FastAPI):
+    """FastAPI lifespan manager replacing deprecated on_event handlers."""
+    if demo_mode:
+        logger.info("Running in demo mode")
+    else:
+        _silence_third_party_loggers()
+        logger.info("Backend starting (real mode)...")
+
+    yield
+
+    # Cleanup on shutdown
+    for _jid, job in list(processing_jobs.items()):
+        for key in ("file_path", "file_paths"):
+            paths = job.get(key)
+            if paths is None:
+                continue
+            for path in paths if isinstance(paths, list) else [paths]:
+                try:
+                    if path and os.path.exists(path):
+                        os.unlink(path)
+                except OSError:
+                    pass
+
+
 # Initialize FastAPI app
 app = FastAPI(
     title="OCR-MCP Web Interface",
     description="Web interface for OCR-MCP document processing",
     version="0.1.0",
+    lifespan=app_lifespan,
 )
 
 # Mount FastMCP streamable HTTP endpoint (dual transport: REST + MCP on one port)
@@ -281,34 +309,6 @@ except Exception as e:
 
     logger.error("Failed to initialize global managers: %s", e)
     traceback.print_exc()
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialization on startup"""
-    if demo_mode:
-        logger.info("Running in demo mode")
-        return
-
-    # Re-apply after any late-importing deps may have tweaked loggers
-    _silence_third_party_loggers()
-    logger.info("Backend starting (real mode)...")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup on shutdown"""
-    for _jid, job in list(processing_jobs.items()):
-        for key in ("file_path", "file_paths"):
-            paths = job.get(key)
-            if paths is None:
-                continue
-            for path in paths if isinstance(paths, list) else [paths]:
-                try:
-                    if path and os.path.exists(path):
-                        os.unlink(path)
-                except OSError:
-                    pass
 
 
 # Remove the home route since the React app is now served statically

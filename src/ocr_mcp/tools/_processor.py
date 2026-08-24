@@ -52,6 +52,7 @@ async def process_document(
     mode: str = "text",
     enhance: bool = True,
     region: list[int] | None = None,
+    auto_index: bool = False,
     backend_manager: BackendManager | None = None,
     config: OCRConfig | None = None,
 ) -> dict[str, Any]:
@@ -85,6 +86,24 @@ async def process_document(
             backend = config.default_backend if config else "tesseract"
 
         start_time = time.time()
+
+        # Digital PDF fast bypass check
+        if source_path.lower().endswith(".pdf"):
+            try:
+                from ..backends.document_processor import document_processor
+
+                digital_res = document_processor.extract_pdf_digital_text(source_path)
+                if digital_res and digital_res.get("success"):
+                    exec_t = round(time.time() - start_time, 2)
+                    digital_res["execution_time"] = exec_t
+                    digital_res["backend_used"] = "pymupdf_digital_bypass"
+                    digital_res["recommendations"] = [
+                        "Extracted clean embedded digital text from PDF; visual OCR bypassed."
+                    ]
+                    digital_res["next_steps"] = ["document_processing(operation='assess_quality')"]
+                    return digital_res
+            except Exception as pdf_err:
+                logger.debug("Digital PDF extraction check error: %s", pdf_err)
 
         # Process with backend manager
         result = await backend_manager.process_with_backend(
@@ -145,6 +164,24 @@ async def process_document(
                     "image_management(operation='convert')",
                 ],
             }
+
+            if auto_index and config:
+                try:
+                    from pathlib import Path
+
+                    from . import _corpus
+
+                    await _corpus.handle_corpus_op(
+                        operation="register",
+                        config=config,
+                        source_path=source_path,
+                        title=Path(source_path).name,
+                        ocr_text=text_content,
+                        backend=backend_used,
+                    )
+                    recommendations.append("Document and OCR text automatically registered in corpus index")
+                except Exception as c_err:
+                    logger.warning("Auto-indexing corpus failed: %s", c_err)
 
             return enhanced_result
         else:
