@@ -1,6 +1,6 @@
 {
     "name": "ocr-mcp",
-    "version": "0.2.0-beta",
+    "version": "0.3.0-beta",
     "type": "server",
     "runtime": "python",
     "entry_point": "src/ocr_mcp/server.py",
@@ -24,6 +24,9 @@
     "build": {
         "include": [
             "src/**/*",
+            "assets/**/*",
+            "manifest.json",
+            "mcpb.json",
             "README.md",
             "LICENSE"
         ],
@@ -36,13 +39,12 @@
             "dist/",
             "build/",
             "target/",
-            "docs/",
-            "scripts/"
+            "docs/"
         ]
     },
     "scripts": {
-        "build": "mcpb build",
-        "pack": "mcpb pack . dist/ocr-mcp.mcpb",
-        "test": "python -m pytest"
+        "build": "uv run python scripts/pack_mcpb.py",
+        "pack": "uv run python scripts/pack_mcpb.py",
+        "test": "uv run pytest"
     }
 }
