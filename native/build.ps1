@@ -52,7 +52,7 @@ if (Test-Path $specFile) {
             Write-Host "  Patched fastmcp metadata fallback" -ForegroundColor Yellow
         }
     }
-    uv run --with pyinstaller python -m PyInstaller "$specFile" --clean --noconfirm
+    uv run --with pyinstaller python -m PyInstaller "$specFile" --workpath "$env:TEMP\ocr-mcp-build\work" --distpath "$Root\dist" --clean --noconfirm
     if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed with exit code $LASTEXITCODE" }
     Pop-Location
 } else {

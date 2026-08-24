@@ -1,12 +1,12 @@
 # OCR-MCP — Product Requirements Document
 
-**Version:** 1.2
+**Version:** 1.3
 **Status:** Active
-**Last Updated:** 2026-07-25
+**Last Updated:** 2026-08-25
 
 ## 1. Product Overview
 
-OCR-MCP is a unified OCR platform with two surfaces: a **streamlined web application** for interactive document processing and a **FastMCP 3.1 MCP server** for agentic IDEs (Claude, Cursor, Windsurf). Both share the same 14 OCR backends, WIA scanner integration, and processing pipelines.
+OCR-MCP is a unified OCR platform with two surfaces: a **streamlined web application** for interactive document processing and a **FastMCP 3.4+ MCP server** for agentic IDEs (Claude, Cursor, Windsurf). Both share the same 14 OCR backends, WIA scanner integration, book ingestion pipelines, and agentic sampling workflows.
 
 ### 1.1 Target Users
 
@@ -19,10 +19,13 @@ OCR-MCP is a unified OCR platform with two surfaces: a **streamlined web applica
 ### 1.2 Core Value Proposition
 
 - **One-click OCR:** Scanner or file -> Unlimited-OCR backend -> inline result. No multi-page navigation.
-- **14 OCR backends:** From lightweight (Tesseract, EasyOCR) to SOTA VLMs (Unlimited-OCR, PaddleOCR-VL, Nemotron VL).
+- **14 OCR backends:** From lightweight (Tesseract, EasyOCR) to SOTA VLMs (Unlimited-OCR, PaddleOCR-VL, Nemotron VL, DeepSeek-OCR-2).
+- **Fast Dependency Probing Lazy Loading:** Probes module specs without instantiating heavy backends or loading PyTorch prematurely.
+- **Digital PDF Fast Bypass:** Native text extraction for PDFs with $\ge 95\%$ text density via PyMuPDF (`fitz`).
+- **Book Ingestion & Multi-Format Export:** Multi-page OCR -> chapter detection -> EPUB and Markdown assembly.
 - **Same backends, two surfaces:** What works in the webapp also works in the MCP server.
 - **Local-first:** All models run on your hardware (GPU optional). No cloud dependency unless you choose Mistral OCR.
-- **Form reconstruction:** Scan a paper form -> detect fields -> reconstruct as fillable ODT (via libreoffice-mcp) -> fill & print.
+- **Form Reconstruction & Overprinting:** Scan paper form -> detect fields & coordinates -> query values -> print entries-only overlay onto physical blank form or render full reconstructed document (via libreoffice-mcp bridge).
 
 ## 2. Functional Requirements
 
@@ -168,18 +171,19 @@ OCR-MCP is a unified OCR platform with two surfaces: a **streamlined web applica
 
 | Phase | Status | Features |
 |-------|--------|----------|
-| Core backends | Done | 14 backends, lazy loading, auto-selection |
+| Core backends | Done | 14 backends, fast dependency-spec probing lazy loading, auto-selection |
+| Digital PDF Bypass | Done | Native text extraction for PDFs with >= 95% text density via PyMuPDF |
 | Web app v1 | Done | Dashboard-first redesign, quick scan, inline results |
 | MCP server | Done | Portmanteau tools, dual transport, resources, prompts |
 | WIA scanner | Done | Flatbed scanning on Windows |
-| Batch/pipelines | Done | Quality optimizer, pipeline execution |
+| Batch/pipelines | Done | Quality optimizer, pipeline execution, auto-corpus indexing |
 | Skills directory | Done | SKILL.md + parameterized skill:// resources |
 | Prefab UI cards | Done | Health card, backends card |
-| Book pipeline | Done | Chapter detection, EPUB assembly, webapp page |
+| Book pipeline | Done | Chapter detection, EPUB & Markdown assembly, webapp page |
 | Auto-Scan watcher | Done | Preview-poll + button event detection |
-| Agentic workflows | Done | ctx.sample() + sample_step() fallback |
-| Form reconstruction | Planned | detect_forms enhancement, reconstruct_form assembly, libreoffice-mcp bridge, dual print modes |
-| Production packaging | In Progress | Tauri NSIS installer, PyInstaller sidecar |
+| Agentic workflows | Done | Hybrid content routing, ctx.sample() + sample_step() fallback |
+| Production packaging | Done | Standardized `.mcpb` bundle, PyInstaller sidecar, Tauri NSIS installer |
+| Form reconstruction | Specified | Field detection, coordinates, dual print modes (overlay & full form) via libreoffice-mcp bridge |
 | CUA-NSIS smoke tests | In Progress | Install -> launch -> verify -> uninstall |
 | Folder watcher (CZUR) | Future | Watch directory for new scan images |
 | TWAIN scanner | Future | Support non-WIA scanners |
