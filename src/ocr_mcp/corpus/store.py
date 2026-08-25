@@ -26,6 +26,8 @@
 #
 #
 
+# ruff: noqa: S608
+
 """
 SQLite-backed document corpus (v0).
 
@@ -279,6 +281,81 @@ class CorpusStore:
                     """,
                     (ocr_text_path, excerpt, backend, now, corpus_id),
                 )
+                conn.commit()
+            finally:
+                conn.close()
+        return {"success": True, "corpus_id": corpus_id}
+
+    def query_documents(
+        self,
+        query: str | None = None,
+        backend: str | None = None,
+        sort_by: str = "created_at",
+        sort_order: str = "desc",
+        limit: int = 50,
+        offset: int = 0,
+    ) -> dict[str, Any]:
+        """Query corpus with search, backend filtering, sorting, and pagination."""
+        conditions = []
+        params: list[Any] = []
+
+        if query and query.strip():
+            q = f"%{query.strip().lower()}%"
+            conditions.append(
+                "(lower(title) LIKE ? OR lower(source_path) LIKE ? OR lower(COALESCE(ocr_excerpt, '')) LIKE ? OR lower(tags) LIKE ?)"
+            )
+            params.extend([q, q, q, q])
+
+        if backend and backend.strip() and backend != "all":
+            conditions.append("backend = ?")
+            params.append(backend)
+
+        where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+
+        valid_sort_fields = {
+            "created_at": "created_at",
+            "title": "title",
+            "backend": "backend",
+            "updated_at": "updated_at",
+        }
+        sort_field = valid_sort_fields.get(sort_by, "created_at")
+        order = "DESC" if sort_order.lower() == "desc" else "ASC"
+
+        lim = max(1, min(limit, 200))
+        off = max(0, offset)
+
+        sql = f"""
+            SELECT id, source_path, title, tags, ocr_excerpt, backend, created_at, updated_at
+            FROM corpus_documents
+            {where_clause}
+            ORDER BY {sort_field} {order}
+            LIMIT ? OFFSET ?
+        """
+        exec_params = list(params)
+        exec_params.extend([lim, off])
+
+        with self._conn_lock:
+            conn = self._connect()
+            try:
+                rows = conn.execute(sql, exec_params).fetchall()
+                count_sql = f"SELECT COUNT(*) FROM corpus_documents {where_clause}"
+                total_count = conn.execute(count_sql, params).fetchone()[0]
+            finally:
+                conn.close()
+
+        results = []
+        for r in rows:
+            d = dict(r)
+            d["tags"] = json.loads(d["tags"] or "[]")
+            results.append(d)
+
+        return {"success": True, "total": total_count, "count": len(results), "results": results}
+
+    def delete_document(self, corpus_id: str) -> dict[str, Any]:
+        with self._conn_lock:
+            conn = self._connect()
+            try:
+                conn.execute("DELETE FROM corpus_documents WHERE id = ?", (corpus_id,))
                 conn.commit()
             finally:
                 conn.close()

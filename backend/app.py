@@ -2329,6 +2329,64 @@ async def api_book_pipeline(body: dict):
     }
 
 
+@app.get("/api/corpus")
+async def get_corpus_documents(
+    query: str | None = None,
+    backend: str | None = None,
+    sort_by: str = "created_at",
+    sort_order: str = "desc",
+    limit: int = 50,
+    offset: int = 0,
+):
+    """Query, search, filter, and sort corpus document depot."""
+    try:
+        from ocr_mcp.corpus.store import get_corpus_store
+
+        store = get_corpus_store(config.cache_dir / "corpus")
+        res = store.query_documents(
+            query=query,
+            backend=backend,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            limit=limit,
+            offset=offset,
+        )
+        return res
+    except Exception as e:
+        logger.error("Corpus query failed: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/corpus/{corpus_id}")
+async def get_corpus_document_detail(corpus_id: str):
+    """Get single document details from corpus store."""
+    try:
+        from ocr_mcp.corpus.store import get_corpus_store
+
+        store = get_corpus_store(config.cache_dir / "corpus")
+        res = store.get(corpus_id)
+        if not res.get("success"):
+            raise HTTPException(status_code=404, detail=res.get("error", "Document not found"))
+        return res
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/corpus/{corpus_id}")
+async def delete_corpus_document(corpus_id: str):
+    """Delete document entry from corpus store."""
+    try:
+        from ocr_mcp.corpus.store import get_corpus_store
+
+        store = get_corpus_store(config.cache_dir / "corpus")
+        res = store.delete_document(corpus_id)
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # Mount React app static files (defined after all API routes for proper precedence)
 if dist_dir.exists():
     # Mount static assets (JS, CSS, images, etc.)

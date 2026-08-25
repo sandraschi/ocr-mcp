@@ -3,6 +3,7 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  Database,
   FileEdit,
   GraduationCap,
   HelpCircle,
@@ -27,6 +28,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   const navItems = [
     { href: "/", label: "Dashboard", icon: LayoutDashboard, testId: "nav-dashboard" },
+    { href: "/depot", label: "Corpus Depot", icon: Database, testId: "nav-depot" },
     { href: "/scan-viewer", label: "Raw Scan", icon: Scan, testId: "nav-scan-viewer" },
     { href: "/book-pipeline", label: "Book Pipeline", icon: BookOpen, testId: "nav-book-pipeline" },
     { href: "/editor", label: "Editor", icon: FileEdit, testId: "nav-editor" },
