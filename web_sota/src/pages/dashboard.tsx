@@ -8,6 +8,7 @@ import {
   EyeOff,
   FileText,
   Loader2,
+  Printer,
   RefreshCw,
   Scan,
   ScanLine,
@@ -61,6 +62,7 @@ export function Dashboard() {
   const [copied, setCopied] = useState(false);
   const [watcherActive, setWatcherActive] = useState(false);
   const [watcherScans, setWatcherScans] = useState(0);
+  const [preservePhotocopyScan, setPreservePhotocopyScan] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -326,6 +328,78 @@ export function Dashboard() {
     }
   };
 
+  const handlePhotocopy = async () => {
+    if (!selectedScanner || scanners.length === 0) {
+      setError("No scanner selected or available. Please connect a scanner.");
+      return;
+    }
+    setError(null);
+    setStatusMsg("Photocopying: scanning document...");
+    setScanning(true);
+
+    try {
+      const scanForm = new FormData();
+      scanForm.append("device_id", selectedScanner);
+      scanForm.append("dpi", "300");
+      scanForm.append("color_mode", "Color");
+      scanForm.append("paper_size", "A4");
+
+      const scanRes = await fetch("/api/scan", { method: "POST", body: scanForm });
+      if (!scanRes.ok) throw new Error("Photocopy scan failed");
+      const scanData = await scanRes.json();
+      if (!scanData.success) throw new Error(scanData.message || "Scan failed");
+
+      const filename = scanData.image_info?.filename || scanData.filename;
+      const imageUrl = scanData.image_path;
+
+      if (preservePhotocopyScan) {
+        setLastScan({ imageUrl, filename });
+        try {
+          await fetch("/api/corpus/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              source_path: filename || imageUrl,
+              title: `Photocopy - ${new Date().toLocaleString()}`,
+              tags: ["photocopy", "raw-scan"],
+              backend: "wia-photocopy",
+            }),
+          });
+        } catch {
+          /* ignore register error */
+        }
+      }
+
+      setScanning(false);
+      setStatusMsg("Photocopy complete — opening print window...");
+
+      const printWin = window.open("", "_blank");
+      if (printWin) {
+        printWin.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Photocopy - ${filename || "scan"}</title>
+              <style>
+                @page { size: A4 portrait; margin: 0; }
+                body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; background: #fff; }
+                img { max-width: 100%; max-height: 100vh; object-fit: contain; }
+                @media print { body { margin: 0; } img { width: 100%; height: 100%; object-fit: contain; } }
+              </style>
+            </head>
+            <body>
+              <img src="${imageUrl}" onload="window.print(); window.close();" />
+            </body>
+          </html>
+        `);
+        printWin.document.close();
+      }
+    } catch (err: unknown) {
+      setScanning(false);
+      setError(err instanceof Error ? err.message : "Photocopy failed");
+    }
+  };
+
   const handleCopy = async () => {
     if (!ocrText) return;
     try {
@@ -491,6 +565,29 @@ export function Dashboard() {
               <Scan className="h-5 w-5" />
               Quick Scan (Raw)
             </button>
+
+            {/* Photocopy button */}
+            <button
+              onClick={handlePhotocopy}
+              disabled={scanning || scanners.length === 0}
+              data-testid="photocopy-btn"
+              title="Photocopy: Scan page via WIA and print immediately to your connected printer"
+              className="inline-flex items-center gap-2 rounded-lg bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 text-sm font-semibold transition-colors"
+            >
+              <Printer className="h-5 w-5" />
+              Photocopy
+            </button>
+
+            {/* Preserve raw scan toggle */}
+            <label className="inline-flex items-center gap-2 text-xs font-medium text-slate-300 cursor-pointer select-none border border-slate-800 bg-slate-900/80 px-3 py-2 rounded-md">
+              <input
+                type="checkbox"
+                checked={preservePhotocopyScan}
+                onChange={(e) => setPreservePhotocopyScan(e.target.checked)}
+                className="rounded bg-slate-950 border-slate-700 text-amber-500 focus:ring-amber-500 h-4 w-4"
+              />
+              Preserve Scan in Depot
+            </label>
 
             {/* Auto-scan watcher toggle */}
             <button

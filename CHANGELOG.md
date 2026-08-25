@@ -2,6 +2,7 @@
 ## [0.4.0-beta] — 2026-08-25
 
 ### Added
+- **1-Click Photocopy Button**: Added a dedicated **Photocopy** button on the Dashboard for immediate 1-click WIA scanning and direct physical printer output with a **Preserve Scan in Depot** toggle option to keep or discard the raw scan file.
 - **Preprinted Form Overlay Filler (`/forms`)**: Dedicated 4-step webapp workflow for official preprinted paper forms (e.g. **Austrian Meldezettel**). Features WIA empty form scanning, layout OCR field elicitation, interactive text field input querying, dual print mode (overlay-only vs full document print), and 1-click template saving to Corpus Depot.
 - **Searchable, Sortable, Filterable Corpus Depot (`/depot`)**: Dedicated SQLite document & form layout repository with full-text search, multi-backend filtering, sorting (date, title, backend), document drawer, and 1-click template reload.
 - **Quick Scan Raw Webpage (`/scan-viewer`)**: One-click raw document scan page with Print, Download/Export, Email, Discord Link embed, and Copy URL action bar.
