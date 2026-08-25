@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Database,
   FileEdit,
+  FileSpreadsheet,
   GraduationCap,
   HelpCircle,
   LayoutDashboard,
@@ -28,6 +29,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   const navItems = [
     { href: "/", label: "Dashboard", icon: LayoutDashboard, testId: "nav-dashboard" },
+    { href: "/forms", label: "Form Filler", icon: FileSpreadsheet, testId: "nav-forms" },
     { href: "/depot", label: "Corpus Depot", icon: Database, testId: "nav-depot" },
     { href: "/scan-viewer", label: "Raw Scan", icon: Scan, testId: "nav-scan-viewer" },
     { href: "/book-pipeline", label: "Book Pipeline", icon: BookOpen, testId: "nav-book-pipeline" },

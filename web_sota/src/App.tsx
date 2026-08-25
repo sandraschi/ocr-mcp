@@ -5,6 +5,7 @@ import { Chat } from "@/pages/chat";
 import { Dashboard } from "@/pages/dashboard";
 import { Depot } from "@/pages/depot";
 import { Editor } from "@/pages/editor";
+import { FormFillerPage } from "@/pages/form-filler";
 import { Help } from "@/pages/help";
 import { Logger } from "@/pages/logger";
 import { ScanViewerPage } from "@/pages/scan-viewer";
@@ -19,6 +20,7 @@ function App() {
       <AppLayout>
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/forms" element={<FormFillerPage />} />
           <Route path="/depot" element={<Depot />} />
           <Route path="/scan-viewer" element={<ScanViewerPage />} />
           <Route path="/book-pipeline" element={<BookPipeline />} />
