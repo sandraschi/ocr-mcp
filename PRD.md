@@ -1,18 +1,19 @@
 # OCR-MCP — Product Requirements Document
 
-**Version:** 1.3
+**Version:** 1.4
 **Status:** Active
 **Last Updated:** 2026-08-25
 
 ## 1. Product Overview
 
-OCR-MCP is a unified OCR platform with two surfaces: a **streamlined web application** for interactive document processing and a **FastMCP 3.4+ MCP server** for agentic IDEs (Claude, Cursor, Windsurf). Both share the same 14 OCR backends, WIA scanner integration, book ingestion pipelines, and agentic sampling workflows.
+OCR-MCP is a unified OCR platform with two surfaces: a **streamlined web application** for interactive document processing and a **FastMCP 3.4+ MCP server** for agentic IDEs (Claude, Cursor, Windsurf). Both share the same 14 OCR backends, WIA scanner integration, book ingestion pipelines, preprinted form overlay filler, searchable corpus depot, and agentic sampling workflows.
 
 ### 1.1 Target Users
 
 | User | Primary Surface | Use Case |
 |------|----------------|----------|
 | **End users** | Web app (dashboard) | Drag-and-drop or scan a document, click one button, get text |
+| **Form filers** | Web app (`/forms`) | Fill official preprinted paper forms (e.g. **Austrian Meldezettel**) without handwriting errors |
 | **Developers / agents** | MCP server (stdio) | Integrate OCR into agent workflows, batch processing, CI/CD |
 | **Power users** | Both | Settings, Mistral API config, backend probing, activity debugging |
 
@@ -21,11 +22,12 @@ OCR-MCP is a unified OCR platform with two surfaces: a **streamlined web applica
 - **One-click OCR:** Scanner or file -> Unlimited-OCR backend -> inline result. No multi-page navigation.
 - **14 OCR backends:** From lightweight (Tesseract, EasyOCR) to SOTA VLMs (Unlimited-OCR, PaddleOCR-VL, Nemotron VL, DeepSeek-OCR-2).
 - **Fast Dependency Probing Lazy Loading:** Probes module specs without instantiating heavy backends or loading PyTorch prematurely.
+- **Preprinted Form Overlay Filler (`/forms`):** 4-step workflow for forms like the **Austrian Meldezettel** (Scan Form -> Elicit Fields -> Query Input Data -> Print Overlay onto physical paper sheet).
+- **Searchable / Sortable / Filterable Corpus Depot (`/depot`):** SQLite document & form layout template repository with full-text search, backend filtering, and 1-click template reload.
 - **Digital PDF Fast Bypass:** Native text extraction for PDFs with $\ge 95\%$ text density via PyMuPDF (`fitz`).
 - **Book Ingestion & Multi-Format Export:** Multi-page OCR -> chapter detection -> EPUB and Markdown assembly.
 - **Same backends, two surfaces:** What works in the webapp also works in the MCP server.
 - **Local-first:** All models run on your hardware (GPU optional). No cloud dependency unless you choose Mistral OCR.
-- **Form Reconstruction & Overprinting:** Scan paper form -> detect fields & coordinates -> query values -> print entries-only overlay onto physical blank form or render full reconstructed document (via libreoffice-mcp bridge).
 
 ## 2. Functional Requirements
 
@@ -34,15 +36,9 @@ OCR-MCP is a unified OCR platform with two surfaces: a **streamlined web applica
 | Feature | Priority | Description |
 |---------|----------|-------------|
 | Quick Scan & OCR | P0 | One button: pick scanner or drop file, select backend, click. Result appears inline. |
-| File drop zone | P0 | Drag-and-drop or click to browse (images + PDF). |
-| Scanner integration | P0 | WIA 2.0 flatbed scanner control (Windows). |
-| Inline OCR result | P0 | Editable textarea with Copy / .txt / .md export. |
-| Live KPI cards | P1 | Server health, tool count, backend availability from `/api/health`. |
-| Backend selector | P1 | Dropdown with auto-detected available backends. |
-| Activity log | P1 | Job status and history for debugging. |
-| Settings | P1 | Default backend, Mistral API key, backend/scanner lists. |
-| Help | P2 | In-app documentation. |
-| Editor (standalone) | P2 | Full text view with JSON/CSV/XML export. |
+| Quick Scan (Raw) | P0 | One button: scan raw document and open in Raw Scan Webpage with Print, Export, Email & Discord sharing. |
+| Form Filler Webpage (`/forms`) | P0 | Dedicated 4-step preprinted form workflow (e.g., **Austrian Meldezettel**). Elicit field boxes, query text inputs, print overlay only on preprinted paper. |
+| Corpus Depot (`/depot`) | P0 | Searchable, sortable, filterable SQLite repository for raws, OCR results, and saved form templates. |
 
 ### 2.2 MCP Server
 

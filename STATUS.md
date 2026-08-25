@@ -20,11 +20,14 @@
 ## What's Working
 
 ### Webapp
-- Dashboard: file drop zone, scanner selector, backend selector, Quick Scan & OCR button, **Auto-Scan toggle**
+- Dashboard: file drop zone, scanner selector, backend selector, Quick Scan & OCR button, **Quick Scan (Raw)** button, **Auto-Scan toggle**
+- **Form Filler page (`/forms`)**: 4-step workflow for preprinted paper forms (e.g. **Austrian Meldezettel**). Elicit field boxes, query text inputs, print overlay-only on physical preprinted paper, and save templates to Corpus Depot.
+- **Corpus Depot page (`/depot`)**: Searchable, sortable, filterable SQLite repository for raws, OCR results, and saved form templates with 1-click reload.
+- **Raw Scan page (`/scan-viewer`)**: Interactive raw scan viewer with Print, Export, Email, Discord Link, and Copy URL action bar.
 - Inline OCR result with Copy / .txt / .md export
 - Live KPI cards from `/api/health` (server, tool count, backend availability)
 - Backend health indicator in topbar (green ping / red / gray)
-- Sidebar: 6 items (Dashboard, **Book Pipeline**, Editor, Activity, Settings, Help)
+- Sidebar: Dashboard, Form Filler, Corpus Depot, Raw Scan, Book Pipeline, Editor, Activity, Settings, Help
 - **Book Pipeline page**: select page images, OCR batch, detect chapters, assemble EPUB & Markdown
 - Editor page: standalone text view with JSON/CSV/XML export
 - Activity page: job status polling and history

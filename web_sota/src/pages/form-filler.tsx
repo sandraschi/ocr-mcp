@@ -7,6 +7,7 @@ import {
   Plus,
   Printer,
   RotateCcw,
+  Save,
   Scan,
   Sparkles,
   Trash2,
@@ -177,6 +178,38 @@ export function FormFillerPage() {
   const deleteField = (id: string) => {
     setFields((prev) => prev.filter((f) => f.id !== id));
     if (selectedFieldId === id) setSelectedFieldId(null);
+  };
+
+  // Save Analyzed Form Template to Depot
+  const handleSaveTemplateToDepot = async () => {
+    if (!formImage) return;
+    const title = prompt("Enter Form Template Title:", formFilename || "Austrian Meldezettel (Meldebestätigung)");
+    if (!title) return;
+
+    try {
+      const res = await fetch("/api/corpus/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source_path: formFilename || `form_templates/${title.toLowerCase().replace(/\s+/g, "_")}.png`,
+          title: title,
+          tags: ["form-template", "meldezettel", "preprinted-form"],
+          metadata: {
+            is_form_template: true,
+            fields: fields,
+            form_image_url: formImage,
+          },
+          backend: "form-filler-overlay",
+        }),
+      });
+      if (res.ok) {
+        alert(`Form template "${title}" saved to Corpus Depot! You can reload it anytime.`);
+      } else {
+        alert("Failed to save template to Depot.");
+      }
+    } catch (err: unknown) {
+      alert(`Save error: ${err instanceof Error ? err.message : "Failed to save"}`);
+    }
   };
 
   // Print Form (Dual Print Mode)
@@ -442,19 +475,30 @@ export function FormFillerPage() {
                     <Label className="text-xs font-bold text-slate-300 uppercase tracking-wider">
                       Fill Field Contents
                     </Label>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setFields((prev) => [
-                          ...prev,
-                          { id: `f_${Date.now()}`, label: "New Field", value: "", x: 25, y: 50, fontSize: 14 },
-                        ])
-                      }
-                      className="h-7 text-xs border-slate-700 bg-slate-800 text-slate-300 gap-1"
-                    >
-                      <Plus className="w-3 h-3" /> Add Field
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSaveTemplateToDepot}
+                        className="h-7 text-xs border-slate-700 bg-slate-800 text-emerald-400 gap-1"
+                        title="Save form layout & field definitions into Corpus Depot for tomorrow"
+                      >
+                        <Save className="w-3 h-3" /> Save to Depot
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setFields((prev) => [
+                            ...prev,
+                            { id: `f_${Date.now()}`, label: "New Field", value: "", x: 25, y: 50, fontSize: 14 },
+                          ])
+                        }
+                        className="h-7 text-xs border-slate-700 bg-slate-800 text-slate-300 gap-1"
+                      >
+                        <Plus className="w-3 h-3" /> Add Field
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">

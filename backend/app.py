@@ -2329,6 +2329,43 @@ async def api_book_pipeline(body: dict):
     }
 
 
+from pydantic import BaseModel
+
+
+class CorpusRegisterRequest(BaseModel):
+    source_path: str
+    title: str | None = None
+    tags: list[str] | None = None
+    metadata: dict[str, Any] | None = None
+    ocr_text: str | None = None
+    backend: str | None = None
+
+
+@app.post("/api/corpus/register")
+async def register_corpus_document(req: CorpusRegisterRequest):
+    """Register document or form template in corpus store."""
+    try:
+        from ocr_mcp.corpus.store import get_corpus_store
+
+        store = get_corpus_store(config.cache_dir / "corpus")
+        res = store.register(
+            source_path=req.source_path,
+            title=req.title,
+            tags=req.tags,
+            metadata=req.metadata,
+        )
+        if res.get("success") and (req.ocr_text or req.backend):
+            store.attach_ocr_result(
+                corpus_id=res["corpus_id"],
+                ocr_text=req.ocr_text,
+                backend=req.backend,
+            )
+        return res
+    except Exception as e:
+        logger.error("Corpus register failed: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/corpus")
 async def get_corpus_documents(
     query: str | None = None,
