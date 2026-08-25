@@ -9,6 +9,7 @@ import {
   FileText,
   Loader2,
   RefreshCw,
+  Scan,
   ScanLine,
   Server,
   Upload,
@@ -292,6 +293,39 @@ export function Dashboard() {
     }
   };
 
+  const handleQuickScanRaw = async () => {
+    if (!selectedScanner || scanners.length === 0) {
+      setError("No scanner selected or available. Please connect a scanner.");
+      return;
+    }
+    setError(null);
+    setStatusMsg("Scanning raw document...");
+    setScanning(true);
+
+    try {
+      const scanForm = new FormData();
+      scanForm.append("device_id", selectedScanner);
+      scanForm.append("dpi", "300");
+      scanForm.append("color_mode", "Color");
+      scanForm.append("paper_size", "A4");
+
+      const scanRes = await fetch("/api/scan", { method: "POST", body: scanForm });
+      if (!scanRes.ok) throw new Error("Raw scan failed");
+      const scanData = await scanRes.json();
+      if (!scanData.success) throw new Error(scanData.message || "Scan failed");
+
+      const filename = scanData.image_info?.filename || scanData.filename;
+      const imageUrl = scanData.image_path;
+      setLastScan({ imageUrl, filename });
+      setScanning(false);
+      setStatusMsg("Raw scan complete — opening Scan Viewer");
+      navigate("/scan-viewer");
+    } catch (err: unknown) {
+      setScanning(false);
+      setError(err instanceof Error ? err.message : "Raw scan failed");
+    }
+  };
+
   const handleCopy = async () => {
     if (!ocrText) return;
     try {
@@ -444,6 +478,18 @@ export function Dashboard() {
             >
               {scanning ? <Loader2 className="h-5 w-5 animate-spin" /> : <ScanLine className="h-5 w-5" />}
               {scanning ? "Processing..." : droppedFile ? "OCR File" : "Quick Scan & OCR"}
+            </button>
+
+            {/* Quick Scan (Raw) button */}
+            <button
+              onClick={handleQuickScanRaw}
+              disabled={scanning || scanners.length === 0}
+              data-testid="quick-scan-raw"
+              title="Perform raw scan and open in Raw Scan Viewer for printing, export, email, or sharing"
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 text-sm font-semibold transition-colors"
+            >
+              <Scan className="h-5 w-5" />
+              Quick Scan (Raw)
             </button>
 
             {/* Auto-scan watcher toggle */}

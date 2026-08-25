@@ -1,15 +1,4 @@
-import {
-  Activity,
-  Archive,
-  Book,
-  Brain,
-  LayoutGrid,
-  Mail,
-  MessageSquare,
-  MonitorPlay,
-  Bot,
-  Scan,
-} from "lucide-react";
+import { Activity, Archive, Book, Bot, Brain, LayoutGrid, Mail, MessageSquare, MonitorPlay, Scan } from "lucide-react";
 
 export interface AppEntry {
   id: string;

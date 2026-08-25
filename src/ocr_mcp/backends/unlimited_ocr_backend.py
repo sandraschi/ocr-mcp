@@ -81,6 +81,10 @@ class UnlimitedOCRBackend(OCRBackend):
             raise RuntimeError("Unlimited-OCR dependencies not available")
 
         try:
+            from ..utils.startup_bootstrap import patch_transformers_compatibility
+
+            patch_transformers_compatibility()
+
             import torch
             from transformers import AutoModel, AutoTokenizer
 

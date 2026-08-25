@@ -62,10 +62,34 @@ def run_ocr_startup_bootstrap(config: OCRConfig) -> None:
         except Exception as e:
             logger.warning("OCR pip auto-install failed: %s", e)
 
-    if not skip_core:
         try:
             from ocr_mcp.utils.ml_stack_hints import emit_ml_stack_hints
 
             emit_ml_stack_hints()
         except Exception as e:
             logger.debug("ML stack hints: %s", e)
+
+        patch_transformers_compatibility()
+
+
+def patch_transformers_compatibility() -> None:
+    """Patch legacy import symbols in transformers.utils for remote HF code compatibility."""
+    try:
+        import transformers.utils.import_utils as iu
+
+        if not hasattr(iu, "is_torch_fx_available"):
+
+            def is_torch_fx_available():
+                try:
+                    return True
+                except Exception:
+                    return False
+
+            iu.is_torch_fx_available = is_torch_fx_available
+
+        import transformers.utils as u
+
+        if not hasattr(u, "is_torch_fx_available"):
+            u.is_torch_fx_available = iu.is_torch_fx_available
+    except Exception as patch_err:
+        logger.debug("Transformers compatibility patch: %s", patch_err)
