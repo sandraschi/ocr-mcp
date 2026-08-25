@@ -329,6 +329,12 @@ class BackendManager:
             return importlib.util.find_spec("easyocr") is not None and importlib.util.find_spec("torch") is not None
         elif name in ("deepseek-ocr", "mistral-ocr"):
             return importlib.util.find_spec("httpx") is not None or importlib.util.find_spec("requests") is not None
+        elif name == "unlimited-ocr":
+            has_torch = importlib.util.find_spec("torch") is not None
+            has_tf = importlib.util.find_spec("transformers") is not None
+            has_addict = importlib.util.find_spec("addict") is not None
+            has_mpl = importlib.util.find_spec("matplotlib") is not None
+            return has_torch and has_tf and has_addict and has_mpl
         else:
             has_torch = importlib.util.find_spec("torch") is not None
             has_transformers = importlib.util.find_spec("transformers") is not None

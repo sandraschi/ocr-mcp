@@ -72,6 +72,9 @@ dependencies = [
     "pdf2image>=1.17.0",
     "watchfiles>=0.21.0",
     "prefab-ui>=0.14.0",
+    "addict>=2.4.0",
+    "easydict>=1.13",
+    "matplotlib>=3.11.1",
 ]
 
 [project.optional-dependencies]

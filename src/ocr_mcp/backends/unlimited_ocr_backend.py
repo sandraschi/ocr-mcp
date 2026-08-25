@@ -48,12 +48,15 @@ class UnlimitedOCRBackend(OCRBackend):
         self._transformers_ok = _iu.find_spec("transformers") is not None
         self._einops_ok = _iu.find_spec("einops") is not None
         self._pil_ok = _iu.find_spec("PIL") is not None
+        self._addict_ok = _iu.find_spec("addict") is not None
+        self._easydict_ok = _iu.find_spec("easydict") is not None
+        self._matplotlib_ok = _iu.find_spec("matplotlib") is not None
 
-        if self._torch_ok and self._transformers_ok and self._pil_ok:
+        if self._torch_ok and self._transformers_ok and self._pil_ok and self._addict_ok and self._matplotlib_ok:
             self._available = True
             if not self._einops_ok:
                 logger.warning(
-                    "Unlimited-OCR: einops not installed, may fail at runtime. pip install einops addict easydict"
+                    "Unlimited-OCR: einops not installed, may fail at runtime. pip install einops addict easydict matplotlib"
                 )
         else:
             self._available = False
@@ -63,6 +66,9 @@ class UnlimitedOCRBackend(OCRBackend):
                     ("torch", self._torch_ok),
                     ("transformers", self._transformers_ok),
                     ("PIL", self._pil_ok),
+                    ("addict", self._addict_ok),
+                    ("easydict", self._easydict_ok),
+                    ("matplotlib", self._matplotlib_ok),
                 ]
                 if not ok
             ]
