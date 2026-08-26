@@ -96,13 +96,130 @@ export function FormFillerPage() {
     }
   };
 
+  // ─── Known Form Templates ──────────────────────────────────
+  // Austrian Meldezettel (Anmeldung / Abmeldung / Ummeldung)
+  const MELDEZETTEL_FIELDS: FormField[] = [
+    { id: "mz01", label: "Familienname", value: "", x: 30, y: 16, fontSize: 12 },
+    { id: "mz02", label: "Vorname(n)", value: "", x: 30, y: 20, fontSize: 12 },
+    { id: "mz03", label: "Geburtsdatum", value: "", x: 30, y: 24, fontSize: 12 },
+    { id: "mz04", label: "Geburtsort", value: "", x: 70, y: 24, fontSize: 12 },
+    { id: "mz05", label: "Geschlecht", value: "", x: 30, y: 28, fontSize: 12 },
+    { id: "mz06", label: "Staatsangehörigkeit", value: "", x: 70, y: 28, fontSize: 12 },
+    { id: "mz07", label: "Familienstand", value: "", x: 30, y: 32, fontSize: 12 },
+    { id: "mz08", label: "Religionsbekenntnis", value: "", x: 70, y: 32, fontSize: 12 },
+    { id: "mz09", label: "Reisepass-/Personalausweisnr.", value: "", x: 30, y: 36, fontSize: 11 },
+    { id: "mz10", label: "ZMR-Zahl", value: "", x: 70, y: 36, fontSize: 12 },
+    { id: "mz11", label: "Straße / Hausnummer / Stiege / Tür", value: "", x: 30, y: 44, fontSize: 12 },
+    { id: "mz12", label: "PLZ", value: "", x: 30, y: 48, fontSize: 12 },
+    { id: "mz13", label: "Ort (Gemeinde)", value: "", x: 50, y: 48, fontSize: 12 },
+    { id: "mz14", label: "Bisherige Adresse (Straße / Hausnr.)", value: "", x: 30, y: 56, fontSize: 11 },
+    { id: "mz15", label: "Bisherige PLZ / Ort", value: "", x: 30, y: 60, fontSize: 12 },
+    {
+      id: "mz16",
+      label: "Datum der An-/Abmeldung",
+      value: new Date().toLocaleDateString("de-AT"),
+      x: 30,
+      y: 72,
+      fontSize: 12,
+    },
+    { id: "mz17", label: "Unterschrift des Meldepflichtigen", value: "", x: 30, y: 82, fontSize: 14 },
+    { id: "mz18", label: "Unterschrift des Unterkunftgebers", value: "", x: 30, y: 88, fontSize: 14 },
+  ];
+
+  // Keyword fingerprints for known Austrian/German form types
+  const MELDEZETTEL_KEYWORDS = [
+    "meldezettel",
+    "meldebestätigung",
+    "meldepflicht",
+    "anmeldung",
+    "abmeldung",
+    "ummeldung",
+    "unterkunftgeber",
+    "zmr",
+    "familienname",
+    "geburtsdatum",
+    "staatsangehörigkeit",
+    "religionsbekenntnis",
+    "geburtsort",
+    "geschlecht",
+    "familienstand",
+    "meldebehörde",
+    "hauptwohnsitz",
+    "nebenwohnsitz",
+    "polizeiliche meldung",
+  ];
+
+  // Try to extract field labels from OCR text lines
+  const extractFieldsFromOcrText = (ocrText: string): FormField[] => {
+    const lines = ocrText
+      .split(/\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+    const lowerText = ocrText.toLowerCase();
+
+    // Check if this is an Austrian Meldezettel
+    const meldezettelHits = MELDEZETTEL_KEYWORDS.filter((kw) => lowerText.includes(kw));
+    if (meldezettelHits.length >= 3) {
+      return MELDEZETTEL_FIELDS.map((f) => ({ ...f }));
+    }
+
+    // Generic: extract lines that look like form labels (short text lines ending with : or followed by __)
+    const detected: FormField[] = [];
+    const totalLines = lines.length;
+    for (let i = 0; i < totalLines; i++) {
+      const line = lines[i];
+      // Heuristic: form labels are short lines often ending with colon, or contain underscores/dots for fill-in
+      const isLabel =
+        (line.length < 60 && (line.endsWith(":") || line.includes("___") || line.includes("..."))) ||
+        (line.length < 40 && /^[A-ZÄÖÜa-zäöüß\s/\-().]+:?\s*$/.test(line));
+
+      if (isLabel) {
+        const label = line.replace(/[:_.\s]+$/, "").trim();
+        if (label.length >= 2 && label.length <= 50) {
+          const yPercent = Math.round(((i + 1) / totalLines) * 85) + 8;
+          detected.push({
+            id: `ocr_${i}`,
+            label: label,
+            value: "",
+            x: 30,
+            y: Math.min(yPercent, 90),
+            fontSize: 12,
+          });
+        }
+      }
+    }
+
+    // If we found at least a few fields, use them
+    if (detected.length >= 2) {
+      return detected;
+    }
+
+    // Last resort: just use all short lines as potential fields
+    const fallback: FormField[] = [];
+    for (let i = 0; i < Math.min(totalLines, 15); i++) {
+      const line = lines[i];
+      if (line.length >= 3 && line.length <= 50) {
+        const yPercent = Math.round(((i + 1) / Math.min(totalLines, 15)) * 75) + 10;
+        fallback.push({
+          id: `line_${i}`,
+          label: line.replace(/[:_.\s]+$/, "").trim(),
+          value: "",
+          x: 30,
+          y: yPercent,
+          fontSize: 12,
+        });
+      }
+    }
+    return fallback.length > 0 ? fallback : MELDEZETTEL_FIELDS.map((f) => ({ ...f }));
+  };
+
   // Auto-detect & Elicit Fields via OCR layout analysis
   const handleDetectFields = async () => {
     if (!formFilename && !formImage) return;
     setDetecting(true);
     try {
-      // Simulate layout analysis or run OCR detection
       if (formFilename) {
+        // Step 1: Start OCR job
         const formData = new FormData();
         formData.append("filename", formFilename);
         formData.append("ocr_mode", "formatted");
@@ -110,35 +227,49 @@ export function FormFillerPage() {
 
         const ocrRes = await fetch("/api/ocr_scanned", { method: "POST", body: formData });
         if (ocrRes.ok) {
-          await ocrRes.json();
-          // Extract default field positions from OCR result
-          const initialFields: FormField[] = [
-            { id: "f1", label: "Full Name", value: "", x: 22, y: 18, fontSize: 14 },
-            { id: "f2", label: "Date", value: new Date().toLocaleDateString(), x: 72, y: 18, fontSize: 14 },
-            { id: "f3", label: "Address", value: "", x: 22, y: 26, fontSize: 14 },
-            { id: "f4", label: "Phone Number", value: "", x: 22, y: 34, fontSize: 14 },
-            { id: "f5", label: "Account ID / Tax Code", value: "", x: 68, y: 34, fontSize: 14 },
-            { id: "f6", label: "Amount ($)", value: "", x: 22, y: 44, fontSize: 14 },
-            { id: "f7", label: "Signature", value: "", x: 68, y: 82, fontSize: 16 },
-          ];
-          setFields(initialFields);
-          setActiveStep(3);
-          setDetecting(false);
-          return;
+          const jobData = await ocrRes.json();
+          const jobId = jobData.job_id;
+
+          if (jobId) {
+            // Step 2: Poll for OCR result (max 30s)
+            let ocrText = "";
+            for (let attempt = 0; attempt < 30; attempt++) {
+              await new Promise((r) => setTimeout(r, 1000));
+              const pollRes = await fetch(`/api/job/${jobId}`);
+              if (pollRes.ok) {
+                const pollData = await pollRes.json();
+                if (pollData.status === "completed" || pollData.status === "done") {
+                  ocrText =
+                    pollData.result?.text ||
+                    pollData.result?.ocr_text ||
+                    pollData.result?.extracted_text ||
+                    (typeof pollData.result === "string" ? pollData.result : "");
+                  break;
+                }
+                if (pollData.status === "error" || pollData.status === "failed") {
+                  break;
+                }
+              }
+            }
+
+            // Step 3: Parse OCR text to extract field labels
+            if (ocrText && ocrText.length > 10) {
+              const detectedFields = extractFieldsFromOcrText(ocrText);
+              setFields(detectedFields);
+              setActiveStep(3);
+              setDetecting(false);
+              return;
+            }
+          }
         }
       }
 
-      // Fallback default elicitation layout
-      setFields([
-        { id: "f1", label: "Full Name", value: "", x: 22, y: 18, fontSize: 14 },
-        { id: "f2", label: "Date", value: new Date().toLocaleDateString(), x: 72, y: 18, fontSize: 14 },
-        { id: "f3", label: "Address", value: "", x: 22, y: 26, fontSize: 14 },
-        { id: "f4", label: "Phone Number", value: "", x: 22, y: 34, fontSize: 14 },
-        { id: "f5", label: "Signature", value: "", x: 68, y: 82, fontSize: 16 },
-      ]);
+      // Fallback: use Meldezettel template (most common use case)
+      setFields(MELDEZETTEL_FIELDS.map((f) => ({ ...f })));
       setActiveStep(3);
     } catch {
-      alert("Auto field detection notice: default layout loaded.");
+      // On any error, load Meldezettel template as safe default
+      setFields(MELDEZETTEL_FIELDS.map((f) => ({ ...f })));
       setActiveStep(3);
     } finally {
       setDetecting(false);
@@ -451,8 +582,8 @@ export function FormFillerPage() {
               {activeStep === 2 && (
                 <div className="space-y-4">
                   <p className="text-sm text-slate-300">
-                    Step 2: Run layout OCR to automatically elicit fillable fields, or click directly on the canvas to
-                    add field coordinates.
+                    Step 2: Run layout OCR to automatically elicit fillable fields, load a known form preset, or click
+                    directly on the canvas to add field coordinates.
                   </p>
                   <Button
                     onClick={handleDetectFields}
@@ -460,8 +591,28 @@ export function FormFillerPage() {
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2 py-3"
                   >
                     {detecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-                    {detecting ? "Analyzing Form Layout..." : "Auto-Detect & Elicit Fields"}
+                    {detecting ? "Analyzing Form Layout via OCR..." : "Auto-Detect & Elicit Fields (OCR)"}
                   </Button>
+
+                  <div className="border-t border-slate-800 pt-3">
+                    <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">
+                      Or load a known form preset
+                    </Label>
+                    <div className="space-y-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setFields(MELDEZETTEL_FIELDS.map((f) => ({ ...f })));
+                          setActiveStep(3);
+                        }}
+                        className="w-full border-slate-700 bg-slate-950 text-emerald-400 gap-2 py-3 justify-start"
+                      >
+                        <FileSpreadsheet className="w-5 h-5" />
+                        🇦🇹 Meldezettel (Anmeldung / Abmeldung)
+                      </Button>
+                    </div>
+                  </div>
+
                   <div className="pt-2 text-xs text-slate-400">
                     <span>Fields detected: {fields.length}</span>
                   </div>
