@@ -1,0 +1,20 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.sandraschi/ocr-mcp",
+  "description": "Comprehensive OCR and document understanding: 14 engines, tables, forms, scanners, PDFs",
+  "version": "0.2.1-beta",
+  "repository": {
+    "url": "https://github.com/sandraschi/ocr-mcp",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "mcpb",
+      "identifier": "https://github.com/sandraschi/ocr-mcp/releases/download/v0.2.1-beta/ocr-mcp-v0.2.1-beta.mcpb",
+      "fileSha256": "f947c61a358d38b609129a9e18b806ddec104660d8a67ee11ff5515c43aba0f4",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

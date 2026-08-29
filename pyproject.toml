@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ocr-mcp"
 version = "0.2.1-beta"
-description = "FastMCP server providing comprehensive OCR capabilities to the MCP ecosystem"
+description = "Comprehensive OCR and document understanding: 14 engines, tables, forms, scanners, PDFs"
 authors = [
     {name = "Sandra", email = "sandraschipal@gmail.com"}
 ]

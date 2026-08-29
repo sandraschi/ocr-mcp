@@ -1,108 +1,102 @@
 [
-  {
-    "tool": "process_document",
-    "operation": "process_document",
-    "params": { "image_path": "scan.png", "backend": "unlimited-ocr" },
-    "description": "OCR a scanned document with Unlimited-OCR"
-  },
-  {
-    "tool": "process_document",
-    "operation": "process_document",
-    "params": { "image_path": "invoice.jpg", "backend": "auto" },
-    "description": "OCR with auto-selected best backend"
-  },
-  {
-    "tool": "process_document",
-    "operation": "process_batch",
-    "params": { "image_paths": ["a.png", "b.png"], "backend": "paddleocr-vl" },
-    "description": "Batch OCR multiple images"
-  },
-  {
-    "tool": "process_document",
-    "operation": "analyze_layout",
-    "params": { "image_path": "page.png" },
-    "description": "Analyze document layout structure"
-  },
-  {
-    "tool": "process_document",
-    "operation": "extract_tables",
-    "params": { "image_path": "table.png" },
-    "description": "Extract tables from document"
-  },
-  {
-    "tool": "process_document",
-    "operation": "assess_quality",
-    "params": { "image_path": "scan.png" },
-    "description": "Assess OCR result quality"
-  },
-  {
-    "tool": "manage_image",
-    "operation": "preprocess",
-    "params": { "image_path": "scan.png", "operations": ["deskew", "denoise"] },
-    "description": "Deskew and denoise a scanned image"
-  },
-  {
-    "tool": "manage_image",
-    "operation": "convert",
-    "params": { "image_path": "scan.png", "target_format": "jpg" },
-    "description": "Convert image to JPG format"
-  },
-  {
-    "tool": "manage_image",
-    "operation": "pdf_to_images",
-    "params": { "pdf_path": "document.pdf" },
-    "description": "Rasterize PDF pages to images"
-  },
-  {
-    "tool": "operate_scanner",
-    "operation": "list_scanners",
-    "params": {},
-    "description": "List available WIA scanners"
-  },
-  {
-    "tool": "operate_scanner",
-    "operation": "scan_document",
-    "params": { "device_id": "scanner-id", "dpi": 300 },
-    "description": "Scan a document at 300 DPI"
-  },
-  {
-    "tool": "operate_scanner",
-    "operation": "scan_batch",
-    "params": { "device_id": "scanner-id", "count": 5 },
-    "description": "Batch scan 5 pages"
-  },
-  {
-    "tool": "manage_workflow",
-    "operation": "process_batch_intelligent",
-    "params": { "image_paths": ["doc1.png", "doc2.png"], "backend": "auto" },
-    "description": "Intelligent batch processing"
-  },
-  {
-    "tool": "manage_workflow",
-    "operation": "ocr_health_check",
-    "params": {},
-    "description": "Check all backend health"
-  },
-  {
-    "tool": "manage_workflow",
-    "operation": "list_backends",
-    "params": {},
-    "description": "List all registered backends with availability"
-  },
-  {
-    "tool": "manage_corpus",
-    "operation": "search",
-    "params": { "query": "invoice" },
-    "description": "Search the document corpus"
-  },
-  {
-    "tool": "get_help",
-    "params": { "topic": "backends" },
-    "description": "Get help about OCR backends"
-  },
-  {
-    "tool": "get_status",
-    "params": {},
-    "description": "Get system health status"
-  }
+  { "name": "get-status", "description": "System health and backends", "prompt": "Is OCR-MCP healthy?", "tool": "get_status", "arguments": { "level": "basic" } },
+  { "name": "get-help-basic", "description": "Basic help", "prompt": "Show basic help", "tool": "get_help", "arguments": { "level": "basic" } },
+  { "name": "get-help-advanced", "description": "Advanced help", "prompt": "Show advanced help", "tool": "get_help", "arguments": { "level": "advanced" } },
+  { "name": "ocr-single", "description": "OCR a single image", "prompt": "OCR this image", "tool": "process_document", "arguments": { "operation": "process_document", "source_path": "C:/docs/scan.png" } },
+  { "name": "ocr-single-backend", "description": "OCR with a specific backend", "prompt": "OCR with tesseract", "tool": "process_document", "arguments": { "operation": "process_document", "source_path": "C:/docs/scan.png", "backend": "tesseract" } },
+  { "name": "ocr-single-auto", "description": "OCR with auto backend", "prompt": "OCR this automatically", "tool": "process_document", "arguments": { "operation": "process_document", "source_path": "C:/docs/scan.png", "backend": "auto" } },
+  { "name": "ocr-language", "description": "OCR with a language hint", "prompt": "OCR this in French", "tool": "process_document", "arguments": { "operation": "process_document", "source_path": "C:/docs/scan.png", "language": "fra" } },
+  { "name": "ocr-region", "description": "OCR a region", "prompt": "OCR the top-left region", "tool": "process_document", "arguments": { "operation": "process_document", "source_path": "C:/docs/scan.png", "region": [0, 0, 500, 500] } },
+  { "name": "ocr-batch", "description": "OCR a directory", "prompt": "OCR everything in this folder", "tool": "process_document", "arguments": { "operation": "process_batch", "source_path": "C:/docs" } },
+  { "name": "ocr-layout", "description": "Analyze layout", "prompt": "Analyze the layout", "tool": "process_document", "arguments": { "operation": "analyze_layout", "source_path": "C:/docs/scan.png" } },
+  { "name": "ocr-layout-tables", "description": "Analyze tables only", "prompt": "Analyze just the tables", "tool": "process_document", "arguments": { "operation": "analyze_layout", "source_path": "C:/docs/scan.png", "analysis_type": "tables_only" } },
+  { "name": "ocr-extract-tables", "description": "Extract tables", "prompt": "Extract the tables", "tool": "process_document", "arguments": { "operation": "extract_tables", "source_path": "C:/docs/scan.png" } },
+  { "name": "ocr-detect-forms", "description": "Detect form fields", "prompt": "Find the form fields", "tool": "process_document", "arguments": { "operation": "detect_forms", "source_path": "C:/docs/form.png" } },
+  { "name": "ocr-reading-order", "description": "Analyze reading order", "prompt": "Analyze the reading order", "tool": "process_document", "arguments": { "operation": "analyze_reading_order", "source_path": "C:/docs/scan.png" } },
+  { "name": "ocr-classify", "description": "Classify document type", "prompt": "What type of document is this?", "tool": "process_document", "arguments": { "operation": "classify_type", "source_path": "C:/docs/scan.png" } },
+  { "name": "ocr-extract-metadata", "description": "Extract metadata entities", "prompt": "Extract the date, names, and numbers", "tool": "process_document", "arguments": { "operation": "extract_metadata", "ocr_result": { "text": "Invoice dated 2026-08-01 to John for 500" } } },
+  { "name": "ocr-assess-quality", "description": "Assess OCR quality", "prompt": "How good is this OCR?", "tool": "process_document", "arguments": { "operation": "assess_quality", "ocr_result": { "text": "sample" } } },
+  { "name": "ocr-validate-accuracy", "description": "Validate against ground truth", "prompt": "Validate this against ground truth", "tool": "process_document", "arguments": { "operation": "validate_accuracy", "ocr_result": { "text": "sample" }, "ground_truth": "sample text" } },
+  { "name": "ocr-compare-backends", "description": "Benchmark backends", "prompt": "Benchmark OCR backends on this", "tool": "process_document", "arguments": { "operation": "compare_backends", "source_path": "C:/docs/scan.png" } },
+  { "name": "ocr-image-quality", "description": "Analyze image quality", "prompt": "Check the image quality first", "tool": "process_document", "arguments": { "operation": "analyze_image_quality", "source_path": "C:/docs/scan.png" } },
+  { "name": "img-preprocess", "description": "Preprocess an image", "prompt": "Deskew and denoise this", "tool": "manage_image", "arguments": { "operation": "preprocess", "source_path": "C:/docs/scan.png" } },
+  { "name": "img-convert", "description": "Convert image format", "prompt": "Convert this to PNG", "tool": "manage_image", "arguments": { "operation": "convert", "source_path": "C:/docs/scan.tiff", "target_path": "C:/docs/scan.png" } },
+  { "name": "img-pdf-to-images", "description": "Explode PDF to images", "prompt": "Turn this PDF into page images", "tool": "manage_image", "arguments": { "operation": "pdf_to_images", "source_path": "C:/docs/book.pdf", "dpi": 200 } },
+  { "name": "img-embed-text", "description": "Create searchable PDF/A", "prompt": "Make this PDF searchable", "tool": "manage_image", "arguments": { "operation": "embed_text", "source_path": "C:/docs/scan.pdf" } },
+  { "name": "scan-list", "description": "List scanners", "prompt": "List the scanners", "tool": "operate_scanner", "arguments": { "operation": "list_scanners" } },
+  { "name": "scan-properties", "description": "Scanner properties", "prompt": "Show scanner properties", "tool": "operate_scanner", "arguments": { "operation": "scanner_properties", "device_id": "0" } },
+  { "name": "scan-configure", "description": "Configure scan settings", "prompt": "Configure scan at 300 DPI grayscale", "tool": "operate_scanner", "arguments": { "operation": "configure_scan", "resolution": 300, "color_mode": "grayscale", "paper_size": "A4" } },
+  { "name": "scan-document", "description": "Scan a flatbed page", "prompt": "Scan a page", "tool": "operate_scanner", "arguments": { "operation": "scan_document", "scan_source": "flatbed" } },
+  { "name": "scan-batch", "description": "Batch scan ADF", "prompt": "Scan 10 pages from the feeder", "tool": "operate_scanner", "arguments": { "operation": "scan_batch", "count": 10 } },
+  { "name": "scan-preview", "description": "Scan preview", "prompt": "Give me a scan preview", "tool": "operate_scanner", "arguments": { "operation": "preview_scan" } },
+  { "name": "scan-diagnostics", "description": "Scanner diagnostics", "prompt": "Run scanner diagnostics", "tool": "operate_scanner", "arguments": { "operation": "diagnostics" } },
+  { "name": "wf-intelligent-batch", "description": "Intelligent batch OCR", "prompt": "OCR this folder intelligently", "tool": "manage_workflow", "arguments": { "operation": "process_batch_intelligent", "source_path": "C:/docs", "workflow_type": "auto" } },
+  { "name": "wf-pdf-batch", "description": "PDF batch workflow", "prompt": "OCR these PDFs", "tool": "manage_workflow", "arguments": { "operation": "process_batch_intelligent", "source_path": "C:/pdfs", "workflow_type": "pdf_processing" } },
+  { "name": "wf-create-pipeline", "description": "Create a processing pipeline", "prompt": "Create a deskew then OCR pipeline", "tool": "manage_workflow", "arguments": { "operation": "create_processing_pipeline", "steps": ["deskew_image", "process_document"] } },
+  { "name": "wf-execute-pipeline", "description": "Execute a pipeline", "prompt": "Run the pipeline on this", "tool": "manage_workflow", "arguments": { "operation": "execute_pipeline", "source_path": "C:/docs/scan.png" } },
+  { "name": "wf-optimize", "description": "Optimize processing", "prompt": "How should I process this?", "tool": "manage_workflow", "arguments": { "operation": "optimize_processing", "source_path": "C:/docs/scan.png" } },
+  { "name": "wf-health", "description": "OCR health check", "prompt": "Health check", "tool": "manage_workflow", "arguments": { "operation": "ocr_health_check" } },
+  { "name": "wf-list-backends", "description": "List backends", "prompt": "List the backends", "tool": "manage_workflow", "arguments": { "operation": "list_backends" } },
+  { "name": "wf-monitor", "description": "Monitor batch progress", "prompt": "How is the batch going?", "tool": "manage_workflow", "arguments": { "operation": "monitor_batch_progress", "batch_id": "b1" } },
+  { "name": "wf-manage-models", "description": "Manage loaded models", "prompt": "Unload idle models", "tool": "manage_workflow", "arguments": { "operation": "manage_models" } },
+  { "name": "corpus-register", "description": "Register a document", "prompt": "Index this document", "tool": "manage_corpus", "arguments": { "operation": "register", "source_path": "C:/docs/scan.png" } },
+  { "name": "corpus-update", "description": "Update corpus metadata", "prompt": "Add metadata to this entry", "tool": "manage_corpus", "arguments": { "operation": "update_metadata", "document_id": "d1", "metadata": { "type": "invoice" } } },
+  { "name": "corpus-get", "description": "Get a corpus entry", "prompt": "Get entry d1", "tool": "manage_corpus", "arguments": { "operation": "get", "document_id": "d1" } },
+  { "name": "corpus-search", "description": "Full-text search corpus", "prompt": "Search for invoices", "tool": "manage_corpus", "arguments": { "operation": "search", "query": "invoice" } },
+  { "name": "corpus-recent", "description": "List recent corpus entries", "prompt": "What did I OCR recently?", "tool": "manage_corpus", "arguments": { "operation": "list_recent" } },
+  { "name": "corpus-attach", "description": "Attach OCR result", "prompt": "Attach this OCR result", "tool": "manage_corpus", "arguments": { "operation": "attach_ocr_result", "document_id": "d1", "ocr_result": { "text": "extracted" } } },
+  { "name": "book-chapters", "description": "Detect chapters", "prompt": "Detect the chapters in these scans", "tool": "ingest_book", "arguments": { "operation": "detect_chapters", "image_paths": ["C:/book/p1.png", "C:/book/p2.png"] } },
+  { "name": "book-metadata", "description": "Detect book metadata", "prompt": "Extract the book metadata", "tool": "ingest_book", "arguments": { "operation": "detect_metadata", "image_paths": ["C:/book/p1.png"] } },
+  { "name": "book-epub", "description": "Assemble EPUB", "prompt": "Assemble the EPUB", "tool": "ingest_book", "arguments": { "operation": "assemble_epub", "output_path": "C:/book/book.epub" } },
+  { "name": "book-full", "description": "Full book pipeline", "prompt": "Turn these scans into an EPUB", "tool": "ingest_book", "arguments": { "operation": "full_pipeline", "image_paths": ["C:/book/p1.png", "C:/book/p2.png"], "backend": "unlimited-ocr" } },
+  { "name": "agentic-ocr", "description": "Agentic OCR workflow", "prompt": "OCR these invoices and extract totals", "tool": "execute_agentic_workflow", "arguments": { "workflow_prompt": "OCR the invoices in C:/invoices and extract totals", "available_tools": ["process_document", "manage_image"], "max_iterations": 5 } },
+  { "name": "health-card", "description": "Health prefab card", "prompt": "Show the health card", "tool": "show_health_card", "arguments": {} },
+  { "name": "backends-card", "description": "Backends prefab card", "prompt": "Show the backends card", "tool": "show_backends_card", "arguments": {} },
+  { "name": "ocr-easyocr", "description": "OCR with EasyOCR", "prompt": "OCR this with easyocr", "tool": "process_document", "arguments": { "operation": "process_document", "source_path": "C:/docs/hand.png", "backend": "easyocr" } },
+  { "name": "ocr-paddleocr-vl", "description": "OCR with PaddleOCR-VL", "prompt": "OCR this with paddleocr-vl", "tool": "process_document", "arguments": { "operation": "process_document", "source_path": "C:/docs/table.png", "backend": "paddleocr-vl" } },
+  { "name": "ocr-olmocr", "description": "OCR with olmOCR-2", "prompt": "OCR this math with olmocr-2", "tool": "process_document", "arguments": { "operation": "process_document", "source_path": "C:/docs/math.png", "backend": "olmocr-2" } },
+  { "name": "ocr-mistral", "description": "OCR with Mistral cloud", "prompt": "OCR this with mistral", "tool": "process_document", "arguments": { "operation": "process_document", "source_path": "C:/docs/scan.png", "backend": "mistral-ocr" } },
+  { "name": "ocr-unlimited", "description": "OCR with Unlimited-OCR", "prompt": "OCR this with unlimited-ocr", "tool": "process_document", "arguments": { "operation": "process_document", "source_path": "C:/docs/long.png", "backend": "unlimited-ocr" } },
+  { "name": "ocr-enhance", "description": "OCR with enhance flag", "prompt": "OCR this and enhance it first", "tool": "process_document", "arguments": { "operation": "process_document", "source_path": "C:/docs/low.png", "enhance_image": true } },
+  { "name": "ocr-layout-comprehensive", "description": "Comprehensive layout analysis", "prompt": "Comprehensive layout analysis", "tool": "process_document", "arguments": { "operation": "analyze_layout", "source_path": "C:/docs/scan.png", "analysis_type": "comprehensive" } },
+  { "name": "ocr-assess-layout", "description": "Layout quality assessment", "prompt": "Assess layout quality", "tool": "process_document", "arguments": { "operation": "assess_quality", "ocr_result": { "text": "x" }, "assessment_type": "layout" } },
+  { "name": "ocr-validate-word", "description": "Word-level accuracy", "prompt": "Validate at word level", "tool": "process_document", "arguments": { "operation": "validate_accuracy", "ocr_result": { "text": "a b" }, "ground_truth": "a c", "validation_type": "word" } },
+  { "name": "img-preprocess-deskew", "description": "Deskew an image", "prompt": "Deskew this image", "tool": "manage_image", "arguments": { "operation": "preprocess", "source_path": "C:/docs/skewed.png" } },
+  { "name": "img-convert-jpg", "description": "Convert to JPG", "prompt": "Convert this to JPG", "tool": "manage_image", "arguments": { "operation": "convert", "source_path": "C:/docs/a.tiff", "target_path": "C:/docs/a.jpg" } },
+  { "name": "img-convert-tiff", "description": "Convert to TIFF", "prompt": "Convert this to TIFF", "tool": "manage_image", "arguments": { "operation": "convert", "source_path": "C:/docs/a.png", "target_path": "C:/docs/a.tiff" } },
+  { "name": "img-pdf-dpi150", "description": "PDF to images at 150 DPI", "prompt": "Rasterize this PDF at 150 DPI", "tool": "manage_image", "arguments": { "operation": "pdf_to_images", "source_path": "C:/docs/doc.pdf", "dpi": 150 } },
+  { "name": "scan-color", "description": "Scan in color", "prompt": "Scan in color", "tool": "operate_scanner", "arguments": { "operation": "configure_scan", "resolution": 300, "color_mode": "color" } },
+  { "name": "scan-lineart", "description": "Scan as lineart", "prompt": "Scan as lineart", "tool": "operate_scanner", "arguments": { "operation": "configure_scan", "color_mode": "lineart" } },
+  { "name": "scan-duplex", "description": "Duplex batch scan", "prompt": "Scan both sides of 5 pages", "tool": "operate_scanner", "arguments": { "operation": "scan_batch", "count": 5, "duplex": true } },
+  { "name": "wf-pipeline-quality", "description": "Pipeline with quality step", "prompt": "Create a pipeline with quality check", "tool": "manage_workflow", "arguments": { "operation": "create_processing_pipeline", "steps": ["deskew_image", "process_document", "assess_ocr_quality"] } },
+  { "name": "wf-pipeline-tables", "description": "Pipeline to extract tables", "prompt": "Create a layout then table pipeline", "tool": "manage_workflow", "arguments": { "operation": "create_processing_pipeline", "steps": ["process_document", "analyze_document_layout", "extract_table_data"] } },
+  { "name": "wf-ocr-only", "description": "OCR-only intelligent batch", "prompt": "OCR-only batch over this folder", "tool": "manage_workflow", "arguments": { "operation": "process_batch_intelligent", "source_path": "C:/docs", "workflow_type": "ocr_only" } },
+  { "name": "corpus-search-total", "description": "Search for totals", "prompt": "Search the corpus for totals", "tool": "manage_corpus", "arguments": { "operation": "search", "query": "total" } },
+  { "name": "corpus-attach-meta", "description": "Attach result with metadata", "prompt": "Attach this result with metadata", "tool": "manage_corpus", "arguments": { "operation": "attach_ocr_result", "document_id": "d2", "ocr_result": { "text": "text" }, "metadata": { "lang": "en" } } },
+  { "name": "book-detect-chapters", "description": "Detect chapters in a set", "prompt": "Find chapters in these scans", "tool": "ingest_book", "arguments": { "operation": "detect_chapters", "image_paths": ["C:/b/1.png", "C:/b/2.png", "C:/b/3.png"] } },
+  { "name": "agentic-narrow", "description": "Narrow agentic OCR", "prompt": "Extract tables from this batch", "tool": "execute_agentic_workflow", "arguments": { "workflow_prompt": "Extract tables from C:/batch", "available_tools": ["process_document", "manage_workflow"], "max_iterations": 3 } },
+  { "name": "ocr-pdf-olmocr", "description": "PDF OCR with olmocr-2", "prompt": "OCR this academic PDF", "tool": "process_document", "arguments": { "operation": "process_document", "source_path": "C:/docs/paper.pdf", "backend": "olmocr-2" } },
+  { "name": "img-preprocess-threshold", "description": "Threshold an image", "prompt": "Apply threshold to this", "tool": "manage_image", "arguments": { "operation": "preprocess", "source_path": "C:/docs/low.png" } },
+  { "name": "wf-health-detailed", "description": "Detailed health", "prompt": "Detailed health check", "tool": "get_status", "arguments": { "level": "detailed" } },
+  { "name": "ocr-classify-id", "description": "Classify an ID", "prompt": "Is this an ID?", "tool": "process_document", "arguments": { "operation": "classify_type", "source_path": "C:/docs/id.png" } },
+  { "name": "ocr-extract-dates", "description": "Extract dates", "prompt": "Extract all dates", "tool": "process_document", "arguments": { "operation": "extract_metadata", "ocr_result": { "text": "Date: 2026-08-01" } } },
+  { "name": "scan-then-ocr", "description": "Scan then OCR flow", "prompt": "Scan a page and OCR it", "tool": "operate_scanner", "arguments": { "operation": "scan_document", "scan_source": "flatbed" } },
+  { "name": "wf-optimize-preproc", "description": "Optimize preprocessing", "prompt": "What preprocessing should I use?", "tool": "manage_workflow", "arguments": { "operation": "optimize_processing", "source_path": "C:/docs/low.png" } },
+  { "name": "corpus-recent-20", "description": "Recent 20 entries", "prompt": "List the 20 most recent", "tool": "manage_corpus", "arguments": { "operation": "list_recent", "limit": 20 } },
+  { "name": "book-assemble-epub-custom", "description": "Assemble EPUB to a path", "prompt": "Assemble the EPUB to out.epub", "tool": "ingest_book", "arguments": { "operation": "assemble_epub", "output_path": "C:/out.epub" } },
+  { "name": "ocr-batch-pdfs", "description": "Batch OCR PDFs", "prompt": "OCR all PDFs in this folder", "tool": "process_document", "arguments": { "operation": "process_batch", "source_path": "C:/pdfs" } },
+  { "name": "img-embed-text-searchable", "description": "Make PDF searchable", "prompt": "Make scan.pdf searchable", "tool": "manage_image", "arguments": { "operation": "embed_text", "source_path": "C:/docs/scan.pdf" } },
+  { "name": "ocr-pp-ocrv5", "description": "OCR with PP-OCRv5", "prompt": "OCR this with pp-ocrv5", "tool": "process_document", "arguments": { "operation": "process_document", "source_path": "C:/docs/print.png", "backend": "pp-ocrv5" } },
+  { "name": "ocr-mineru", "description": "OCR with MinerU", "prompt": "Parse this with mineru-2.5", "tool": "process_document", "arguments": { "operation": "process_document", "source_path": "C:/docs/doc.png", "backend": "mineru-2.5" } },
+  { "name": "ocr-nemotron", "description": "OCR with Nemotron", "prompt": "OCR this with nemotron-vl", "tool": "process_document", "arguments": { "operation": "process_document", "source_path": "C:/docs/scan.png", "backend": "nemotron-vl" } },
+  { "name": "ocr-deepseek", "description": "OCR with DeepSeek", "prompt": "OCR this with deepseek-ocr2", "tool": "process_document", "arguments": { "operation": "process_document", "source_path": "C:/docs/scan.png", "backend": "deepseek-ocr2" } },
+  { "name": "img-preprocess-grayscale", "description": "Grayscale preprocessing", "prompt": "Grayscale this before OCR", "tool": "manage_image", "arguments": { "operation": "preprocess", "source_path": "C:/docs/scan.png" } },
+  { "name": "scan-configure-custom", "description": "Custom scan resolution", "prompt": "Scan at 600 DPI", "tool": "operate_scanner", "arguments": { "operation": "configure_scan", "resolution": 600 } },
+  { "name": "wf-pipeline-rotate", "description": "Rotate then OCR pipeline", "prompt": "Create a rotate then OCR pipeline", "tool": "manage_workflow", "arguments": { "operation": "create_processing_pipeline", "steps": ["rotate_image", "process_document"] } },
+  { "name": "wf-pipeline-convert", "description": "Convert then process pipeline", "prompt": "Create a convert then process pipeline", "tool": "manage_workflow", "arguments": { "operation": "create_processing_pipeline", "steps": ["convert_image_format", "process_document"] } },
+  { "name": "corpus-search-invoice", "description": "Search corpus for invoices", "prompt": "Find all invoices in the corpus", "tool": "manage_corpus", "arguments": { "operation": "search", "query": "invoice vendor total" } },
+  { "name": "ocr-region-bottom", "description": "OCR bottom region", "prompt": "OCR the bottom half", "tool": "process_document", "arguments": { "operation": "process_document", "source_path": "C:/docs/scan.png", "region": [0, 500, 1000, 1000] } },
+  { "name": "img-pdf-dpi300", "description": "PDF to images at 300 DPI", "prompt": "Rasterize at 300 DPI", "tool": "manage_image", "arguments": { "operation": "pdf_to_images", "source_path": "C:/docs/doc.pdf", "dpi": 300 } },
+  { "name": "book-full-backend", "description": "Book pipeline with backend", "prompt": "Make an EPUB with tesseract", "tool": "ingest_book", "arguments": { "operation": "full_pipeline", "image_paths": ["C:/b/1.png", "C:/b/2.png"], "backend": "tesseract" } },
+  { "name": "ocr-got", "description": "OCR with GOT-OCR", "prompt": "OCR this with got-ocr", "tool": "process_document", "arguments": { "operation": "process_document", "source_path": "C:/docs/scan.png", "backend": "got-ocr" } }
 ]
