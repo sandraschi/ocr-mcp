@@ -104,11 +104,14 @@ export function Depot() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="depot-page">
       {/* Header */}
-      <div className="flex flex-wrap justify-between items-center gap-4">
+      <div className="flex flex-wrap justify-between items-center gap-4" data-testid="depot-control-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-100 flex items-center gap-3">
+          <h1
+            className="text-3xl font-bold tracking-tight text-slate-100 flex items-center gap-3"
+            data-testid="depot-title"
+          >
             <Database className="w-8 h-8 text-blue-500" /> Corpus Depot
           </h1>
           <p className="text-slate-400">Searchable, sortable, and filterable repository of raw scans & OCR results.</p>
@@ -169,7 +172,7 @@ export function Depot() {
                 <option value="all">All Backends</option>
                 <option value="unlimited-ocr">unlimited-ocr</option>
                 <option value="paddleocr-vl">paddleocr-vl</option>
-                <option value="deepseek-ocr">deepseek-ocr</option>
+                <option value="deepseek-ocr2">deepseek-ocr2</option>
                 <option value="tesseract">tesseract</option>
                 <option value="easyocr">easyocr</option>
                 <option value="pymupdf_digital_bypass">pymupdf_digital_bypass</option>

@@ -15,6 +15,8 @@ Two inference modes:
 Dependencies: torch>=2.10.0, transformers>=4.57.1, einops, addict, easydict
 """
 
+import asyncio
+import json
 import logging
 import os
 import tempfile
@@ -28,6 +30,7 @@ from ..core.config import OCRConfig
 logger = logging.getLogger(__name__)
 
 _HF_MODEL_ID = "baidu/Unlimited-OCR"
+_LEGACY_VENV_DIR = Path(__file__).resolve().parents[3] / ".venv-legacy-vlm-deepseek"
 
 
 class UnlimitedOCRBackend(OCRBackend):
@@ -74,11 +77,54 @@ class UnlimitedOCRBackend(OCRBackend):
             ]
             logger.warning(f"Unlimited-OCR missing deps: {missing}")
 
+    def _legacy_venv_python(self) -> Path | None:
+        """Path to the isolated transformers==4.46.3 venv, shared with
+        DeepSeek-OCR and DeepSeek-OCR-2 (Unlimited-OCR is "Built on
+        DeepSeek-OCR lineage" per its own model card, and vendors the
+        identical infer() signature and hardcoded .cuda()/.to(bfloat16)
+        pattern throughout generate() -- confirmed by grepping
+        modeling_unlimitedocr.py: 14 hardcoded .cuda() calls). The README's
+        stated transformers==4.57.1 doesn't change this -- the vendored
+        forward()/generate() calls are what matter, not the config metadata.
+        """
+        candidate = _LEGACY_VENV_DIR / "Scripts" / "python.exe"
+        return candidate if candidate.exists() else None
+
+    async def _run_via_legacy_venv(self, python_exe: Path, image_path: str, prompt: str) -> str:
+        """Run Unlimited-OCR inference in the isolated legacy-transformers venv."""
+        runner = Path(__file__).resolve().with_name("_deepseek_ocr_legacy_runner.py")
+        proc = await asyncio.create_subprocess_exec(
+            str(python_exe),
+            str(runner),
+            self.model_name,
+            image_path,
+            prompt,
+            str(self.cache_dir),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate()
+        lines = stdout.decode("utf-8", errors="replace").strip().splitlines()
+        if not lines:
+            raise RuntimeError(
+                f"legacy-vlm subprocess produced no output (exit {proc.returncode}): "
+                f"{stderr.decode('utf-8', errors='replace')[-2000:]}"
+            )
+        payload = json.loads(lines[-1])
+        if not payload.get("success"):
+            raise RuntimeError(payload.get("error", "unknown legacy-vlm subprocess error"))
+        return payload["text"]
+
     def _load_model(self):
         if self._model is not None:
             return
         if not self.is_available():
             raise RuntimeError("Unlimited-OCR dependencies not available")
+        if self._legacy_venv_python() is not None:
+            # Real loading happens per-call in the isolated subprocess.
+            self._model = True
+            self._tokenizer = True
+            return
 
         try:
             from ..utils.startup_bootstrap import patch_transformers_compatibility
@@ -89,9 +135,13 @@ class UnlimitedOCRBackend(OCRBackend):
             from transformers import AutoModel, AutoTokenizer
 
             self._device = "cuda" if torch.cuda.is_available() else "cpu"
-            dtype = torch.bfloat16 if self._device == "cuda" else torch.float32
 
-            logger.info(f"Loading Unlimited-OCR on {self._device}...")
+            logger.warning(
+                "Unlimited-OCR: .venv-legacy-vlm-deepseek not found, falling back to "
+                "in-process load under the main venv's transformers -- likely to fail "
+                "the same way GOT-OCR did before isolation. Run "
+                "scripts/setup_legacy_vlm_deepseek_venv.py to fix."
+            )
             t0 = time.time()
 
             self._tokenizer = AutoTokenizer.from_pretrained(
@@ -103,7 +153,7 @@ class UnlimitedOCRBackend(OCRBackend):
             self._model = AutoModel.from_pretrained(
                 self.model_name,
                 trust_remote_code=True,
-                torch_dtype=dtype,
+                torch_dtype=torch.bfloat16,  # infer() hardcodes image tensors to bfloat16
                 device_map="auto" if self._device == "cuda" else None,
                 cache_dir=str(self.cache_dir),
             )
@@ -140,37 +190,26 @@ class UnlimitedOCRBackend(OCRBackend):
             self._load_model()
             t0 = time.time()
 
-            img = Image.open(image_path).convert("RGB")
+            input_path = image_path
             if region and len(region) == 4:
-                img = img.crop(tuple(region))
+                img = Image.open(image_path).convert("RGB").crop(tuple(region))
                 temp_cropped = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
                 img.save(temp_cropped, format="PNG")
                 temp_cropped.close()
                 input_path = temp_cropped.name
-            else:
-                input_path = image_path
 
             prompt_text = "<image>document parsing."
             if mode in ("raw", "ocr"):
                 prompt_text = "<image>Free OCR."
 
-            tmp_dir_obj = tempfile.TemporaryDirectory(prefix="unlimited_ocr_")
-            tmp_dir = tmp_dir_obj.name
-
             try:
-                result = self._model.infer(
-                    self._tokenizer,
-                    prompt=prompt_text,
-                    image_file=input_path,
-                    output_path=tmp_dir,
-                    base_size=1024,
-                    image_size=640,
-                    crop_mode=True,
-                    max_length=32768,
-                    no_repeat_ngram_size=35,
-                    ngram_window=128,
-                    save_results=True,
-                )
+                legacy_python = self._legacy_venv_python()
+                if legacy_python is None:
+                    raise RuntimeError(
+                        "Unlimited-OCR needs the isolated .venv-legacy-vlm-deepseek venv "
+                        "(transformers==4.46.3). Run scripts/setup_legacy_vlm_deepseek_venv.py."
+                    )
+                text = await self._run_via_legacy_venv(legacy_python, input_path, prompt_text)
             finally:
                 if region and len(region) == 4:
                     try:
@@ -178,60 +217,20 @@ class UnlimitedOCRBackend(OCRBackend):
                     except OSError:
                         pass
 
-            text = self._read_output(tmp_dir, result)
-            try:
-                tmp_dir_obj.cleanup()
-            except OSError:
-                pass
-
             return {
                 "success": True,
-                "text": text,
+                "text": text.strip(),
                 "backend": "unlimited-ocr",
                 "model": self.model_name,
                 "mode": mode,
                 "processing_time": time.time() - t0,
                 "confidence": 0.85,
-                "metadata": {"device": self._device, "inference_mode": "gundam"},
+                "metadata": {"device": "cpu (legacy-vlm venv)", "inference_mode": "gundam"},
             }
 
         except Exception as e:
             logger.error(f"Unlimited-OCR error: {e}")
             return {"success": False, "error": str(e), "backend": "unlimited-ocr"}
-
-    def _read_output(self, output_dir: str, result: Any) -> str:
-        """Read OCR output from files in the output directory."""
-        dir_path = Path(output_dir)
-        if not dir_path.is_dir():
-            if isinstance(result, str) and result.strip():
-                return result.strip()
-            if isinstance(result, dict):
-                for key in ("text", "result", "output", "content"):
-                    val = result.get(key)
-                    if isinstance(val, str) and val.strip():
-                        return val.strip()
-            return str(result) if result else ""
-
-        candidates = sorted(dir_path.iterdir())
-        for p in candidates:
-            if p.suffix.lower() in (".txt", ".md", ".json", ".html"):
-                try:
-                    content = p.read_text(encoding="utf-8").strip()
-                    if content:
-                        return content
-                except Exception:
-                    continue
-
-        for p in candidates:
-            if p.is_file():
-                try:
-                    content = p.read_text(encoding="utf-8").strip()
-                    if content:
-                        return content
-                except Exception:
-                    continue
-
-        return ""
 
     def get_capabilities(self) -> dict[str, Any]:
         caps = super().get_capabilities()

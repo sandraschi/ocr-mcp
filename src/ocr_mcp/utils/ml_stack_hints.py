@@ -32,7 +32,7 @@ def emit_ml_stack_hints() -> None:
                     "(see docs/OCR_BACKEND_REQUIREMENTS.md)."
                 )
     except Exception:
-        pass
+        logger.debug("suppressed Exception in emit_ml_stack_hints", exc_info=True)
 
     try:
         import transformers  # noqa: F401

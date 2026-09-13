@@ -1,46 +1,34 @@
-# MCPB Pack Exclusion List — MCP server only, no webapp
-tests/
-.git/
-__pycache__/
-*.pyc
+# Logic/Dev Bloat
 .venv/
-.venv_cpu_stale/
-.venv-gpu/
+node_modules/
+__pycache__/
+.ruff_cache/
+.pytest_cache/
+tests/
+
+# Discovery & Fleet Metadata
+glama.json
+llms.txt
+llms-full.txt
+.git/
+.github/
+.vscode/
+
+# Build Artifacts
 dist/
 build/
-target/
-docs/
-scripts/
-.cursor/
-.windsurf/
-.pytest_cache/
-.coverage
-.hypothesis/
-.mypy_cache/
-.ruff_cache/
-node_modules/
-native/
-backend/
-web_sota/
-webapp/
-frontend/
-scans/
-tools/
-test_artifacts/
-test_logs/
-temp_test/
-start.ps1
-start.bat
+*.mcpb
+
+# Backup dross (batch-edit .bak copies, timestamped or plain)
 *.bak
-*.spec
-poetry.lock
-build.ps1
-src/lib.rs
-Cargo.toml
-Cargo.lock
-extension.toml
-docker-compose.yml
-Dockerfile
-test_ocr_result.txt
-test_scan_result.png
-.github/
+*.bak.*
+
+# Runtime data (never ship local DBs/caches)
+data/
+*.sqlite3
+*.db*
+
+# Non-MCP components (webapp, native, scripts)
+native/
+web_sota/
+scripts/

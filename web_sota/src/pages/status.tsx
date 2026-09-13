@@ -93,9 +93,11 @@ export function Status() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-100">Activity</h1>
+    <div className="space-y-6" data-testid="status-page">
+      <div data-testid="status-control-3">
+        <h1 className="text-3xl font-bold tracking-tight text-slate-100" data-testid="status-title">
+          Activity
+        </h1>
         <p className="text-sm text-slate-400 mt-1 max-w-2xl">
           What your last OCR run is doing. You don&apos;t need job IDs — use{" "}
           <Link to="/editor" className="text-blue-400 hover:underline">

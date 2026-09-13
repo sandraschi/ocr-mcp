@@ -10,6 +10,7 @@ from typing import Any
 
 from fastmcp import Context
 from fastmcp.server.server import ToolResult
+from fastmcp.tools.tool import ToolAnnotations
 from prefab_ui import PrefabApp
 from prefab_ui.components import Div, Heading, Row
 
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 def register_prefab_tools(app, runtime: dict[str, Any]):
     """Register Prefab UI tools with the FastMCP app."""
 
-    @app.tool(app=True)
+    @app.tool(app=True, annotations=ToolAnnotations(readOnlyHint=True))
     async def show_health_card(ctx: Context) -> ToolResult:
         """Display a rich health card with backend status, tool count, and system info.
 
@@ -61,7 +62,7 @@ def register_prefab_tools(app, runtime: dict[str, Any]):
                     Div(f"{name} - {desc} | Modes: {modes}")
         return ToolResult(content="OCR-MCP health card rendered.", structured_content=app)
 
-    @app.tool(app=True)
+    @app.tool(app=True, annotations=ToolAnnotations(readOnlyHint=True))
     async def show_backends_card(ctx: Context) -> ToolResult:
         """Display all registered OCR backends with availability and capabilities.
 

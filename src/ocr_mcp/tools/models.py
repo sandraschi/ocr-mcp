@@ -33,7 +33,6 @@ from pydantic import BaseModel, Field
 # Common Literals for Enums
 OCRBackend = Literal[
     "auto",
-    "deepseek-ocr",
     "deepseek-ocr2",
     "paddleocr-vl",
     "olmocr-2",

@@ -53,7 +53,7 @@ class TestMockDeepSeekBackend:
 
     def test_initialization(self, backend, config):
         """Test backend initialization."""
-        assert backend.name == "deepseek-ocr"
+        assert backend.name == "deepseek-ocr2"
         assert backend.config == config
         assert backend.is_available()
         assert backend.call_count == 0
@@ -66,7 +66,7 @@ class TestMockDeepSeekBackend:
         assert result["success"] is True
         assert "DeepSeek OCR result" in result["text"]
         assert result["confidence"] == 0.95
-        assert result["backend"] == "deepseek-ocr"
+        assert result["backend"] == "deepseek-ocr2"
         assert result["mode"] == "text"
         assert not result["gpu_used"]
         assert backend.call_count == 1
@@ -110,7 +110,7 @@ class TestMockDeepSeekBackend:
         """Test backend capabilities."""
         capabilities = backend.get_capabilities()
 
-        assert capabilities["name"] == "deepseek-ocr"
+        assert capabilities["name"] == "deepseek-ocr2"
         assert capabilities["available"] is True
         assert "text" in capabilities["modes"]
         assert "formatted" in capabilities["modes"]
@@ -363,7 +363,7 @@ class TestBackendCommonBehavior:
     @pytest.mark.parametrize(
         "backend_class,backend_name",
         [
-            (MockDeepSeekBackend, "deepseek-ocr"),
+            (MockDeepSeekBackend, "deepseek-ocr2"),
             (MockFlorenceBackend, "florence-2"),
             (MockDOTSBackend, "dots-ocr"),
             (MockPPOCRBackend, "pp-ocrv5"),

@@ -122,9 +122,11 @@ export function Editor() {
   };
 
   return (
-    <div className="space-y-4 flex flex-col h-[calc(100vh-8rem)]">
-      <div className="shrink-0">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-100">Your OCR text</h1>
+    <div className="space-y-4 flex flex-col h-[calc(100vh-8rem)]" data-testid="editor-page">
+      <div className="shrink-0" data-testid="editor-control-3">
+        <h1 className="text-3xl font-bold tracking-tight text-slate-100" data-testid="editor-title">
+          Your OCR text
+        </h1>
         <p className="text-sm text-slate-400 mt-1 max-w-2xl">
           Follows your latest scan or upload automatically. Edit below, then export.
         </p>

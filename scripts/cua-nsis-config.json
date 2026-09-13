@@ -10,5 +10,17 @@
     "window_title_re": "OCR MCP",
     "nsis_glob": "native/target/release/bundle/nsis/OCR MCP_*_x64-setup.exe",
     "bridge_ok_text": "REST bridge reachable",
-    "uninstall_registry_filter": "*OCR MCP*"
+    "uninstall_registry_filter": "*OCR MCP*",
+    "nav_routes": [
+        { "label": "Dashboard", "route": "/" },
+        { "label": "Inbox", "route": "/inbox" },
+        { "label": "Form Filler", "route": "/forms" },
+        { "label": "Corpus Depot", "route": "/depot" },
+        { "label": "Chat", "route": "/chat" },
+        { "label": "Tools", "route": "/tools" },
+        { "label": "Skills", "route": "/skills" },
+        { "label": "Logs", "route": "/logs" },
+        { "label": "Settings", "route": "/settings" },
+        { "label": "Help", "route": "/help" }
+    ]
 }

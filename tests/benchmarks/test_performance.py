@@ -113,7 +113,7 @@ class TestOCRPerformance:
         return process.memory_info().rss / 1024 / 1024
 
     @pytest.mark.benchmark
-    @pytest.mark.parametrize("backend_name", ["deepseek-ocr", "florence-2", "got-ocr", "tesseract"])
+    @pytest.mark.parametrize("backend_name", ["deepseek-ocr2", "florence-2", "got-ocr", "tesseract"])
     def test_backend_processing_speed(self, benchmark, backend_manager, benchmark_images, backend_name):
         """Benchmark OCR processing speed for different backends."""
 

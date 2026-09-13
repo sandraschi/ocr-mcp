@@ -246,7 +246,7 @@ def _heuristic_backend_hints(user_text: str, available: list[str] | None) -> lis
     q = user_text.lower()
     candidates: list[str] = []
     if any(w in q for w in ("math", "formula", "equation", "latex")):
-        candidates.extend(["deepseek-ocr", "deepseek-ocr2", "paddleocr-vl"])
+        candidates.extend(["deepseek-ocr2", "paddleocr-vl"])
     elif any(w in q for w in ("table", "layout", "form", "invoice", "chart")):
         candidates.extend(["paddleocr-vl", "pp-ocrv5", "dots-ocr"])
     elif any(w in q for w in ("fast", "speed", "batch")):

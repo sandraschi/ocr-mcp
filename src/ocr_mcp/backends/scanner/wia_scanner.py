@@ -86,7 +86,7 @@ if IS_WINDOWS:
                 pythoncom.CoInitialize()
             except Exception:
                 # Already initialized
-                pass
+                logger.debug("COM already initialized (module import)", exc_info=True)
             test_dm = cc.CreateObject("WIA.DeviceManager")
             WIA_AVAILABLE = True
             logger.info("WIA is available and working")
@@ -221,7 +221,7 @@ class WIABackend:
                 self._com_initialized = True
             except Exception:
                 # Already initialized
-                pass
+                logger.debug("COM already initialized (ensure_com_context)", exc_info=True)
 
     def is_available(self) -> bool:
         """Check if WIA backend is available and functional."""
@@ -370,7 +370,7 @@ class WIABackend:
                 if horiz_res:
                     max_dpi = max(max_dpi, int(horiz_res))
             except Exception:
-                pass
+                logger.debug("suppressed Exception in _extract_scanner_info", exc_info=True)
 
             return ScannerInfo(
                 device_id=device_id,
@@ -444,7 +444,7 @@ class WIABackend:
                     # Try to detect ADF
                     supports_adf = True
             except Exception:
-                pass
+                logger.debug("suppressed Exception in get_scanner_properties", exc_info=True)
 
             return ScannerProperties(
                 supported_resolutions=supported_resolutions,
@@ -634,6 +634,7 @@ class WIABackend:
                     try:
                         it = items[i + 1]
                     except Exception:
+                        logger.debug("suppressed Exception in _get_scan_item", exc_info=True)
                         continue
                 props = getattr(it, "Properties", None)
                 if not props:
@@ -662,6 +663,7 @@ class WIABackend:
                     logger.debug(f"Using scan item index {idx + 1} (use_adf={use_adf}) for {device_id}")
                     return item
                 except Exception:
+                    logger.debug("suppressed Exception in _get_scan_item", exc_info=True)
                     continue
         return None
 
@@ -790,7 +792,7 @@ class WIABackend:
                             image_data = file_data.getvalue()
                             logger.info("Successfully extracted image data using getvalue()")
                         except Exception:
-                            pass
+                            logger.debug("suppressed Exception in _perform_scan", exc_info=True)
 
                     if image_data is None or not isinstance(image_data, bytes | bytearray):
                         # Final attempt: try to convert Vector to bytes directly
@@ -830,7 +832,7 @@ class WIABackend:
                 if prop.Name == property_name:
                     return prop.Value
         except Exception:
-            pass
+            logger.debug("suppressed Exception in _get_property_value", exc_info=True)
         return None
 
     def _set_property_value(self, properties, property_name: str, value: Any) -> bool:

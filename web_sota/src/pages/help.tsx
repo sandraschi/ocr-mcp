@@ -15,8 +15,8 @@ export function Help() {
   const [activeTab, setActiveTab] = useState<TabId>("webapp");
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto pb-12">
-      <h1 className="text-3xl font-bold tracking-tight text-slate-100 flex items-center gap-3">
+    <div className="space-y-6 max-w-4xl mx-auto pb-12" data-testid="help-page">
+      <h1 className="text-3xl font-bold tracking-tight text-slate-100 flex items-center gap-3" data-testid="help-title">
         <HelpCircle className="w-8 h-8 text-blue-500" />
         Help & Documentation
       </h1>

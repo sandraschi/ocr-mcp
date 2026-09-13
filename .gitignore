@@ -39,6 +39,9 @@ native/gen/
 
 # Backup files
 *.bak
+*.bak.*
+# MCPB pack staging (exact copy of src/, never commit)
+mcpb/src/
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
@@ -115,6 +118,8 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.venv-legacy-vlm/
+.venv-legacy-vlm-deepseek/
 env/
 venv/
 ENV/

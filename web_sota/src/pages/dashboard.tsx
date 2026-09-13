@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { LlmOnboarding } from "@/components/llm/LlmOnboarding";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useOcrTextStore, useScanStore } from "@/store";
 
@@ -497,13 +498,16 @@ export function Dashboard() {
         </Card>
       </div>
 
+      {/* AI setup banner (fleet LLM onboarding; renders only when unconfigured) */}
+      <LlmOnboarding mode="banner" />
+
       {/* Action bar: scanner + backend + Quick Scan */}
       <Card className="border-slate-800 bg-slate-950/50">
         <CardContent className="p-4">
           <div className="flex flex-wrap items-end gap-4">
             {/* Scanner selector */}
             <div className="min-w-[200px] flex-1">
-              <label className="text-xs font-medium text-slate-400 mb-1 block">Scanner</label>
+              <label className="text-sm font-medium text-slate-300 mb-1 block">Scanner</label>
               <select
                 value={selectedScanner}
                 onChange={(e) => setSelectedScanner(e.target.value)}
@@ -522,7 +526,7 @@ export function Dashboard() {
 
             {/* Backend selector */}
             <div className="min-w-[180px] flex-1">
-              <label className="text-xs font-medium text-slate-400 mb-1 block">OCR Backend</label>
+              <label className="text-sm font-medium text-slate-300 mb-1 block">OCR Backend</label>
               <select
                 value={selectedBackend}
                 onChange={(e) => {
@@ -625,11 +629,11 @@ export function Dashboard() {
           }`}
         >
           <input ref={fileInputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={handleFilePick} />
-          <Upload className="h-10 w-10 text-slate-500 mb-3" />
+          <Upload className="h-10 w-10 text-slate-400 mb-3" />
           <p className="text-sm font-medium text-slate-300">
             {droppedFile ? droppedFile.name : "Drop an image or PDF here, or click to browse"}
           </p>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-sm text-slate-400 mt-1">
             {scanners.length > 0
               ? "Or select a scanner above and click Quick Scan & OCR."
               : "Supports PNG, JPG, TIFF, PDF"}

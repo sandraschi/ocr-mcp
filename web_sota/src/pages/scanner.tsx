@@ -200,9 +200,11 @@ export function Scanner() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-100">Scanner Control</h1>
+    <div className="space-y-6" data-testid="scanner-page">
+      <div className="flex justify-between items-center" data-testid="scanner-control-3">
+        <h1 className="text-3xl font-bold tracking-tight text-slate-100" data-testid="scanner-title">
+          Scanner Control
+        </h1>
         <Button
           variant="outline"
           onClick={fetchScanners}

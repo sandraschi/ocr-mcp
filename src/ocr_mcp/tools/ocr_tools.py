@@ -37,6 +37,8 @@ import logging
 import os
 from typing import Any, Literal
 
+from fastmcp.tools.tool import ToolAnnotations
+
 from ..core.config import OCRConfig
 from ..core.error_handler import ErrorHandler
 from . import (
@@ -70,7 +72,9 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
             )
         return backend_manager_or_runtime, config
 
-    @app.tool()
+    @app.tool(
+        annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=True)
+    )
     async def process_document(
         operation: Literal[
             "process_document",
@@ -275,7 +279,9 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
                 next_steps=err.get("recovery_options", []),
             )
 
-    @app.tool()
+    @app.tool(
+        annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=True, idempotentHint=False, openWorldHint=False)
+    )
     async def manage_image(
         operation: Literal["preprocess", "convert", "pdf_to_images", "embed_text"],
         source_path: str | None = None,
@@ -367,7 +373,9 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
         except Exception as e:
             return ToolResponse(success=False, operation=operation, summary=str(e))
 
-    @app.tool()
+    @app.tool(
+        annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=True)
+    )
     async def operate_scanner(
         operation: Literal[
             "list_scanners",
@@ -442,7 +450,9 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
         except Exception as e:
             return ToolResponse(success=False, operation=operation, summary=str(e))
 
-    @app.tool()
+    @app.tool(
+        annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=True)
+    )
     async def manage_workflow(
         operation: Literal[
             "process_batch_intelligent",
@@ -497,7 +507,9 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
         except Exception as e:
             return ToolResponse(success=False, operation=operation, summary=str(e))
 
-    @app.tool()
+    @app.tool(
+        annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=True, idempotentHint=False, openWorldHint=False)
+    )
     async def manage_corpus(
         operation: Literal["register", "update_metadata", "get", "search", "list_recent", "attach_ocr_result"],
         source_path: str | None = None,
@@ -553,7 +565,7 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
         except Exception as e:
             return ToolResponse(success=False, operation=operation, summary=str(e))
 
-    @app.tool()
+    @app.tool(annotations=ToolAnnotations(readOnlyHint=True))
     async def get_help(level: Literal["basic", "intermediate", "advanced"] = "basic", topic: str | None = None) -> str:
         """Contextual documentation for OCR operations and tool configurations.
 
@@ -566,7 +578,7 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
         """
         return _workflow.get_help_content(level, topic)
 
-    @app.tool()
+    @app.tool(annotations=ToolAnnotations(readOnlyHint=True))
     async def get_status(level: Literal["basic", "detailed"] = "basic") -> ToolResponse:
         """Real-time system health, backend availability, and resource utilization.
 
@@ -588,7 +600,7 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
             summary="System status retrieved.",
         )
 
-    @app.tool()
+    @app.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=True))
     async def shutdown_server(confirm: bool = False) -> ToolResponse:
         """Gracefully shut down the OCR-MCP server.
 

@@ -107,9 +107,9 @@ class TestBackendManager:
         manager = BackendManager(config)
 
         # Test existing backend
-        backend = manager.get_backend("deepseek-ocr")
+        backend = manager.get_backend("deepseek-ocr2")
         assert backend is not None
-        assert backend.name == "deepseek-ocr"
+        assert backend.name == "deepseek-ocr2"
 
         # Test non-existing backend
         backend = manager.get_backend("nonexistent-backend")
@@ -276,7 +276,7 @@ class TestBackendManager:
         manager = BackendManager(config)
 
         expected_backends = [
-            "deepseek-ocr",
+            "deepseek-ocr2",
             "paddleocr-vl",
             "dots-ocr",
             "pp-ocrv5",
@@ -396,7 +396,6 @@ class TestBackendListAndStatus:
         manager = BackendManager(config)
 
         expected = {
-            "deepseek-ocr",
             "paddleocr-vl",
             "deepseek-ocr2",
             "olmocr-2",
@@ -462,14 +461,14 @@ class TestBackendListAndStatus:
         manager = BackendManager(config)
 
         mock_be = Mock()
-        mock_be.name = "deepseek-ocr"
+        mock_be.name = "deepseek-ocr2"
         mock_be.is_available.return_value = True
-        manager.backends["deepseek-ocr"] = mock_be
+        manager.backends["deepseek-ocr2"] = mock_be
 
         # Try with alias
         selected = manager.select_backend("deepseek")
         assert selected is not None
-        assert selected.name == "deepseek-ocr"
+        assert selected.name == "deepseek-ocr2"
 
     def test_select_backend_returns_none_when_none_available(self, config):
         """Test that select_backend returns None when no backends available."""

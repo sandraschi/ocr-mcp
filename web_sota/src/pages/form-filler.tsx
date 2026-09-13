@@ -353,7 +353,7 @@ export function FormFillerPage() {
     const fieldsHtml = fields
       .map(
         (f) => `
-        <div style="position: absolute; left: ${f.x}%; top: ${f.y}%; font-family: 'Courier New', Courier, monospace; font-weight: bold; font-size: ${f.fontSize}pt; color: #000080; white-space: nowrap; transform: translateY(-50%);">
+        <div style="position: absolute; left: ${f.x}%; top: ${f.y}%; font-family: 'Courier New', Courier, monospace; font-weight: bold; font-size: ${f.fontSize}pt; color: #000080; white-space: nowrap; transform: translateY(-50%);" data-testid="form-filler-page">
           ${f.value}
         </div>
       `,
@@ -377,7 +377,7 @@ export function FormFillerPage() {
           </style>
         </head>
         <body>
-          <div class="form-container">
+          <div class="form-container" data-testid="form-filler-control-3">
             ${mode === "full" ? `<img class="bg-image" src="${formImage}" />` : ""}
             ${fieldsHtml}
           </div>
@@ -402,7 +402,10 @@ export function FormFillerPage() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-100 flex items-center gap-3">
+            <h1
+              className="text-3xl font-bold tracking-tight text-slate-100 flex items-center gap-3"
+              data-testid="form-filler-title"
+            >
               <FileSpreadsheet className="w-8 h-8 text-emerald-500" /> Preprinted Form Filler
             </h1>
             <p className="text-slate-400">

@@ -93,3 +93,19 @@ def patch_transformers_compatibility() -> None:
             u.is_torch_fx_available = iu.is_torch_fx_available
     except Exception as patch_err:
         logger.debug("Transformers compatibility patch: %s", patch_err)
+
+    # Legacy trust_remote_code models (GOT-OCR, DeepSeek-OCR family, ...) vendor
+    # a copy of an old GenerationMixin.prepare_inputs_for_generation that reads
+    # Cache.seen_tokens / Cache.get_max_length() -- both removed from the Cache
+    # API in current transformers (superseded by get_seq_length() /
+    # get_max_cache_shape()). Restore them as thin aliases so that old code
+    # keeps working without patching every vendored HF cache file by hand.
+    try:
+        from transformers.cache_utils import Cache
+
+        if not hasattr(Cache, "seen_tokens"):
+            Cache.seen_tokens = property(lambda self: self.get_seq_length())
+        if not hasattr(Cache, "get_max_length"):
+            Cache.get_max_length = lambda self: self.get_max_cache_shape()
+    except Exception as patch_err:
+        logger.debug("Transformers Cache compatibility patch: %s", patch_err)

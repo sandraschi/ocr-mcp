@@ -142,15 +142,15 @@ def mock_scan_settings():
 # Backend Mocks
 @pytest.fixture
 def mock_deepseek_backend():
-    """Mock DeepSeek-OCR backend."""
+    """Mock DeepSeek-OCR-2 backend."""
     mock_backend = Mock()
-    mock_backend.name = "deepseek-ocr"
+    mock_backend.name = "deepseek-ocr2"
     mock_backend.is_available.return_value = True
     mock_backend.process_image = Mock(
-        return_value={"success": True, "text": "DeepSeek OCR result", "backend": "deepseek-ocr"}
+        return_value={"success": True, "text": "DeepSeek OCR result", "backend": "deepseek-ocr2"}
     )
     mock_backend.get_capabilities.return_value = {
-        "name": "deepseek-ocr",
+        "name": "deepseek-ocr2",
         "available": True,
         "modes": ["text", "formatted"],
         "languages": ["en", "multilingual"],
@@ -360,6 +360,7 @@ def mock_scanner_manager(mock_wia_backend):
         mock_wia_backend.scan_document(),
         mock_wia_backend.scan_document(),
     ]
+    mock_manager.preview_scan.return_value = mock_wia_backend.scan_document()
     mock_manager.get_available_backends.return_value = ["wia"]
     mock_manager.get_backend_status.return_value = {"wia": "available"}
     return mock_manager
@@ -410,7 +411,7 @@ def ocr_mode(request):
 @pytest.fixture(
     params=[
         "auto",
-        "deepseek-ocr",
+        "deepseek-ocr2",
         "florence-2",
         "dots-ocr",
         "pp-ocrv5",

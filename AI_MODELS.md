@@ -19,7 +19,6 @@ This document lists every OCR backend used by **OCR-MCP** (both the [web app](RE
 | **Mistral OCR** | ✅ API | — | 0 | 94.9% claimed, 74% win rate | Cloud fallback, high accuracy |
 | **Qwen2.5-VL** | ✅ Good | 7B | ~16GB | Strong on DocVQA | Complex layouts, VQA |
 | **GOT-OCR 2.0** | ✅ Lean | 580M | ~2GB | Solid | Fast, mixed content, lean VRAM |
-| **DeepSeek-OCR** | ✅ API | — | 0 | 92-95% | Cloud, enterprise docs |
 | **DOTS.OCR** | ✅ OK | 3B | ~6GB | 87-90% tables | Table-heavy docs |
 | **PP-OCRv5** | ✅ Legacy | ~100MB | low | 86-89% | High throughput, CJK |
 | **EasyOCR** | ⚠️ Legacy | ~200MB | low | 82-87% | Handwriting, quick integration |
@@ -28,7 +27,7 @@ This document lists every OCR backend used by **OCR-MCP** (both the [web app](RE
 *\* with `flash-attn` installed. Without it: ~40GB — do not run on GPU without flash-attn.*
 
 **Auto-selection priority** (highest to lowest):
-`paddleocr-vl → mistral-ocr → deepseek-ocr2 → unlimited-ocr → mineru-2.5 → olmocr-2 → nemotron-vl → deepseek-ocr → qwen-layered → got-ocr → dots-ocr → pp-ocrv5 → easyocr → tesseract`
+`paddleocr-vl → mistral-ocr → deepseek-ocr2 → unlimited-ocr → mineru-2.5 → olmocr-2 → nemotron-vl → qwen-layered → got-ocr → dots-ocr → pp-ocrv5 → easyocr → tesseract`
 
 ---
 
@@ -110,7 +109,7 @@ pip install flash-attn==2.7.3 --no-build-isolation
 
 **HF model:** `deepseek-ai/DeepSeek-OCR-2`
 **Backend name:** `deepseek-ocr2`
-**Aliases:** `deepseek2`, `deepseek-ocr-2`
+**Aliases:** `deepseek`, `deepseek2`, `deepseek-ocr-2` (v1 `deepseek-ocr` was removed 2026-09-08; same authors, this supersedes it)
 
 ---
 
@@ -193,15 +192,6 @@ Alibaba's multimodal VLM, available in 2B/7B/72B. The 7B variant scores near GPT
 **HF model:** `stepfun-ai/GOT-OCR2_0`
 **Backend name:** `got-ocr`
 **Alias:** `got`
-
----
-
-### DeepSeek-OCR (original)
-
-The original DeepSeek-OCR cloud API backend. Still useful when DeepSeek-OCR-2 weights aren't downloaded yet, or for API-based processing.
-
-**Backend name:** `deepseek-ocr`
-**Alias:** `deepseek`
 
 ---
 
@@ -329,7 +319,7 @@ Microsoft Florence-2 is a general vision foundation model (object detection, ima
 | Minimum VRAM, still good quality | `got-ocr` (580M) or `mineru-2.5` (2.5GB) |
 | CPU only, no GPU | `tesseract` |
 | High volume batch | `pp-ocrv5` or `tesseract` |
-| Cloud, no local model | `mistral-ocr` or `deepseek-ocr` |
+| Cloud, no local model | `mistral-ocr` |
 
 ---
 

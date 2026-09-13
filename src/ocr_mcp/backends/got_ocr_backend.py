@@ -26,14 +26,38 @@
 #
 #
 
+import asyncio
+import contextlib
+import json
 import logging
 import time
+from pathlib import Path
 from typing import Any
 
 from ..core.backend_manager import OCRBackend
 from ..core.config import OCRConfig
 
 logger = logging.getLogger(__name__)
+
+_LEGACY_VENV_DIR = Path(__file__).resolve().parents[3] / ".venv-legacy-vlm"
+
+
+@contextlib.contextmanager
+def _no_cuda_required():
+    """Neutralize GOT-OCR's vendored ``model.chat()``, which hardcodes
+    ``.cuda()``/``.half()`` on every tensor it builds (image + input_ids)
+    with no CPU branch at all. Scoped to this call only, restored after.
+    """
+    import torch
+
+    orig_cuda, orig_half = torch.Tensor.cuda, torch.Tensor.half
+    torch.Tensor.cuda = lambda self, *a, **k: self
+    torch.Tensor.half = lambda self, *a, **k: self
+    try:
+        yield
+    finally:
+        torch.Tensor.cuda = orig_cuda
+        torch.Tensor.half = orig_half
 
 
 class GOTOCRBackend(OCRBackend):
@@ -60,8 +84,57 @@ class GOTOCRBackend(OCRBackend):
             self._available = False
             logger.warning("GOT-OCR2.0 dependencies not available")
 
+    def _legacy_venv_python(self) -> Path | None:
+        """Path to the isolated transformers==4.37.2 venv's interpreter, if set
+        up via ``scripts/setup_legacy_vlm_venv.py``. GOT-OCR's vendored code
+        (tokenizer + Cache.seen_tokens + cache_position handling in its own
+        forward()) only works against the transformers version it shipped
+        with -- see module docstring on ``_no_cuda_required`` and
+        ``_got_ocr_legacy_runner.py`` for the chain of incompatibilities this
+        sidesteps. Returns None if the sidecar venv hasn't been created.
+        """
+        candidate = _LEGACY_VENV_DIR / "Scripts" / "python.exe"
+        return candidate if candidate.exists() else None
+
+    async def _run_via_legacy_venv(self, python_exe: Path, image_path: str, ocr_type: str) -> str:
+        """Run GOT-OCR2.0 inference in the isolated legacy-transformers venv."""
+        runner = Path(__file__).resolve().with_name("_got_ocr_legacy_runner.py")
+        proc = await asyncio.create_subprocess_exec(
+            str(python_exe),
+            str(runner),
+            image_path,
+            ocr_type,
+            str(self.cache_dir),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate()
+        last_line = stdout.decode("utf-8", errors="replace").strip().splitlines()
+        if not last_line:
+            raise RuntimeError(
+                f"legacy-vlm subprocess produced no output (exit {proc.returncode}): "
+                f"{stderr.decode('utf-8', errors='replace')[-2000:]}"
+            )
+        payload = json.loads(last_line[-1])
+        if not payload.get("success"):
+            raise RuntimeError(payload.get("error", "unknown legacy-vlm subprocess error"))
+        return payload["text"]
+
     def _load_model(self):
-        """Load model and tokenizer lazily."""
+        """Load model and tokenizer lazily.
+
+        GOT-OCR2.0 (stepfun-ai/GOT-OCR2_0) ships a custom ``GOTConfig`` /
+        ``modeling_GOT.py`` via ``trust_remote_code``. It must be loaded with
+        ``AutoModel`` (generic auto-dispatch), NOT ``AutoModelForCausalLM``
+        which fails with::
+
+            Unrecognized configuration class ...GOTConfig... for this kind of
+            AutoModel: AutoModelForCausalLM.
+
+        Newer transformers (>=4.48) also ships a native ``GotOcr2Config`` /
+        ``GotOcr2ForConditionalGeneration`` mapping, so we try generic
+        ``AutoModel`` first and fall back to the native class.
+        """
         if self._model is not None:
             return
 
@@ -69,14 +142,28 @@ class GOTOCRBackend(OCRBackend):
             raise RuntimeError("GOT-OCR dependencies not available")
 
         try:
+            from ..utils.startup_bootstrap import patch_transformers_compatibility
+
+            patch_transformers_compatibility()
+
             import torch
-            from transformers import AutoModelForCausalLM, AutoTokenizer
+            from transformers import AutoModel, AutoTokenizer
 
             logger.info(f"Loading GOT-OCR2.0 model from {self.model_name}...")
             start_time = time.time()
 
             self._tokenizer = AutoTokenizer.from_pretrained(
                 self.model_name, trust_remote_code=True, cache_dir=str(self.cache_dir)
+            )
+            # QWenTokenizer (vendored, targets transformers==4.37.2) never defines
+            # cls/sep tokens -- it bakes BOS/EOS into the prompt text itself via
+            # literal <|im_start|>/<|im_end|>. Modern transformers' default
+            # build_inputs_with_special_tokens() unconditionally splices in
+            # [cls_token_id] + ids + [sep_token_id], which are None here, so
+            # tokenizer(prompt) -> pad() blows up with "type of None unknown".
+            # Neutralize it to the no-op passthrough this tokenizer expects.
+            self._tokenizer.build_inputs_with_special_tokens = lambda token_ids_0, token_ids_1=None: (
+                token_ids_0 if token_ids_1 is None else token_ids_0 + token_ids_1
             )
 
             # Determine device and dtype
@@ -86,22 +173,82 @@ class GOTOCRBackend(OCRBackend):
 
             dtype = torch.bfloat16 if device == "cuda" else torch.float32
 
-            self._model = AutoModelForCausalLM.from_pretrained(
-                self.model_name,
-                trust_remote_code=True,
-                low_cpu_mem_usage=True,
-                device_map=device,
-                use_safetensors=True,
-                torch_dtype=dtype,
-                cache_dir=str(self.cache_dir),
-            )
+            # device_map="cuda"/"cpu" is invalid -- accelerate expects
+            # "auto"/"cuda:0"/None. On CUDA use "auto" (shard + offload),
+            # on CPU load plain then .to("cpu") to avoid accelerate quirks.
+            load_kwargs: dict[str, Any] = {
+                "trust_remote_code": True,
+                "cache_dir": str(self.cache_dir),
+            }
+            try:
+                import accelerate  # noqa: F401 -- just probing availability
+
+                has_accelerate = True
+            except Exception:
+                has_accelerate = False
+
+            if device == "cuda" and has_accelerate:
+                load_kwargs.update(
+                    {
+                        "device_map": "auto",
+                        "torch_dtype": dtype,
+                        "low_cpu_mem_usage": True,
+                        "use_safetensors": True,
+                    }
+                )
+            else:
+                load_kwargs.update({"torch_dtype": dtype, "low_cpu_mem_usage": True})
+                # use_safetensors only when the checkpoint actually ships them;
+                # let from_pretrained decide on CPU path (avoids hard failure).
+
+            try:
+                self._model = AutoModel.from_pretrained(self.model_name, **load_kwargs)
+            except Exception as e:
+                logger.warning(f"Generic AutoModel load failed ({e}), trying native GotOcr2 class...")
+                native_cls = None
+                try:
+                    from transformers import GotOcr2ForConditionalGeneration
+
+                    native_cls = GotOcr2ForConditionalGeneration
+                except Exception:
+                    try:
+                        from transformers.models.got_ocr2.modeling_got_ocr2 import (
+                            GotOcr2ForConditionalGeneration as _Native,
+                        )
+
+                        native_cls = _Native
+                    except Exception:
+                        native_cls = None
+                if native_cls is not None:
+                    # Native class uses the stock config (no remote code).
+                    native_kwargs = dict(load_kwargs)
+                    native_kwargs.pop("trust_remote_code", None)
+                    self._model = native_cls.from_pretrained(self.model_name, **native_kwargs)
+                else:
+                    raise
+
+            if device != "cuda" or not has_accelerate:
+                try:
+                    self._model = self._model.to(device)
+                except Exception:
+                    logger.debug("suppressed Exception in _load_model", exc_info=True)
 
             self._model.eval()
             logger.info(f"GOT-OCR2.0 model loaded in {time.time() - start_time:.2f}s on {device}")
 
         except Exception as e:
-            logger.error(f"Failed to load GOT-OCR2.0 model: {e}")
-            raise RuntimeError(f"Failed to load GOT-OCR2.0 model: {e}")
+            msg = str(e)
+            hint = ""
+            if "Unrecognized configuration class" in msg or "GOTConfig" in msg:
+                import transformers as _tf
+
+                hint = (
+                    f" (transformers={getattr(_tf, '__version__', '?')}; "
+                    "GOT-OCR2_0 needs trust_remote_code + generic AutoModel. "
+                    "Upgrade with: uv pip install -U transformers accelerate safetensors)"
+                )
+            logger.error(f"Failed to load GOT-OCR2.0 model: {e}{hint}")
+            raise RuntimeError(f"Failed to load GOT-OCR2.0 model: {e}{hint}")
 
     async def process_image(
         self,
@@ -119,8 +266,6 @@ class GOTOCRBackend(OCRBackend):
             return {"success": False, "error": "GOT-OCR2.0 backend not available"}
 
         try:
-            self._load_model()
-
             start_time = time.time()
 
             # Map mode to ocr_type
@@ -133,9 +278,28 @@ class GOTOCRBackend(OCRBackend):
             # For simplicity in this v1, we focus on full image 'ocr' and 'format'
             # If region is provided, we might interpret it handling logic (crop or prompt)
 
-            # Run inference
-            # model.chat(tokenizer, image_file, ocr_type='ocr', ocr_box=None, ocr_color=None)
-            res = self._model.chat(self._tokenizer, image_path, ocr_type=ocr_type)
+            legacy_python = self._legacy_venv_python()
+            if legacy_python is not None:
+                # Preferred path: GOT-OCR's vendored code needs transformers==4.37.2,
+                # see _legacy_venv_python's docstring. Isolated venv, no in-process load.
+                res = await self._run_via_legacy_venv(legacy_python, image_path, ocr_type)
+                device_str = "cpu (legacy-vlm venv)"
+            else:
+                logger.warning(
+                    "GOT-OCR2.0: .venv-legacy-vlm not found, falling back to in-process "
+                    "load under the main venv's transformers -- this is known to fail "
+                    "(cache_position mismatch inside GOT-OCR's vendored forward()). "
+                    "Run scripts/setup_legacy_vlm_venv.py to fix."
+                )
+                self._load_model()
+                # model.chat(tokenizer, image_file, ocr_type='ocr', ocr_box=None, ocr_color=None)
+                device = str(getattr(self._model, "device", "cpu"))
+                if device.startswith("cuda"):
+                    res = self._model.chat(self._tokenizer, image_path, ocr_type=ocr_type)
+                else:
+                    with _no_cuda_required():
+                        res = self._model.chat(self._tokenizer, image_path, ocr_type=ocr_type)
+                device_str = device
 
             processing_time = time.time() - start_time
 
@@ -150,7 +314,7 @@ class GOTOCRBackend(OCRBackend):
                 "metadata": {
                     "model": self.model_name,
                     "model_size": self.config.got_ocr_model_size,
-                    "device": str(self._model.device if self._model else "unknown"),
+                    "device": device_str,
                 },
             }
 

@@ -33,7 +33,7 @@ OCR-MCP Error Handler: Comprehensive error handling and user feedback system
 import logging
 import traceback
 from enum import Enum
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any, ClassVar
 
 logger = logging.getLogger(__name__)
@@ -178,6 +178,11 @@ class ErrorHandler:
             "Region coordinates are invalid",
             ErrorCategory.VALIDATION,
             ErrorSeverity.MEDIUM,
+        ),
+        "PATH_TRAVERSAL": (
+            "File path escapes the allowed directory",
+            ErrorCategory.VALIDATION,
+            ErrorSeverity.HIGH,
         ),
         # Processing errors
         "PROCESSING_FAILED": (
@@ -399,12 +404,35 @@ class ErrorHandler:
     def validate_file_path(cls, file_path: str | Path) -> OCRError | None:
         """Validate file path and return error if invalid"""
 
+        raw = str(file_path)
+
+        # Null-byte injection is never a legitimate path.
+        if "\x00" in raw:
+            return cls.create_error("PATH_TRAVERSAL", details={"file_path": raw})
+
+        # `..` segments (either separator) escape the working directory.
+        # Normalize backslashes first so Windows-style traversal is caught on any OS.
+        parts = PurePath(raw.replace("\\", "/")).parts
+        if ".." in parts:
+            return cls.create_error("PATH_TRAVERSAL", details={"file_path": raw})
+
         path = Path(file_path)
 
-        if not path.exists():
+        try:
+            exists = path.exists()
+        except OSError:
+            # stat() itself refused (e.g. locked system files) -> fail closed
+            return cls.create_error("FILE_PERMISSION_DENIED", details={"file_path": raw})
+
+        if not exists:
             return cls.create_error("FILE_NOT_FOUND", details={"file_path": str(file_path)})
 
-        if not path.is_file():
+        try:
+            is_file = path.is_file()
+        except OSError:
+            return cls.create_error("FILE_PERMISSION_DENIED", details={"file_path": raw})
+
+        if not is_file:
             return cls.create_error(
                 "FILE_NOT_FOUND",
                 message_override="Path exists but is not a file",
@@ -436,7 +464,7 @@ class ErrorHandler:
         if "backend" in kwargs:
             valid_backends = [
                 "auto",
-                "deepseek-ocr",
+                "deepseek-ocr2",
                 "florence-2",
                 "dots-ocr",
                 "pp-ocrv5",

@@ -46,12 +46,12 @@ from typing import Any
 
 import httpx
 import uvicorn
-from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, BackgroundTasks, FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from PIL import Image
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class MistralSettingsUpdate(BaseModel):
@@ -225,7 +225,7 @@ async def app_lifespan(app_instance: FastAPI):
                     if path and os.path.exists(path):
                         os.unlink(path)
                 except OSError:
-                    pass
+                    logger.debug("suppressed OSError in app_lifespan", exc_info=True)
 
 
 # Initialize FastAPI app
@@ -244,6 +244,16 @@ try:
     logger.info("MCP streamable HTTP mounted at /mcp")
 except Exception as _mcp_err:
     logger.warning("Failed to mount MCP HTTP endpoint: %s", _mcp_err)
+
+# Fleet Apps hub (APPS_PAGE_STANDARD.md v3 — vendored, do not hand-edit the
+# modules). Standard /api/apps* live alongside the legacy custom
+# /api/fleet/apps endpoint below. Router (not bare app) so the /api prefix
+# matches the frontend + Vite proxy, same as the arxiv-mcp pilot.
+from ocr_mcp.services.apps_routes import register_apps_routes as _register_apps_routes
+
+_apps_router = APIRouter(prefix="/api")
+_register_apps_routes(_apps_router)
+app.include_router(_apps_router)
 
 # Configure CORS
 app.add_middleware(
@@ -677,61 +687,258 @@ async def get_skill_content(skill_name: str):
     return {"success": True, "name": skill_name, "content": skill_file.read_text(encoding="utf-8")}
 
 
+@app.get("/api/capabilities")
+async def get_capabilities():
+    """Standard capability envelope: tools, features, version (fleet contract)."""
+    try:
+        from importlib.metadata import version
+
+        pkg_version = version("ocr-mcp")
+    except Exception:
+        pkg_version = "unknown"
+    return {
+        "server": "ocr-mcp",
+        "version": pkg_version,
+        "tools": [
+            "process_document",
+            "manage_image",
+            "operate_scanner",
+            "manage_workflow",
+            "manage_corpus",
+            "execute_agentic_workflow",
+            "ingest_book",
+            "llm_ops",
+            "get_help",
+            "get_status",
+        ],
+        "features": ["sampling", "resources", "prompts", "prefab-ui", "skills", "webapp"],
+        "health": "/api/health",
+        "diagnostics": "/api/v1/diagnostics",
+    }
+
+
+@app.get("/api/llm/discover")
+async def get_llm_discover():
+    """Local-engine presence probe (Ollama/LM Studio): reachable + models, no keys."""
+    import asyncio
+
+    from ocr_mcp.services import llm_providers
+
+    infos = llm_providers.public_provider_info()
+    locals_ = [i for i in infos if i["kind"] == "local"]
+    probes = await asyncio.gather(*(llm_providers.probe_local(i["id"]) for i in locals_))
+    return {
+        "locals": [
+            {"id": info["id"], "label": info["label"], "reachable": reachable, "models": models}
+            for info, (reachable, models) in zip(locals_, probes, strict=True)
+        ]
+    }
+
+
+# --- Fleet LLM surfaces (SETTINGS_LLM.md contract, vendored pattern) ---
+# Backend truth lives in llm_settings.json + 0600 keystore under the user
+# cache dir (see ocr_mcp.services.llm_providers). localStorage is a
+# fast-boot mirror only. Engine lifecycle reuses llm_engine — the same path
+# the llm_ops MCP tool uses, so UI and agents cannot drift.
+
+
+class LlmSettingsWriteIn(BaseModel):
+    provider: str = Field(default="ollama")
+    endpoint: str = Field(default="http://localhost:11434")
+    model: str = Field(default="")
+    api_key: str | None = Field(default=None, description="Write-only; stored in 0600 keystore")
+
+
+class LlmUnloadIn(BaseModel):
+    provider: str = Field(default="ollama")
+    endpoint: str = Field(default="http://localhost:11434")
+
+
+class LlmChatIn(BaseModel):
+    provider: str
+    model: str = Field(min_length=1)
+    messages: list[dict[str, Any]] = Field(min_length=1)
+
+
+class LlmInstallIn(BaseModel):
+    engine: str
+
+
+@app.get("/api/settings/llm")
+async def get_llm_settings():
+    """Read saved LLM selection (backend truth; key bytes never returned)."""
+    from ocr_mcp.services import llm_providers
+
+    data = llm_providers.read_llm_settings()
+    data["keys_configured"] = llm_providers.keys_configured()
+    return data
+
+
+@app.post("/api/settings/llm")
+async def post_llm_settings(body: LlmSettingsWriteIn):
+    """Save LLM selection; key goes to the keystore only.
+
+    Saving an ollama model switches VRAM (evict rest, warm choice) via the
+    shared llm_engine — a silent config-only save would let a leftover hog
+    keep squatting while the new choice can't fit.
+    """
+    from ocr_mcp.services import llm_engine, llm_providers
+
+    try:
+        llm_providers.require_provider(body.provider)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    payload = {"provider": body.provider, "endpoint": body.endpoint, "model": body.model}
+    llm_providers.write_llm_settings(payload)
+    key_saved = False
+    if body.api_key:
+        try:
+            llm_providers.save_key(body.provider, body.api_key)
+            key_saved = True
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+    switch: dict[str, Any] = {}
+    if body.provider == "ollama" and body.model.strip():
+        switch = await llm_engine.switch_ollama_model(body.model.strip(), body.endpoint)
+    return {"success": True, **payload, "key_saved": key_saved, "switch": switch}
+
+
+@app.delete("/api/settings/llm/key")
+async def delete_llm_key(provider: str = Query(...)):
+    """Delete one stored cloud API key."""
+    from ocr_mcp.services import llm_providers
+
+    try:
+        removed = llm_providers.delete_key(provider)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"success": True, "provider": provider, "removed": removed}
+
+
 @app.get("/api/llm/providers")
 async def get_llm_providers():
-    """Discover local LLM providers (Ollama, LM Studio)."""
-    providers = []
+    """Provider registry with live local detection + cloud key flags (no key bytes)."""
+    import asyncio
+
+    from ocr_mcp.services import llm_providers
+
+    infos = llm_providers.public_provider_info()
+    locals_ = [i for i in infos if i["kind"] == "local"]
+    probes = await asyncio.gather(*(llm_providers.probe_local(i["id"]) for i in locals_))
+    for info, (reachable, models) in zip(locals_, probes, strict=True):
+        info["detected"] = reachable
+        info["models"] = models
+    for info in infos:
+        if info["kind"] == "cloud":
+            info["detected"] = info["configured"]
+            info["models"] = []
+    return {"providers": infos}
+
+
+@app.get("/api/llm/models")
+async def get_llm_models(provider: str = Query(...)):
+    """Model list for one provider: live when reachable/keyed, else curated."""
+    from ocr_mcp.services import llm_providers
+
     try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
-            resp = await client.get("http://127.0.0.1:11434/api/tags")
-            if resp.status_code == 200:
-                data = resp.json()
-                models = [m["name"] for m in data.get("models", [])]
-                providers.append(
-                    {
-                        "id": "ollama",
-                        "label": "Ollama",
-                        "base_url": "http://127.0.0.1:11434/v1",
-                        "models": models,
-                        "needs_key": False,
-                    }
-                )
-    except Exception:
-        providers.append(
-            {
-                "id": "ollama",
-                "label": "Ollama",
-                "base_url": "http://127.0.0.1:11434/v1",
-                "models": [],
-                "needs_key": False,
-            }
-        )
+        return await llm_providers.list_models(provider)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/llm/loaded")
+async def get_llm_loaded(provider: str = Query(...), endpoint: str = Query(default="")):
+    """Models currently resident on the local engine (name + VRAM + expiry)."""
+    from ocr_mcp.services import llm_engine
+
+    if provider != "ollama":
+        raise HTTPException(status_code=400, detail="loaded residents need the ollama provider")
+    base = endpoint.rstrip("/") or "http://localhost:11434"
+    return {"success": True, "provider": provider, **await llm_engine.ollama_loaded(base)}
+
+
+@app.post("/api/llm/unload")
+async def post_llm_unload(body: LlmUnloadIn):
+    """Kick every loaded model out of the local engine (full VRAM release).
+
+    Loads nothing; fails loudly when the engine is unreachable instead of
+    pretending. Same engine call the llm_ops MCP tool uses.
+    """
+    from ocr_mcp.services import llm_engine
+
+    if body.provider != "ollama":
+        raise HTTPException(status_code=400, detail="unload needs the ollama provider")
+    switch = await llm_engine.switch_ollama_model("", body.endpoint)
+    if not switch.get("engine"):
+        raise HTTPException(status_code=502, detail="Ollama engine unreachable - start it first")
+    return {"success": True, "provider": body.provider, **switch}
+
+
+@app.get("/api/llm/gpus")
+async def get_llm_gpus():
+    """Live GPU VRAM (used/total) via nvidia-smi. Empty list when unavailable."""
+    from ocr_mcp.services import llm_engine
+
+    return {"gpus": llm_engine.gpu_vram()}
+
+
+@app.get("/api/llm/onboarding")
+async def get_llm_onboarding():
+    """Fresh-install starter facts: what exists, what can be installed, best path."""
+    from ocr_mcp.services import llm_providers
+
+    return llm_providers.onboarding_state()
+
+
+@app.post("/api/llm/install")
+async def post_llm_install(body: LlmInstallIn):
+    """Start a fixed-command engine install (allowlist: ollama). No user input reaches the shell."""
+    from ocr_mcp.services import llm_providers
+
     try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
-            resp = await client.get("http://127.0.0.1:1234/v1/models")
-            if resp.status_code == 200:
-                data = resp.json()
-                models = [m["id"] for m in data.get("data", [])]
-                providers.append(
-                    {
-                        "id": "lmstudio",
-                        "label": "LM Studio",
-                        "base_url": "http://127.0.0.1:1234/v1",
-                        "models": models,
-                        "needs_key": False,
-                    }
-                )
-    except Exception:
-        providers.append(
-            {
-                "id": "lmstudio",
-                "label": "LM Studio",
-                "base_url": "http://127.0.0.1:1234/v1",
-                "models": [],
-                "needs_key": False,
-            }
-        )
-    return {"providers": providers}
+        return llm_providers.start_install(body.engine.strip().lower())
+    except (ValueError, RuntimeError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/llm/install/status")
+async def get_llm_install_status(engine: str = Query(...)):
+    """Poll a background engine install: idle | running | done | error."""
+    from ocr_mcp.services import llm_providers
+
+    try:
+        return llm_providers.install_status(engine.strip().lower())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/llm/chat")
+async def post_llm_chat(body: LlmChatIn):
+    """Non-streaming chat via the backend proxy (keys never leave the server)."""
+    from ocr_mcp.services import llm_providers
+
+    try:
+        content = await llm_providers.chat_complete(body.provider, body.model, body.messages)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return {"provider": body.provider, "model": body.model, "content": content}
+
+
+@app.post("/api/llm/chat/stream")
+async def post_llm_chat_stream(body: LlmChatIn):
+    """Streaming chat (SSE, OpenAI-style chunks) via the backend proxy."""
+    from ocr_mcp.services import llm_providers
+
+    try:
+        llm_providers.require_provider(body.provider)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if not body.model.strip():
+        raise HTTPException(status_code=400, detail="Empty model name")
+    gen = llm_providers.chat_stream(body.provider, body.model, body.messages)
+    return StreamingResponse(gen, media_type="text/event-stream")
 
 
 FLEET_APPS: list[dict[str, Any]] = [
@@ -827,7 +1034,7 @@ async def get_fleet_apps():
                 if resp.status_code == 200:
                     return {**app_info, "url": f"http://localhost:{app_info['port']}", "alive": True, "icon": None}
         except Exception:
-            pass
+            logger.debug("suppressed Exception in probe", exc_info=True)
         return {**app_info, "url": f"http://localhost:{app_info['port']}", "alive": False, "icon": None}
 
     tasks = [probe(app) for app in FLEET_APPS]
@@ -1221,7 +1428,7 @@ async def process_file_background(job_id: str, file_path: str, ocr_mode: str, ba
         try:
             os.unlink(file_path)
         except OSError:
-            pass
+            logger.debug("suppressed OSError in process_file_background", exc_info=True)
 
     except Exception as e:
         logger.error(f"Failed to process file {job_id}: {e}")
@@ -1230,7 +1437,7 @@ async def process_file_background(job_id: str, file_path: str, ocr_mode: str, ba
         try:
             os.unlink(file_path)
         except OSError:
-            pass
+            logger.debug("suppressed OSError in process_file_background", exc_info=True)
 
 
 async def process_batch_background(job_id: str, file_paths: list[str], ocr_mode: str, backend: str):
@@ -1256,7 +1463,7 @@ async def process_batch_background(job_id: str, file_paths: list[str], ocr_mode:
             try:
                 os.unlink(file_path)
             except OSError:
-                pass
+                logger.debug("suppressed OSError in process_batch_background", exc_info=True)
 
     except Exception as e:
         logger.error(f"Failed to process batch {job_id}: {e}")
@@ -1266,7 +1473,7 @@ async def process_batch_background(job_id: str, file_paths: list[str], ocr_mode:
             try:
                 os.unlink(fp)
             except OSError:
-                pass
+                logger.debug("suppressed OSError in process_batch_background", exc_info=True)
 
 
 async def process_file_demo(job_id: str, file_path: str, filename: str, ocr_mode: str, backend: str):
@@ -1318,7 +1525,7 @@ async def process_file_demo(job_id: str, file_path: str, filename: str, ocr_mode
         try:
             os.unlink(file_path)
         except OSError:
-            pass
+            logger.debug("suppressed OSError in process_file_demo", exc_info=True)
 
     except Exception as e:
         logger.error(f"Failed to process demo file {job_id}: {e}")
@@ -1327,7 +1534,7 @@ async def process_file_demo(job_id: str, file_path: str, filename: str, ocr_mode
         try:
             os.unlink(file_path)
         except OSError:
-            pass
+            logger.debug("suppressed OSError in process_file_demo", exc_info=True)
 
 
 async def process_batch_demo(
@@ -1378,7 +1585,7 @@ async def process_batch_demo(
             try:
                 os.unlink(fp)
             except OSError:
-                pass
+                logger.debug("suppressed OSError in process_batch_demo", exc_info=True)
 
     except Exception as e:
         logger.error(f"Failed to process demo batch {job_id}: {e}")
@@ -1388,7 +1595,7 @@ async def process_batch_demo(
             try:
                 os.unlink(fp)
             except OSError:
-                pass
+                logger.debug("suppressed OSError in process_batch_demo", exc_info=True)
 
 
 async def optimize_background(job_id: str, file_path: str, target_quality: float, max_attempts: int):
@@ -1450,7 +1657,7 @@ async def optimize_background(job_id: str, file_path: str, target_quality: float
         try:
             os.unlink(file_path)
         except OSError:
-            pass
+            logger.debug("suppressed OSError in optimize_background", exc_info=True)
 
     except Exception as e:
         logger.error(f"Failed to optimize {job_id}: {e}")
@@ -1459,7 +1666,7 @@ async def optimize_background(job_id: str, file_path: str, target_quality: float
         try:
             os.unlink(file_path)
         except OSError:
-            pass
+            logger.debug("suppressed OSError in optimize_background", exc_info=True)
 
 
 async def convert_background(job_id: str, file_path: str, target_format: str, ocr_mode: str, backend: str):
@@ -1492,7 +1699,7 @@ async def convert_background(job_id: str, file_path: str, target_format: str, oc
         try:
             os.unlink(file_path)
         except OSError:
-            pass
+            logger.debug("suppressed OSError in convert_background", exc_info=True)
 
     except Exception as e:
         logger.error(f"Failed to convert {job_id}: {e}")
@@ -1501,7 +1708,7 @@ async def convert_background(job_id: str, file_path: str, target_format: str, oc
         try:
             os.unlink(file_path)
         except OSError:
-            pass
+            logger.debug("suppressed OSError in convert_background", exc_info=True)
 
 
 async def execute_pipeline_background(job_id: str, pipeline_id: str, file_path: str, backend: str = "auto"):
@@ -1568,7 +1775,7 @@ async def execute_pipeline_background(job_id: str, pipeline_id: str, file_path: 
         try:
             os.unlink(file_path)
         except OSError:
-            pass
+            logger.debug("suppressed OSError in execute_pipeline_background", exc_info=True)
 
     except Exception as e:
         logger.error(f"Pipeline execution failed for {job_id}: {e}")
@@ -1577,7 +1784,7 @@ async def execute_pipeline_background(job_id: str, pipeline_id: str, file_path: 
         try:
             os.unlink(file_path)
         except OSError:
-            pass
+            logger.debug("suppressed OSError in execute_pipeline_background", exc_info=True)
 
 
 # End of processing jobs
@@ -2004,7 +2211,7 @@ def _collect_model_status() -> dict[str, Any]:
                 try:
                     caps = existing.get_capabilities()
                 except Exception:
-                    pass
+                    logger.debug("suppressed Exception in _collect_model_status", exc_info=True)
             backends_status[name] = {
                 "name": name,
                 "description": meta_info["description"],
@@ -2024,7 +2231,7 @@ def _collect_model_status() -> dict[str, Any]:
                 try:
                     caps = be.get_capabilities()
                 except Exception:
-                    pass
+                    logger.debug("suppressed Exception in _collect_model_status", exc_info=True)
             backends_status[name] = {
                 "name": name,
                 "description": meta_info["description"],

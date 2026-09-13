@@ -258,30 +258,30 @@ class DocumentAnalyzer:
 
         # Primary recommendations based on document type
         if doc_type == DocumentType.MATHEMATICAL:
-            recommendations.extend(["deepseek-ocr", "florence-2", "mistral-ocr"])
+            recommendations.extend(["deepseek-ocr2", "florence-2", "mistral-ocr"])
         elif doc_type == DocumentType.TABLE:
             recommendations.extend(["dots-ocr", "florence-2", "mistral-ocr"])
         elif doc_type == DocumentType.FORM:
             recommendations.extend(["mistral-ocr", "florence-2", "dots-ocr"])
         elif doc_type == DocumentType.COMIC:
-            recommendations.extend(["qwen-layered", "florence-2", "deepseek-ocr"])
+            recommendations.extend(["qwen-layered", "florence-2", "deepseek-ocr2"])
         elif doc_type == DocumentType.HANDWRITING:
-            recommendations.extend(["florence-2", "deepseek-ocr", "easyocr"])
+            recommendations.extend(["florence-2", "deepseek-ocr2", "easyocr"])
         elif doc_type == DocumentType.MIXED_CONTENT:
-            recommendations.extend(["mistral-ocr", "deepseek-ocr", "florence-2"])
+            recommendations.extend(["mistral-ocr", "deepseek-ocr2", "florence-2"])
         elif doc_type == DocumentType.PRINTED_TEXT:
             if complexity == ContentComplexity.SIMPLE:
                 recommendations.extend(["pp-ocrv5", "tesseract", "easyocr"])
             else:
-                recommendations.extend(["mistral-ocr", "deepseek-ocr", "florence-2"])
+                recommendations.extend(["mistral-ocr", "deepseek-ocr2", "florence-2"])
 
         # Adjust for image quality
         if quality in [ImageQuality.POOR, ImageQuality.VERY_POOR]:
             # Prefer robust backends for poor quality images
             if "florence-2" not in recommendations:
                 recommendations.insert(0, "florence-2")
-            if "deepseek-ocr" not in recommendations:
-                recommendations.insert(0, "deepseek-ocr")
+            if "deepseek-ocr2" not in recommendations:
+                recommendations.insert(0, "deepseek-ocr2")
 
         # Fallback to auto-selection
         if not recommendations:
@@ -509,7 +509,7 @@ class BackendOptimizer:
                 "gpu_memory": "high",
                 "offline": False,
             },
-            "deepseek-ocr": {
+            "deepseek-ocr2": {
                 "strengths": ["complex_layouts", "mathematical", "multilingual", "mixed_content"],
                 "weaknesses": [],
                 "speed": "medium",

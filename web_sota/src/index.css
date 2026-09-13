@@ -24,7 +24,7 @@ body {
     --secondary-foreground: 210 40% 98%;
 
     --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted-foreground: 215 20% 80%;
 
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
@@ -62,4 +62,61 @@ html:not(.dark) video,
 html:not(.dark) canvas,
 html:not(.dark) iframe {
   filter: invert(1) hue-rotate(180deg);
+}
+
+/* READABILITY UPLIFT 2026-09-07 — fixes "tiny low contrast fonts".
+   Root causes: text-xs (12px) used for real labels, slate-400/500/600
+   (#94a3b8 and darker) on slate-950 backgrounds fails WCAG contrast.
+   This block lifts minimum sizes + brightens muted text globally so all
+   16 pages benefit without per-file churn. Safe to keep permanently. */
+@layer base {
+  html {
+    font-size: 16px;
+  }
+  body {
+    font-size: 0.9375rem; /* 15px base */
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  /* Form controls must never be smaller than body text */
+  input,
+  select,
+  textarea,
+  button {
+    font-size: 0.875rem; /* 14px minimum */
+  }
+  ::placeholder {
+    color: hsl(215 20% 70%);
+    opacity: 1;
+  }
+}
+
+@layer utilities {
+  /* Bump Tailwind's smallest tiers: 12px -> 13px, 10/11px -> 12px */
+  .text-xs {
+    font-size: 0.8125rem !important;
+    line-height: 1.45 !important;
+  }
+  .text-\[10px\],
+  .text-\[11px\] {
+    font-size: 0.75rem !important;
+    line-height: 1.4 !important;
+  }
+  /* Low-contrast slate tiers on dark bg: lift one step brighter */
+  .text-slate-500 {
+    color: #94a3b8 !important; /* slate-400 */
+  }
+  .text-slate-600 {
+    color: #94a3b8 !important;
+  }
+  .placeholder\:text-slate-500::placeholder {
+    color: #94a3b8 !important;
+    opacity: 1;
+  }
+}
+
+/* Vendored Apps hub token (APPS_PAGE_STANDARD.md). */
+:root {
+  --gh-green: 142 71% 45%;
 }

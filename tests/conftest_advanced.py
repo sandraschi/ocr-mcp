@@ -81,8 +81,10 @@ def backend_manager_with_mocks(advanced_config) -> BackendManager:
     mock_backends = MockBackendFactory.create_backend_suite()
     manager.backends = mock_backends
 
-    # Make some backends available, others unavailable for testing
-    available_backends = ["deepseek-ocr", "florence-2", "tesseract"]
+    # Make some backends available, others unavailable for testing.
+    # NOTE: use canonical registry names (canonical_backend_name maps the
+    # retired "florence-2" alias to "paddleocr-vl", which has no mock here).
+    available_backends = ["deepseek-ocr2", "pp-ocrv5", "tesseract"]
     for name, backend in manager.backends.items():
         backend.is_available.return_value = name in available_backends
 
@@ -242,12 +244,12 @@ def backend_comparison_matrix():
     """Matrix of backend comparisons for different document types."""
     return {
         "clean_text": {
-            "expected_best": ["deepseek-ocr", "florence-2"],
+            "expected_best": ["deepseek-ocr2", "florence-2"],
             "expected_worst": ["tesseract"],
             "min_accuracy": 0.90,
         },
         "handwriting": {
-            "expected_best": ["florence-2", "deepseek-ocr"],
+            "expected_best": ["florence-2", "deepseek-ocr2"],
             "expected_worst": ["tesseract"],
             "min_accuracy": 0.60,
         },
@@ -257,12 +259,12 @@ def backend_comparison_matrix():
             "min_accuracy": 0.75,
         },
         "mixed_content": {
-            "expected_best": ["deepseek-ocr", "florence-2"],
+            "expected_best": ["deepseek-ocr2", "florence-2"],
             "expected_worst": ["tesseract"],
             "min_accuracy": 0.80,
         },
         "low_quality": {
-            "expected_best": ["florence-2", "deepseek-ocr"],
+            "expected_best": ["florence-2", "deepseek-ocr2"],
             "expected_worst": ["tesseract"],
             "min_accuracy": 0.50,
         },

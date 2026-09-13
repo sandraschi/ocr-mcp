@@ -148,10 +148,12 @@ export function BookPipeline() {
 
   return (
     <div className="space-y-6 max-w-4xl" data-testid="book-pipeline">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3" data-testid="book-pipeline-page">
         <BookOpen className="h-8 w-8 text-amber-400" />
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-100">Book Pipeline</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-100" data-testid="book-pipeline-title">
+            Book Pipeline
+          </h1>
           <p className="text-sm text-slate-400">Scan pages &rarr; OCR &rarr; detect chapters &rarr; assemble EPUB</p>
         </div>
       </div>

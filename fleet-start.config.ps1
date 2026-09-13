@@ -4,8 +4,8 @@
     Name         = 'ocr-mcp'
     BackendPort  = 10859
     FrontendPort = 10858
-    HealthPath   = '/api/health'
-    WebRoot      = 'D:\Dev\repos\ocr-mcp\web_sota'
+    HealthPath   = '/health'
+    WebRoot      = 'web_sota'
     Backend = @{
         Kind          = 'uvicorn'
         UvicornTarget = 'backend.app:app'

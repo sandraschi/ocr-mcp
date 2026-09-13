@@ -765,8 +765,8 @@ def _generate_backend_recommendation(results: list[dict], image_path: str) -> st
     best = results[0]
     backend = best["backend"]
 
-    if backend == "deepseek-ocr":
-        return "DeepSeek-OCR performed best - excellent for complex documents and formulas"
+    if backend == "deepseek-ocr2":
+        return "DeepSeek-OCR-2 performed best - excellent for complex documents and formulas"
     elif backend == "florence-2":
         return "Florence-2 performed best - great for layout understanding and structured content"
     elif backend == "pp-ocrv5":

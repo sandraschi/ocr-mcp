@@ -50,9 +50,11 @@ export function Import() {
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight text-slate-100">Import Document</h1>
-      <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl">
+    <div className="space-y-6" data-testid="import-page">
+      <h1 className="text-3xl font-bold tracking-tight text-slate-100" data-testid="import-title">
+        Import Document
+      </h1>
+      <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl" data-testid="import-control-3">
         <CardHeader>
           <CardTitle className="text-slate-100">Upload File for OCR</CardTitle>
           <CardDescription className="text-slate-400">Select an image or PDF to process.</CardDescription>

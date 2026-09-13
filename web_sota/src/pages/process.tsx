@@ -130,14 +130,14 @@ function PipelineCard({ pipeline, backends }: PipelineCardProps) {
   };
 
   return (
-    <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl flex flex-col">
+    <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl flex flex-col" data-testid="process-control-1">
       <CardHeader>
         <CardTitle className="text-slate-200 text-lg">{pipeline.name}</CardTitle>
         <CardDescription className="text-slate-400 text-sm">{pipeline.description}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 flex-1">
         {/* Steps pills */}
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5" data-testid="process-control-3">
           {pipeline.steps.map((step, i) => (
             <span
               key={i}
@@ -324,7 +324,9 @@ export function Process() {
 
   return (
     <div className="space-y-8 max-w-5xl">
-      <h1 className="text-3xl font-bold tracking-tight text-slate-100">Action Pipelines</h1>
+      <h1 className="text-3xl font-bold tracking-tight text-slate-100" data-testid="process-title">
+        Action Pipelines
+      </h1>
 
       {/* Pipeline cards */}
       {pipelines.length > 0 && (

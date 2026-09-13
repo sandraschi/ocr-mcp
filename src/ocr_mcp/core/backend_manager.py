@@ -105,7 +105,7 @@ logger = logging.getLogger(__name__)
 
 # Optimizer / docs may still say "florence-2"; registry uses concrete package names only.
 _BACKEND_NAME_ALIASES: dict[str, str] = {
-    "deepseek": "deepseek-ocr",
+    "deepseek": "deepseek-ocr2",  # v1 (deepseek-ocr) removed; DeepSeek-OCR-2 supersedes it
     "deepseek2": "deepseek-ocr2",
     "deepseek-ocr-2": "deepseek-ocr2",
     "paddleocr": "paddleocr-vl",
@@ -185,12 +185,6 @@ class BackendManager:
         """Initialize backend registry for lazy loading - no actual imports yet!"""
         # Registry of available backends with their import paths and model sizes
         self.backend_registry = {
-            "deepseek-ocr": {
-                "module": "..backends.deepseek_backend",
-                "class": "DeepSeekOCRBackend",
-                "model_size": "~500MB+",
-                "description": "DeepSeek-OCR cloud API",
-            },
             "paddleocr-vl": {
                 "module": "..backends.paddleocr_vl_backend",
                 "class": "PaddleOCRVLBackend",
@@ -327,7 +321,7 @@ class BackendManager:
             return importlib.util.find_spec("pytesseract") is not None
         elif name == "easyocr":
             return importlib.util.find_spec("easyocr") is not None and importlib.util.find_spec("torch") is not None
-        elif name in ("deepseek-ocr", "mistral-ocr"):
+        elif name == "mistral-ocr":
             return importlib.util.find_spec("httpx") is not None or importlib.util.find_spec("requests") is not None
         elif name == "unlimited-ocr":
             has_torch = importlib.util.find_spec("torch") is not None
@@ -406,7 +400,6 @@ class BackendManager:
                 "unlimited-ocr",
                 "mineru-2.5",
                 "olmocr-2",
-                "deepseek-ocr",
                 "qwen-layered",
                 "nemotron-vl",
             ]

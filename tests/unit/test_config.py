@@ -54,13 +54,13 @@ class TestOCRConfig:
         config = OCRConfig(
             cache_dir=custom_cache_dir,
             device="cuda",
-            default_backend="deepseek-ocr",
+            default_backend="deepseek-ocr2",
             max_concurrent_jobs=5,
         )
 
         assert config.cache_dir == custom_cache_dir
         assert config.device == "cuda"
-        assert config.default_backend == "deepseek-ocr"
+        assert config.default_backend == "deepseek-ocr2"
         assert config.max_concurrent_jobs == 5
 
     def test_cache_dir_creation(self, temp_dir):
@@ -94,7 +94,7 @@ class TestOCRConfig:
     def test_backend_validation(self):
         """Test default backend validation."""
         valid_backends = [
-            "deepseek-ocr",
+            "deepseek-ocr2",
             "paddleocr-vl",
             "florence-2",
             "dots-ocr",
@@ -162,12 +162,12 @@ class TestOCRConfig:
 
     def test_config_repr(self):
         """Test string representation of config."""
-        config = OCRConfig(device="cuda", default_backend="deepseek-ocr")
+        config = OCRConfig(device="cuda", default_backend="deepseek-ocr2")
 
         repr_str = repr(config)
         assert "OCRConfig" in repr_str
         assert "cuda" in repr_str
-        assert "deepseek-ocr" in repr_str
+        assert "deepseek-ocr2" in repr_str
 
     def test_config_properties_access(self):
         """Test that all config properties are accessible."""

@@ -1,5 +1,6 @@
 import { Bot, Download, Eraser, Send, User } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { fetchLlmSettings, streamChat } from "@/components/llm/lib-llm";
 
 const HISTORY_KEY = "ocr-mcp-chat-history";
 const PERSONALITY_KEY = "ocr-mcp-chat-personality";
@@ -52,7 +53,31 @@ export function Chat() {
   });
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [skillPreprompt, setSkillPreprompt] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Skill-first: load ocr-expert skill content as the base system preprompt.
+  // Falls back to personality-only when the backend is unreachable.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await fetch("/api/skills").then((r) => (r.ok ? r.json() : null));
+        const names: string[] = Array.isArray(list?.skills)
+          ? list.skills.map((s: { name?: string } | string) => (typeof s === "string" ? s : s?.name)).filter(Boolean)
+          : [];
+        const pick = names.includes("ocr-expert") ? "ocr-expert" : names[0];
+        if (!pick) return;
+        const detail = await fetch(`/api/skills/${encodeURIComponent(pick)}`).then((r) => (r.ok ? r.json() : null));
+        if (!cancelled && detail?.content) setSkillPreprompt(String(detail.content));
+      } catch {
+        /* backend down: personality-only mode */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(HISTORY_KEY, JSON.stringify(messages));
@@ -69,27 +94,54 @@ export function Chat() {
     if (!text || sending) return;
     setInput("");
     const userMsg = { role: "user" as const, content: text };
-    setMessages((prev) => {
-      const next = [...prev, userMsg];
-      return next.length > MAX_HISTORY ? next.slice(-MAX_HISTORY) : next;
+    const history = [...messages, userMsg];
+    setMessages(() => {
+      return history.length > MAX_HISTORY ? history.slice(-MAX_HISTORY) : history;
     });
     setSending(true);
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, personality }),
+      // Send-time guard (SETTINGS_LLM rule 6): backend truth, refuse when empty.
+      const sel = await fetchLlmSettings().catch(() => null);
+      const provider = sel?.provider || "";
+      const model = sel?.model || "";
+      if (!provider || !model) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant" as const,
+            content: "No AI model selected — pick one in AI Settings first.",
+          },
+        ]);
+        return;
+      }
+      const wire = history.map((m) => ({ role: m.role, content: m.content }));
+      const system = skillPreprompt
+        ? `${skillPreprompt}\n\n---\n\n${PERSONALITIES[personality]}`
+        : PERSONALITIES[personality];
+      let acc = "";
+      setMessages((prev) => [...prev, { role: "assistant" as const, content: "" }]);
+      await streamChat(provider, model, [{ role: "system", content: system }, ...wire], (t) => {
+        acc += t;
+        const snapshot = acc;
+        setMessages((prev) => {
+          const next = [...prev];
+          next[next.length - 1] = { role: "assistant" as const, content: snapshot };
+          return next;
+        });
       });
-      const data = await res.json();
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant" as const, content: data.response || data.content || "No response" },
-      ]);
+      if (!acc) {
+        setMessages((prev) => {
+          const next = [...prev];
+          next[next.length - 1] = { role: "assistant" as const, content: "No response" };
+          return next;
+        });
+      }
     } catch (e) {
       setMessages((prev) => [...prev, { role: "assistant", content: `Error: ${(e as Error).message}` }]);
+    } finally {
+      setSending(false);
     }
-    setSending(false);
-  }, [input, sending, personality]);
+  }, [input, sending, personality, messages, skillPreprompt]);
 
   const exportChat = () => {
     const text = messages.map((m) => `[${m.role.toUpperCase()}] ${m.content}`).join("\n\n");
@@ -111,13 +163,18 @@ export function Chat() {
       <div data-testid="chat-controls" className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-white">Chat</h2>
-          <p className="text-slate-400">OCR MCP \u2014 an OCR server for extracting text from images</p>
+          <p className="text-slate-300">OCR MCP \u2014 an OCR server for extracting text from images</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded">skill:ocr-expert</span>
+          <span
+            className="text-sm text-slate-300 bg-slate-800 px-2 py-1 rounded"
+            title={skillPreprompt ? "ocr-expert skill loaded as system preprompt" : "skill unavailable (backend down)"}
+          >
+            skill:ocr-expert{skillPreprompt ? "" : " (offline)"}
+          </span>
           <select
             data-testid="personality-select"
-            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200"
+            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-slate-200"
             value={personality}
             onChange={(e) => setPersonality(e.target.value)}
           >
@@ -131,7 +188,7 @@ export function Chat() {
             data-testid="chat-export"
             onClick={exportChat}
             disabled={messages.length === 0}
-            className="p-1.5 rounded hover:bg-slate-800 text-slate-400 disabled:opacity-30"
+            className="p-1.5 rounded hover:bg-slate-800 text-slate-300 disabled:opacity-30"
             title="Export"
           >
             <Download className="h-4 w-4" />
@@ -140,7 +197,7 @@ export function Chat() {
             data-testid="chat-clear"
             onClick={clearChat}
             disabled={messages.length === 0}
-            className="p-1.5 rounded hover:bg-slate-800 text-slate-400 disabled:opacity-30"
+            className="p-1.5 rounded hover:bg-slate-800 text-slate-300 disabled:opacity-30"
             title="Clear"
           >
             <Eraser className="h-4 w-4" />
@@ -150,7 +207,7 @@ export function Chat() {
 
       <div data-testid="chat-messages" className="flex-1 overflow-y-auto space-y-4">
         {messages.length === 0 ? (
-          <div className="text-center text-slate-500 py-8 text-sm">Start a conversation with the OCR assistant.</div>
+          <div className="text-center text-slate-300 py-8 text-sm">Start a conversation with the OCR assistant.</div>
         ) : (
           messages.map((msg, i) => (
             <div key={i} className="flex gap-3">
@@ -158,7 +215,7 @@ export function Chat() {
                 className={`h-8 w-8 rounded-full flex items-center justify-center border shrink-0 ${msg.role === "user" ? "bg-slate-800 border-slate-700" : "bg-blue-900/20 border-blue-800"}`}
               >
                 {msg.role === "user" ? (
-                  <User className="h-4 w-4 text-slate-400" />
+                  <User className="h-4 w-4 text-slate-300" />
                 ) : (
                   <Bot className="h-4 w-4 text-blue-400" />
                 )}
@@ -177,7 +234,7 @@ export function Chat() {
           ))
         )}
         {sending && (
-          <div className="flex items-center gap-2 text-sm text-slate-500">
+          <div className="flex items-center gap-2 text-sm text-slate-300">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-500 border-t-transparent" />
             Thinking...
           </div>
@@ -188,12 +245,12 @@ export function Chat() {
       <div data-testid="example-prompts" className="flex flex-wrap gap-2">
         {EXAMPLE_PROMPTS.map((group) => (
           <div key={group.group} className="flex flex-wrap items-center gap-1">
-            <span className="text-xs text-slate-500 mr-1">{group.group}:</span>
+            <span className="text-sm text-slate-300 mr-1">{group.group}:</span>
             {group.prompts.map((p) => (
               <button
                 key={p}
                 onClick={() => setInput(p)}
-                className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded"
+                className="text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded"
               >
                 {p}
               </button>

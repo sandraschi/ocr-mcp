@@ -87,12 +87,16 @@ def get_pip_install_cmd() -> list[str] | None:
         )
         return [sys.executable, "-m", "pip", "install"]
     except (subprocess.CalledProcessError, FileNotFoundError):
-        pass
+        logger.debug(
+            "suppressed (subprocess.CalledProcessError, FileNotFoundError) in get_pip_install_cmd", exc_info=True
+        )
     try:
         subprocess.run(["uv", "--version"], check=True, capture_output=True)
         return ["uv", "pip", "install"]
     except (subprocess.CalledProcessError, FileNotFoundError):
-        pass
+        logger.debug(
+            "suppressed (subprocess.CalledProcessError, FileNotFoundError) in get_pip_install_cmd", exc_info=True
+        )
     return None
 
 
@@ -138,7 +142,7 @@ def ensure_ocr_pip_dependencies(log: logging.Logger | None = None) -> None:
             if check_fn():
                 continue
         except Exception:
-            pass
+            logger.debug("suppressed Exception in ensure_ocr_pip_dependencies", exc_info=True)
         if install_cmd:
             try:
                 r = subprocess.run(
@@ -149,7 +153,7 @@ def ensure_ocr_pip_dependencies(log: logging.Logger | None = None) -> None:
                 if r.returncode == 0:
                     optional_installed = True
             except Exception:
-                pass
+                logger.debug("suppressed Exception in ensure_ocr_pip_dependencies", exc_info=True)
     if optional_installed:
         lg.info("Optional OCR deps (Paddle) installed. Restarting process...")
         os.execv(sys.executable, sys.argv)

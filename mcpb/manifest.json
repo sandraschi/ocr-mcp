@@ -1,0 +1,40 @@
+{
+  "manifest_version": "0.2",
+  "name": "ocr-mcp",
+  "version": "0.2.1-beta",
+  "description": "FastMCP server providing comprehensive OCR capabilities to the MCP ecosystem",
+  "author": { "name": "sandraschi" },
+  "server": {
+    "type": "python",
+    "entry_point": "run_server.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": ["run","--directory","${PWD}","run_server.py"],
+      "env": {
+        "PYTHONPATH": "${PWD}/src",
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  },
+  "tools": [
+    { "name": "main_stdio", "description": "main(stdio)" },
+    { "name": "main_http", "description": "main(http)" },
+    { "name": "main_sse", "description": "main(sse)" },
+    { "name": "register_prefab_tools", "description": "Register Prefab UI tools with the FastMCP app." },
+    { "name": "show_health_card", "description": "show_health_card" },
+    { "name": "show_backends_card", "description": "show_backends_card" },
+    { "name": "execute_agentic_workflow", "description": "execute_agentic_workflow" },
+    { "name": "ingest_book", "description": "ingest_book" },
+    { "name": "process_document", "description": "process_document" },
+    { "name": "manage_image", "description": "manage_image" },
+    { "name": "operate_scanner", "description": "operate_scanner" },
+    { "name": "manage_workflow", "description": "manage_workflow" },
+    { "name": "manage_corpus", "description": "manage_corpus" },
+    { "name": "get_help", "description": "get_help" },
+    { "name": "get_status", "description": "get_status" },
+    { "name": "shutdown_server", "description": "shutdown_server" },
+    { "name": "register_sota_tools_comprehensive", "description": "register_sota_tools(comprehensive)" },
+    { "name": "register_sota_tools_basic", "description": "register_sota_tools(basic)" },
+    { "name": "register_sota_tools_layout", "description": "register_sota_tools(layout)" }
+  ]
+}

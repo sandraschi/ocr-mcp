@@ -33,6 +33,7 @@ Comprehensive testing utilities for OCR-MCP test suite.
 """
 
 import asyncio
+import logging
 import tempfile
 import time
 from pathlib import Path
@@ -212,19 +213,23 @@ class MockBackendFactory:
 
         mock_backend.get_capabilities.return_value = default_capabilities
 
-        # Configure processing behavior
+        # Configure processing behavior. Both entry points return backend-contract
+        # dicts: product code prefers process_document when present, so the
+        # double must implement it too (a bare Mock auto-attr breaks item
+        # assignment in BackendManager.process_with_backend).
+        success_payload = {
+            "success": True,
+            "text": f"Mock OCR result from {name}",
+            "confidence": 0.85,
+            "backend": name,
+            "processing_time": 0.5,
+        }
         if process_behavior == "success":
-            mock_backend.process_image = AsyncMock(
-                return_value={
-                    "success": True,
-                    "text": f"Mock OCR result from {name}",
-                    "confidence": 0.85,
-                    "backend": name,
-                    "processing_time": 0.5,
-                }
-            )
+            mock_backend.process_image = AsyncMock(return_value=dict(success_payload))
+            mock_backend.process_document = AsyncMock(return_value=dict(success_payload))
         elif process_behavior == "failure":
             mock_backend.process_image = AsyncMock(side_effect=Exception(f"{name} processing failed"))
+            mock_backend.process_document = AsyncMock(side_effect=Exception(f"{name} processing failed"))
         elif process_behavior == "timeout":
 
             async def timeout_process(*args, **kwargs):
@@ -232,6 +237,7 @@ class MockBackendFactory:
                 return {"success": False, "error": "Timeout"}
 
             mock_backend.process_image = AsyncMock(side_effect=timeout_process)
+            mock_backend.process_document = AsyncMock(side_effect=timeout_process)
 
         return mock_backend
 
@@ -241,7 +247,7 @@ class MockBackendFactory:
         backends = {}
 
         backend_configs = [
-            ("deepseek-ocr", {"gpu_support": True, "accuracy": 0.92, "processing_speed": "medium"}),
+            ("deepseek-ocr2", {"gpu_support": True, "accuracy": 0.92, "processing_speed": "medium"}),
             ("florence-2", {"gpu_support": True, "accuracy": 0.89, "processing_speed": "fast"}),
             ("dots-ocr", {"gpu_support": False, "accuracy": 0.87, "processing_speed": "fast"}),
             ("pp-ocrv5", {"gpu_support": True, "accuracy": 0.86, "processing_speed": "fast"}),
@@ -329,7 +335,7 @@ class TestFileManager:
                 if file_path.exists():
                     file_path.unlink()
             except Exception:
-                pass  # Ignore cleanup errors
+                logging.getLogger(__name__).debug("test cleanup failed for %s", file_path, exc_info=True)
 
         self.created_files.clear()
 

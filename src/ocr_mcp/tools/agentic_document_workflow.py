@@ -37,6 +37,7 @@ import logging
 from typing import Literal
 
 from fastmcp import Context
+from fastmcp.tools.tool import ToolAnnotations
 
 from .models import ToolResponse
 
@@ -46,7 +47,9 @@ logger = logging.getLogger(__name__)
 def register_agentic_document_workflow(app):
     """Register the agentic document workflow tool with the FastMCP app."""
 
-    @app.tool()
+    @app.tool(
+        annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=True)
+    )
     async def execute_agentic_workflow(
         workflow_prompt: str,
         available_tools: list[

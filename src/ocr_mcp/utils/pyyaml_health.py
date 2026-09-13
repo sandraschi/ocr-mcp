@@ -55,6 +55,7 @@ def pyyaml_metadata_version() -> str | None:
         try:
             v = importlib.metadata.version(name)
         except importlib.metadata.PackageNotFoundError:
+            logger.debug("suppressed importlib.metadata.PackageNotFoundError in pyyaml_metadata_version", exc_info=True)
             continue
         if v is not None and str(v).strip():
             return str(v).strip()
@@ -101,7 +102,10 @@ def _force_reinstall_pyyaml() -> bool:
         )
         attempts.append(["uv", "pip", "install", "--force-reinstall", "pyyaml>=6.0"])
     except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
-        pass
+        logger.debug(
+            "suppressed (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired) in _force_reinstall_pyyaml",
+            exc_info=True,
+        )
 
     for cmd in attempts:
         try:
@@ -112,7 +116,7 @@ def _force_reinstall_pyyaml() -> bool:
 
                     importlib.metadata.invalidate_caches()
                 except Exception:
-                    pass
+                    logger.debug("suppressed Exception in _force_reinstall_pyyaml", exc_info=True)
                 return True
             logger.warning(
                 "PyYAML reinstall attempt failed (%s): %s",
@@ -171,5 +175,5 @@ def site_packages_pyyaml_distinfo_ok() -> bool:
             if _dist_info_has_metadata(Path(sp)):
                 return True
     except Exception:
-        pass
+        logger.debug("suppressed Exception in site_packages_pyyaml_distinfo_ok", exc_info=True)
     return False

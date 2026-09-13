@@ -11,7 +11,7 @@
 
 **Topics:** `ocr`, `mcp`, `fastmcp`, `document-processing`, `scanner`, `wia`, `pdf`, `computer-vision`, `model-context-protocol`, `llm`
 
-[![Version](https://img.shields.io/badge/Version-0.2.0--alpha-blue)](https://github.com/sandraschi/ocr-mcp/releases)
+[![Version](https://img.shields.io/badge/Version-0.2.1--beta-blue)](https://github.com/sandraschi/ocr-mcp/releases)
 [![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)](https://python.org)
 [![FastMCP](https://img.shields.io/badge/FastMCP-3.1-0066CC)](https://github.com/jlowin/fastmcp)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)

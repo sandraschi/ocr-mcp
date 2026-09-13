@@ -122,7 +122,7 @@ class ScannerWatcher:
                                 if "C00" in eid or "Scan" in str(evt.Name):
                                     return True
                     except Exception:
-                        pass
+                        logger.debug("suppressed Exception in _check_button_event", exc_info=True)
         except Exception as e:
             logger.debug("Button event check failed: %s", e)
         return False
@@ -224,7 +224,7 @@ class ScannerWatcher:
             try:
                 await self._task
             except asyncio.CancelledError:
-                pass
+                logger.debug("suppressed asyncio.CancelledError in stop", exc_info=True)
         self._status.running = False
         logger.info("Scanner watcher stopped")
 

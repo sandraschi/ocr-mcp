@@ -9,14 +9,23 @@ Two inference modes:
   - "free":     <image>\nFree OCR.
 """
 
+import asyncio
+import json
 import logging
+import os
+import tempfile
 import time
+from pathlib import Path
 from typing import Any
+
+from PIL import Image
 
 from ..core.backend_manager import OCRBackend
 from ..core.config import OCRConfig
 
 logger = logging.getLogger(__name__)
+
+_LEGACY_VENV_DIR = Path(__file__).resolve().parents[3] / ".venv-legacy-vlm-deepseek"
 
 
 class DeepSeekOCR2Backend(OCRBackend):
@@ -47,40 +56,78 @@ class DeepSeekOCR2Backend(OCRBackend):
             self._available = False
             logger.warning("DeepSeek-OCR-2: torch or transformers not available")
 
+    def _legacy_venv_python(self) -> Path | None:
+        """Path to the isolated transformers==4.46.3 venv's interpreter, shared
+        with DeepSeek-OCR and Unlimited-OCR (same deepseek-v2 encoder lineage,
+        same infer() signature). See deepseek_backend.py's
+        _legacy_venv_python docstring for why: vendored infer() hardcodes
+        .cuda() throughout generate() and targets an older transformers than
+        the main venv carries for paddleocr-vl/dots-ocr/etc.
+        """
+        candidate = _LEGACY_VENV_DIR / "Scripts" / "python.exe"
+        return candidate if candidate.exists() else None
+
+    async def _run_via_legacy_venv(self, python_exe: Path, image_path: str, prompt: str) -> str:
+        """Run DeepSeek-OCR-2 inference in the isolated legacy-transformers venv."""
+        runner = Path(__file__).resolve().with_name("_deepseek_ocr_legacy_runner.py")
+        proc = await asyncio.create_subprocess_exec(
+            str(python_exe),
+            str(runner),
+            self.model_name,
+            image_path,
+            prompt,
+            str(self.cache_dir),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate()
+        lines = stdout.decode("utf-8", errors="replace").strip().splitlines()
+        if not lines:
+            raise RuntimeError(
+                f"legacy-vlm subprocess produced no output (exit {proc.returncode}): "
+                f"{stderr.decode('utf-8', errors='replace')[-2000:]}"
+            )
+        payload = json.loads(lines[-1])
+        if not payload.get("success"):
+            raise RuntimeError(payload.get("error", "unknown legacy-vlm subprocess error"))
+        return payload["text"]
+
     def _load_model(self):
         if self._model is not None:
             return
         if not self.is_available():
             raise RuntimeError("DeepSeek-OCR-2 dependencies not available")
+        if self._legacy_venv_python() is not None:
+            # Real loading happens per-call in the isolated subprocess.
+            self._model = True
+            self._tokenizer = True
+            return
 
         try:
             import torch
-            from transformers import AutoModelForCausalLM, AutoTokenizer
+            from transformers import AutoModel, AutoTokenizer
 
             self._device = "cuda" if torch.cuda.is_available() else "cpu"
-            dtype = torch.bfloat16 if self._device == "cuda" else torch.float32
 
-            logger.info(f"Loading DeepSeek-OCR-2 on {self._device}...")
-            t0 = time.time()
-
+            logger.warning(
+                "DeepSeek-OCR-2: .venv-legacy-vlm-deepseek not found, falling back to "
+                "in-process load under the main venv's transformers -- likely to fail "
+                "the same way GOT-OCR did before isolation. Run "
+                "scripts/setup_legacy_vlm_deepseek_venv.py to fix."
+            )
             self._tokenizer = AutoTokenizer.from_pretrained(
                 self.model_name,
                 trust_remote_code=True,
                 cache_dir=str(self.cache_dir),
             )
-
-            self._model = AutoModelForCausalLM.from_pretrained(
+            self._model = AutoModel.from_pretrained(
                 self.model_name,
                 trust_remote_code=True,
-                torch_dtype=dtype,
-                device_map="auto" if self._device == "cuda" else None,
+                use_safetensors=True,
+                torch_dtype=torch.bfloat16,
                 cache_dir=str(self.cache_dir),
             )
-            if self._device == "cpu":
-                self._model = self._model.to("cpu")
-
-            self._model.eval()
-            logger.info(f"DeepSeek-OCR-2 loaded in {time.time() - t0:.1f}s")
+            self._model = self._model.eval().to(self._device)
 
         except Exception as e:
             logger.error(f"Failed to load DeepSeek-OCR-2: {e}")
@@ -100,76 +147,49 @@ class DeepSeekOCR2Backend(OCRBackend):
             return {"success": False, "error": "DeepSeek-OCR-2 not available"}
 
         try:
-            import torch
-            from PIL import Image
-
             self._load_model()
             t0 = time.time()
 
-            img = Image.open(image_path).convert("RGB")
-            if region and len(region) == 4:
-                img = img.crop(tuple(region))
-
             # DeepSeek-OCR-2 prompt styles per model card
             if mode in ("format", "text"):
-                # Structured markdown extraction
                 prompt = "<image>\n<|grounding|>Convert the document to markdown."
             else:
-                # Raw text extraction
                 prompt = "<image>\nFree OCR."
 
-            inputs = self._tokenizer(
-                prompt,
-                images=img,
-                return_tensors="pt",
-            )
-            if self._device == "cuda":
-                inputs = {k: v.to("cuda") for k, v in inputs.items()}
+            crop_path = None
+            target_path = image_path
+            if region and len(region) == 4:
+                img = Image.open(image_path).convert("RGB").crop(tuple(region))
+                fd, crop_path = tempfile.mkstemp(suffix=".png")
+                os.close(fd)
+                img.save(crop_path)
+                target_path = crop_path
 
-            with torch.inference_mode():
-                output_ids = self._model.generate(
-                    **inputs,
-                    max_new_tokens=4096,
-                    do_sample=False,
-                    use_cache=True,
+            legacy_python = self._legacy_venv_python()
+            if legacy_python is None:
+                raise RuntimeError(
+                    "DeepSeek-OCR-2 needs the isolated .venv-legacy-vlm-deepseek venv "
+                    "(transformers==4.46.3). Run scripts/setup_legacy_vlm_deepseek_venv.py."
                 )
-                logits = self._model(output_ids).logits
+            text = await self._run_via_legacy_venv(legacy_python, target_path, prompt)
 
-            input_len = inputs["input_ids"].shape[1]
-            generated = output_ids[0][input_len:]
-            confidence = self._compute_confidence(logits, generated, input_len) if len(generated) > 0 else 0.0
-
-            text = self._tokenizer.decode(
-                generated,
-                skip_special_tokens=True,
-            ).strip()
+            if crop_path:
+                Path(crop_path).unlink(missing_ok=True)
 
             return {
                 "success": True,
-                "text": text,
+                "text": text.strip(),
                 "backend": "deepseek-ocr2",
                 "model": self.model_name,
                 "mode": mode,
                 "processing_time": time.time() - t0,
-                "confidence": confidence,
-                "metadata": {"device": self._device},
+                "confidence": 1.0,
+                "metadata": {"device": "cpu (legacy-vlm venv)"},
             }
 
         except Exception as e:
             logger.error(f"DeepSeek-OCR-2 error: {e}")
             return {"success": False, "error": str(e), "backend": "deepseek-ocr2"}
-
-    @staticmethod
-    def _compute_confidence(logits, generated_ids, input_len: int) -> float:
-        import torch
-
-        try:
-            gen_logits = logits[0, input_len - 1 : input_len - 1 + len(generated_ids)]
-            probs = torch.softmax(gen_logits, dim=-1)
-            token_probs = probs[torch.arange(len(generated_ids), device=probs.device), generated_ids]
-            return round(float(token_probs.prod().item() ** (1.0 / max(len(generated_ids), 1))), 4)
-        except Exception:
-            return 0.85
 
     def get_capabilities(self) -> dict[str, Any]:
         caps = super().get_capabilities()

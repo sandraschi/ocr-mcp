@@ -141,13 +141,13 @@ Performance and accuracy validation:
 All OCR engines are mocked for reliable testing:
 
 ```python
-# Mock DeepSeek-OCR backend
-class MockDeepSeekOCRBackend(OCRBackend):
+# Mock DeepSeek-OCR-2 backend
+class MockDeepSeekOCR2Backend(OCRBackend):
     async def process_image(self, image_path: str, mode: str = "text", **kwargs):
         return {
             "success": True,
             "text": f"Mock OCR result for {image_path}",
-            "backend": "deepseek-ocr",
+            "backend": "deepseek-ocr2",
             "mode": mode
         }
 ```
@@ -248,7 +248,7 @@ def test_ocr_accuracy(mock_backend_manager, ground_truth_text):
     """Test OCR accuracy against known text."""
 
     result = mock_backend_manager.process_with_backend(
-        "deepseek-ocr",
+        "deepseek-ocr2",
         test_image_path,
         mode="text"
     )
@@ -374,9 +374,3 @@ def new_feature():
 ---
 
 **Built with Austrian efficiency for rock-solid OCR workflows.** 🇦🇹
-
-
-
-
-
-

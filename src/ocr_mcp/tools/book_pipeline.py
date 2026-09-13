@@ -11,6 +11,7 @@ import logging
 from typing import Any, Literal
 
 from fastmcp import Context
+from fastmcp.tools.tool import ToolAnnotations
 
 from ..core.backend_manager import BackendManager
 from ..core.config import OCRConfig
@@ -30,7 +31,9 @@ except ImportError:
 def register_book_pipeline_tool(app, backend_manager: BackendManager | None, config: OCRConfig):
     """Register the ingest_book portmanteau tool."""
 
-    @app.tool()
+    @app.tool(
+        annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=True)
+    )
     async def ingest_book(
         operation: Literal[
             "detect_chapters",

@@ -147,12 +147,17 @@ export function ScanViewerPage() {
 
   if (!imageUrl) {
     return (
-      <div className="flex flex-col items-center justify-center h-[70vh] space-y-6 text-center">
+      <div
+        className="flex flex-col items-center justify-center h-[70vh] space-y-6 text-center"
+        data-testid="scan-viewer-page"
+      >
         <div className="p-6 bg-slate-900/50 rounded-full border border-slate-800">
           <Scan className="w-12 h-12 text-slate-500" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-2xl font-bold text-slate-100">No Active Raw Scan</h2>
+          <h2 className="text-2xl font-bold text-slate-100" data-testid="scan-viewer-title">
+            No Active Raw Scan
+          </h2>
           <p className="text-slate-400 max-w-md">
             You haven't performed any scans in this session. Go to Dashboard and click "Quick Scan (Raw)" to start.
           </p>
@@ -172,7 +177,9 @@ export function ScanViewerPage() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-100">Raw Scan Webpage</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-100" data-testid="scan-viewer-title">
+              Raw Scan Webpage
+            </h1>
             <p className="text-slate-400">View, export, print, email, share to Discord, or OCR selection.</p>
           </div>
         </div>

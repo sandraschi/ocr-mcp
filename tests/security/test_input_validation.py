@@ -47,8 +47,12 @@ class TestInputValidation:
     def test_path_traversal_prevention(self, security_test_cases):
         """Test that path traversal attacks are prevented."""
         for malicious_path in security_test_cases["path_traversal"]:
-            with pytest.raises(Exception):  # Should raise validation error
-                ErrorHandler.validate_file_path(malicious_path)
+            # Contract: validate_file_path returns an OCRError (never raises)
+            err = ErrorHandler.validate_file_path(malicious_path)
+            assert err is not None, f"Malicious path accepted: {malicious_path}"
+            assert err.error_code in ("PATH_TRAVERSAL", "FILE_NOT_FOUND", "FILE_PERMISSION_DENIED"), (
+                f"Unexpected code {err.error_code} for {malicious_path}"
+            )
 
     def test_file_size_limits(self, security_test_cases, file_manager):
         """Test file size validation and limits."""
@@ -177,10 +181,11 @@ class TestInputValidation:
         ]
 
         for traversal_path in traversal_attempts:
-            # Should fail validation
+            # Should fail validation: `..` escapes -> PATH_TRAVERSAL,
+            # other nonexistent absolutes -> FILE_NOT_FOUND
             result = ErrorHandler.validate_file_path(traversal_path)
             assert result is not None, f"Path traversal not prevented: {traversal_path}"
-            assert result.error_code == "FILE_NOT_FOUND"
+            assert result.error_code in ("PATH_TRAVERSAL", "FILE_NOT_FOUND", "FILE_PERMISSION_DENIED")
 
     def test_file_type_validation(self, test_data_generator, file_manager):
         """Test that file type validation works correctly."""

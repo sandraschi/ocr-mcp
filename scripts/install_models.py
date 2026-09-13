@@ -48,7 +48,7 @@ Options:
 
 Supported backends:
     - mistral-ocr: Mistral OCR 3 (state-of-the-art, API-based)
-    - deepseek-ocr: DeepSeek-OCR (4.7M+ downloads)
+    - deepseek-ocr2: DeepSeek-OCR-2 (Visual Causal Flow)
     - florence-2: Microsoft Florence-2 vision model
     - dots-ocr: DOTS.OCR document understanding
     - pp-ocrv5: PaddlePaddle PP-OCRv5
@@ -62,7 +62,7 @@ Examples:
     python scripts/install_models.py
 
     # Install only specific backends
-    python scripts/install_models.py --backends mistral-ocr deepseek-ocr florence-2
+    python scripts/install_models.py --backends mistral-ocr deepseek-ocr2 florence-2
 
     # Force redownload and use custom cache
     python scripts/install_models.py --force-redownload --cache-dir ./models
@@ -149,8 +149,17 @@ class ModelInstaller:
             logger.warning(f"Could not save status file: {e}")
 
     async def install_deepseek_ocr(self, dry_run: bool = False) -> bool:
-        """Install DeepSeek-OCR model."""
-        logger.info("Installing DeepSeek-OCR...")
+        """Install DeepSeek-OCR-2 model.
+
+        NOTE: this uses transformers' generic `pipeline("image-to-text", ...)`
+        helper, which is not the real loading API for this model (it needs
+        `AutoModel` + `model.infer(tokenizer, prompt=..., image_file=...)` --
+        see src/ocr_mcp/backends/deepseek_ocr2_backend.py). Pre-existing gap,
+        unrelated to the deepseek-ocr v1 removal that renamed this function's
+        target; left as-is since fixing it means rewriting this whole script's
+        install path for every backend, not just this one.
+        """
+        logger.info("Installing DeepSeek-OCR-2...")
 
         if not dry_run:
             try:
@@ -180,27 +189,27 @@ class ModelInstaller:
                 logger.info(f"Using device: {device}")
 
                 # Download model
-                model_path = self.cache_dir / "deepseek-ocr"
+                model_path = self.cache_dir / "deepseek-ocr2"
                 if self.force_redownload and model_path.exists():
                     import shutil
 
                     shutil.rmtree(model_path)
 
-                logger.info("Downloading DeepSeek-OCR model (this may take a while)...")
+                logger.info("Downloading DeepSeek-OCR-2 model (this may take a while)...")
                 pipeline(
                     "image-to-text",
-                    model="deepseek-ai/DeepSeek-OCR",
+                    model="deepseek-ai/DeepSeek-OCR-2",
                     cache_dir=str(self.cache_dir),
                     device=device,
                     torch_dtype=torch.bfloat16 if device == "cuda" else torch.float32,
                     trust_remote_code=True,
                 )
 
-                self.installed_models.add("deepseek-ocr")
-                logger.info("SUCCESS: DeepSeek-OCR installed")
+                self.installed_models.add("deepseek-ocr2")
+                logger.info("SUCCESS: DeepSeek-OCR-2 installed")
 
             except Exception as e:
-                logger.error(f"FAILED: DeepSeek-OCR installation failed: {e}")
+                logger.error(f"FAILED: DeepSeek-OCR-2 installation failed: {e}")
                 return False
 
         return True
@@ -497,18 +506,18 @@ class ModelInstaller:
 
         success = True
         for backend in backends:
-            if backend == "deepseek-ocr":
+            if backend == "deepseek-ocr2":
                 try:
                     from transformers import pipeline
 
                     pipeline(
                         "image-to-text",
-                        model="deepseek-ai/DeepSeek-OCR",
+                        model="deepseek-ai/DeepSeek-OCR-2",
                         cache_dir=str(self.cache_dir),
                     )
-                    logger.info("✓ DeepSeek-OCR: Verified")
+                    logger.info("✓ DeepSeek-OCR-2: Verified")
                 except Exception as e:
-                    logger.error(f"✗ DeepSeek-OCR: Verification failed: {e}")
+                    logger.error(f"✗ DeepSeek-OCR-2: Verification failed: {e}")
                     success = False
 
             elif backend == "florence-2":
@@ -596,7 +605,7 @@ class ModelInstaller:
         # Backend installation mapping
         backend_installers = {
             "mistral-ocr": self.install_mistral_ocr,
-            "deepseek-ocr": self.install_deepseek_ocr,
+            "deepseek-ocr2": self.install_deepseek_ocr,
             "florence-2": self.install_florence_2,
             "dots-ocr": self.install_dots_ocr,
             "pp-ocrv5": self.install_pp_ocrv5,
@@ -679,7 +688,7 @@ async def main():
         nargs="+",
         choices=[
             "mistral-ocr",
-            "deepseek-ocr",
+            "deepseek-ocr2",
             "florence-2",
             "dots-ocr",
             "pp-ocrv5",
@@ -716,7 +725,7 @@ async def main():
     if "all" in args.backends:
         all_backends = [
             "mistral-ocr",
-            "deepseek-ocr",
+            "deepseek-ocr2",
             "florence-2",
             "dots-ocr",
             "pp-ocrv5",
@@ -733,7 +742,7 @@ async def main():
         # Only install backends that support GPU
         gpu_backends = [
             "mistral-ocr",
-            "deepseek-ocr",
+            "deepseek-ocr2",
             "florence-2",
             "pp-ocrv5",
             "qwen-image-layered",

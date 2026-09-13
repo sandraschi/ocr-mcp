@@ -1,7 +1,7 @@
 # OCR-MCP — Full Documentation for LLMs
 
-**Version:** 0.2.0-beta
-**Last Updated:** 2026-07-21
+**Version:** 0.2.1-beta
+**Last Updated:** 2026-09-13
 
 This is the complete reference for OCR-MCP, a FastMCP 3.4+ server providing comprehensive OCR capabilities. Read this to understand all tools, configuration, backends, and endpoints.
 
@@ -247,6 +247,26 @@ Rich in-chat card: server status, tool count, uptime, available backends.
 
 Rich in-chat card: all 14 backends with availability, model size, modes, strengths.
 
+### `execute_agentic_workflow`
+
+Goal-driven multi-step OCR via sampling (SEP-1577): tries `ctx.sample()`
+(FastMCP 3.4+), falls back to `sample_step()` (3.1). Parameters:
+`workflow_prompt`, `available_tools`, `max_steps`.
+
+### `llm_ops`
+
+Local LLM engine ops (same path as AI Settings): `list_models`, `loaded`,
+`switch_model`, `unload_all`, `vram`. Parameters: `provider`, `model`, `endpoint`.
+
+### `shutdown_server`
+
+Graceful self-termination. Parameter: `confirm=true` (required).
+
+All `@mcp.tool()` registrations carry `ToolAnnotations` (`readOnlyHint` on
+`get_help`/`get_status`/Prefab cards, `destructiveHint` on
+`manage_corpus`/`manage_image`/`shutdown_server`, `openWorldHint` on
+engine/hardware/workflow tools).
+
 ---
 
 ## REST API (FastAPI backend at :10859)
@@ -280,6 +300,23 @@ OpenAPI docs at `http://127.0.0.1:10859/docs`.
 | `/api/ocr/detect-metadata` | POST | Extract title/author from first pages |
 | `/api/ocr/assemble-epub` | POST | Build EPUB from chapter text + metadata |
 | `/api/ocr/book-pipeline` | POST | Full pipeline: OCR pages -> chapters -> EPUB |
+| `/api/capabilities` | GET | Fleet capability envelope (tools, features, version) |
+| `/api/corpus` | GET | Corpus index query (`query`, `backend`, `sort_by`, `limit`) — Inbox data |
+| `/api/corpus/{id}` | GET/DELETE | Corpus document detail / delete |
+| `/api/corpus/register` | POST | Register document in corpus |
+| `/api/skills` | GET | Skill list (`ocr-expert`); Chat loads it as system preprompt |
+| `/api/skills/{name}` | GET | Raw SKILL.md content |
+| `/api/llm/discover` | GET | Local-engine probe (Ollama/LM Studio reachable + models) |
+| `/api/llm/models` | GET | Model list per provider (live or curated) |
+| `/api/llm/chat` + `/stream` | POST | Backend chat proxy (only path the Chat page uses) |
+| `/api/llm/onboarding` | GET | Fresh-install starter facts + recommended path |
+| `/api/llm/gpus` | GET | GPU VRAM telemetry |
+| `/api/fleet/apps` + `/api/apps` | GET | Fleet app discovery (Apps Hub; registry + port health) |
+| `/api/v1/system/info` | GET | System info (CUA smoke feature path) |
+| `/api/v1/diagnostics` | GET | Full diagnostics (CUA-NSIS smoke) |
+
+Backend alias note: `canonical_backend_name` maps retired names —
+`florence-2` → `paddleocr-vl`. Identity assertions must use canonical names.
 
 ---
 

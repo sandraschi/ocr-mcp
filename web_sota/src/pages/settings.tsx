@@ -37,6 +37,7 @@ interface LlmProvider {
   base_url: string;
   models: string[];
   needs_key: boolean;
+  kind?: string;
 }
 
 interface MistralSettingsResponse {
@@ -106,7 +107,8 @@ export function Settings() {
     fetch("/api/llm/providers")
       .then((r) => r.json())
       .then((d) => {
-        const list = d.providers || [];
+        // Local LLM card shows locals only (clouds live in AI Settings).
+        const list = (d.providers || []).filter((p: LlmProvider) => p.kind !== "cloud");
         setLlmProviders(list);
         const map: Record<string, LlmProvider> = {};
         list.forEach((p: LlmProvider) => {
@@ -225,9 +227,12 @@ export function Settings() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl pb-12">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+    <div className="space-y-6 max-w-4xl pb-12" data-testid="settings-page">
+      <div data-testid="settings-control-3">
+        <h2
+          className="text-2xl font-bold tracking-tight text-white flex items-center gap-2"
+          data-testid="settings-title"
+        >
           <SettingsIcon className="w-6 h-6 text-slate-400" />
           System Settings
         </h2>
@@ -576,7 +581,8 @@ export function Settings() {
                   fetch("/api/llm/providers")
                     .then((r) => r.json())
                     .then((d) => {
-                      const list = d.providers || [];
+                      // Local LLM card shows locals only (clouds live in AI Settings).
+                      const list = (d.providers || []).filter((p: LlmProvider) => p.kind !== "cloud");
                       setLlmProviders(list);
                       const map: Record<string, LlmProvider> = {};
                       list.forEach((p: LlmProvider) => {

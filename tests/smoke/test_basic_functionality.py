@@ -60,7 +60,7 @@ class TestBasicFunctionality:
         assert config.device in ["auto", "cpu", "cuda"]
         assert config.default_backend in [
             "auto",
-            "deepseek-ocr",
+            "deepseek-ocr2",
             "florence-2",
             "tesseract",
             "got-ocr",
@@ -85,7 +85,7 @@ class TestBasicFunctionality:
         assert len(available_backends) > 0
 
         # At least one known registry name should be present (availability varies by env)
-        known = {"got-ocr", "tesseract", "deepseek-ocr", "dots-ocr", "pp-ocrv5", "easyocr"}
+        known = {"got-ocr", "tesseract", "deepseek-ocr2", "dots-ocr", "pp-ocrv5", "easyocr"}
         available_set = set(available_backends)
         assert len(available_set.intersection(known)) > 0 or len(available_backends) > 0
 

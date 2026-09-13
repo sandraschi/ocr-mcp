@@ -1,4 +1,45 @@
 
+## [Unreleased] - 2026-09-13 (assfix)
+
+### Added
+- **Inbox page (`/inbox`)**: catch-them-all gap closed. Recent corpus documents
+  (`GET /api/corpus`, newest first) + batch-job lookup (`GET /api/job/{id}`),
+  search, loading/empty/error states, data-testids. Route + sidebar entry.
+- **REST**: `GET /api/capabilities` (fleet envelope: tools, features, version),
+  `GET /api/llm/discover` (local-engine probe, no keys).
+- **Docs stack**: `docs/ONBOARDING.md`, `docs/CONFIGURATION.md`,
+  `docs/DEVELOPMENT.md`, `docs/TOOLS.md`, `docs/TROUBLESHOOTING.md`.
+- **ToolAnnotations** on all MCP tools (readOnly/destructive/openWorld hints).
+- **CUA `nav_routes`** in `scripts/cua-nsis-config.json` (matches sidebar).
+- **Tauri**: `@tauri-apps/api` webapp dep + `backend-status` event listener
+  with HTTP-poll fallback in Topbar.
+- **Chat skill-first**: loads `ocr-expert` via `GET /api/skills` as system
+  preprompt (personality appended); offline badge state when backend is down.
+- **Security**: `PATH_TRAVERSAL` detection in `validate_file_path`
+  (`..` segments, null bytes, fail-closed stat); webapp `check` script
+  (`tsc -b`) for CI gate parity.
+
+### Fixed
+- **Ruff gate**: removed `S110`/`S112` from ignore (silent swallows now log),
+  added `T20` print-ban with per-file ignores for CLI-runner stdout-JSON
+  protocol; `ruff check` + `format --check` green.
+- **Tests**: repaired SOTA-refactor drift — integration (27) and e2e (18)
+  suites rewritten to portmanteau names/ops/params + `_flat()` contract
+  adapter; security traversal tests assert the error-return contract;
+  hypothesis fixture health-check declared; mock factory honors the dict
+  contract; perf uses canonical backend names; session `temp_dir`
+  isolation for batch counts. Full suite: 270+ passed, 0 errors.
+- **Webapp**: `data-testid` >=3 on every page; Chat/Inbox font-contrast pass;
+  biome + `tsc -b` green on all touched files.
+- **Hygiene**: `.gitignore`/`.mcpbignore` cover `*.bak*` + `mcpb/src/`;
+  stale `.bak` dross removed; `glama.json` version aligned to 0.2.1-beta.
+
+### Deferred (documented, not done)
+- Fleet-wide font/contrast sweep (remaining `text-xs`/low-contrast hits
+  outside touched files); pyright rollout; Playwright e2e harness;
+- `mcp-central-docs/starts/ocr-mcp-start.bat` launcher entry (cross-repo);
+- webhooks (no push-event surface); `output_schema=` (return-type check pending).
+
 ## [0.4.0-beta] — 2026-08-25
 
 ### Added

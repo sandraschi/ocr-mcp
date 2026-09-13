@@ -84,7 +84,7 @@ class EasyOCRBackend(OCRBackend):
 
                 use_gpu = bool(torch.cuda.is_available())
             except Exception:
-                pass
+                logger.debug("suppressed Exception in _ensure_initialized", exc_info=True)
 
             self._reader = self._easyocr.Reader(
                 self.config.easyocr_languages,

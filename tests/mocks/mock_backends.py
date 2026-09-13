@@ -41,10 +41,10 @@ from ocr_mcp.core.config import OCRConfig
 
 
 class MockDeepSeekBackend(OCRBackend):
-    """Mock DeepSeek-OCR backend for testing."""
+    """Mock DeepSeek-OCR-2 backend for testing."""
 
     def __init__(self, config: OCRConfig):
-        super().__init__("deepseek-ocr", config)
+        super().__init__("deepseek-ocr2", config)
         self._available = True
         self.call_count = 0
         self.last_call_args = None
@@ -63,7 +63,7 @@ class MockDeepSeekBackend(OCRBackend):
             "success": True,
             "text": f"DeepSeek OCR result for {image_path} in {mode} mode",
             "confidence": 0.95,
-            "backend": "deepseek-ocr",
+            "backend": "deepseek-ocr2",
             "processing_time": 0.1,
             "mode": mode,
             "gpu_used": False,
@@ -82,7 +82,7 @@ class MockDeepSeekBackend(OCRBackend):
 
     def get_capabilities(self) -> dict[str, Any]:
         return {
-            "name": "deepseek-ocr",
+            "name": "deepseek-ocr2",
             "available": True,
             "modes": ["text", "formatted", "fine-grained"],
             "languages": ["en", "multilingual"],

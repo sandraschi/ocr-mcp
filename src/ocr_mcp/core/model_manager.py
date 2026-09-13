@@ -119,7 +119,7 @@ class ModelManager:
         # Model priorities (higher = more important to keep loaded)
         self.model_priorities = {
             "mistral-ocr": 3,  # State-of-the-art, keep loaded
-            "deepseek-ocr": 3,  # Very popular, keep loaded
+            "deepseek-ocr2": 3,  # Very popular, keep loaded
             "florence-2": 2,  # Good general purpose
             "dots-ocr": 2,  # Specialized for tables
             "pp-ocrv5": 1,  # Fast but less accurate
@@ -168,7 +168,7 @@ class ModelManager:
                     utilization = gpu.load * 100
                     temperature = gpu.temperature
                 except Exception:
-                    pass
+                    logger.debug("suppressed Exception in get_gpu_info", exc_info=True)
 
             total_mb = total_memory // (1024 * 1024)
             used_mb = allocated_memory // (1024 * 1024)
@@ -431,7 +431,7 @@ class ModelManager:
         # Models to preload based on priority
         preload_candidates = [
             ("mistral-ocr", "high_priority"),
-            ("deepseek-ocr", "high_priority"),
+            ("deepseek-ocr2", "high_priority"),
             ("florence-2", "medium_priority"),
         ]
 

@@ -1,6 +1,6 @@
 # OCR-MCP — Project Status
 
-**Last Updated:** 2026-08-25
+**Last Updated:** 2026-09-13
 **Version:** 0.3.0-beta
 **Status:** Beta
 
@@ -8,10 +8,11 @@
 
 | Gate | Status |
 |------|--------|
-| Python lint (ruff) | Pass |
-| TypeScript (tsc --noEmit) | Pass |
+| Python lint (ruff) | Pass (`check` + `format --check`, S110/S112 + T20 enforced) |
+| TypeScript (tsc --noEmit) | Pass (`bun run check` = `tsc -b`) |
 | Vite build | Pass |
-| Tests | Pass (156 unit tests) |
+| Tests | Pass (270+ across unit/integration/e2e/fuzz/perf/security; 0 errors) |
+| Webapp pages | Catch-them-all incl. new Inbox (`/inbox`); data-testid >=3 per page |
 | NSIS build | Pass |
 | CUA smoke test | Pass |
 | Pre-commit hooks | Configured (ruff, file hygiene) |

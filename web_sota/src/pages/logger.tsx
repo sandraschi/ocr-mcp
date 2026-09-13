@@ -47,10 +47,13 @@ export function Logger() {
   }, [stickToEnd, lines]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="space-y-6" data-testid="logger-page">
+      <div className="flex flex-wrap items-start justify-between gap-4" data-testid="logger-control-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
+          <h1
+            className="text-3xl font-bold tracking-tight text-slate-100 flex items-center gap-2"
+            data-testid="logger-title"
+          >
             <ScrollText className="h-8 w-8 text-amber-400" />
             Logger
           </h1>

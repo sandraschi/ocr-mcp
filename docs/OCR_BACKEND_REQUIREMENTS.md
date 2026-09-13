@@ -21,7 +21,6 @@ Per-backend pip packages, system deps, and config. For **how the web FastAPI bac
 | Backend | Typical install | Auto pip (`OCR_AUTO_INSTALL_DEPS=1`) | Bootstrap / notes |
 |---------|-----------------|----------------------------------------|-------------------|
 | **paddleocr-vl** | `uv sync` | torch stack | PyYAML repair; **flash-attn** not auto-installed — log hint on GPU |
-| **deepseek-ocr** | `uv sync` | torch stack | HF weights on first use |
 | **deepseek-ocr2** | `uv sync` | torch stack | Optional flash-attn per model card |
 | **olmocr-2** | `uv sync` | torch stack | Large HF model |
 | **dots-ocr** | `uv sync` | torch stack | |
@@ -44,18 +43,72 @@ Per-backend pip packages, system deps, and config. For **how the web FastAPI bac
 | Backend | Pip packages | System / env | Notes |
 |---------|--------------|--------------|--------|
 | **paddleocr-vl** | `transformers>=5.0.0`, `torch`, `accelerate`, `huggingface-hub`, **pyyaml**, PIL | — | `flash-attn` recommended on GPU (~3.3GB vs ~40GB VRAM) |
-| **deepseek-ocr** | `torch`, `transformers`, `huggingface-hub`, PIL | — | HF model: deepseek-ai/DeepSeek-OCR |
-| **deepseek-ocr2** | `torch`, `transformers`, `einops`, `addict`, `easydict`, PIL | — | Optional: `flash-attn==2.7.3`; doc suggests torch 2.6, transformers 4.46 |
+| **deepseek-ocr2** | `torch`, `torchvision`, `transformers`, `einops`, `addict`, `easydict`, PIL | — | Optional: `flash-attn==2.7.3`; doc suggests torch 2.6, transformers 4.46. Supersedes DeepSeek-OCR v1 (removed 2026-09-08 — same authors, newer architecture, no reason to keep both) |
 | **olmocr-2** | `torch`, `transformers`, PIL | — | HF: allenai/olmOCR-2-7B-1025, ~7B params |
 | **dots-ocr** | `torch`, `transformers`, `huggingface-hub`, PIL | — | HF: rednote-hilab/dots.ocr |
 | **pp-ocrv5** | `paddlepaddle`, `paddleocr`, `numpy`, PIL | — | Optional; platform/CUDA variants for paddle |
 | **qwen-layered** | `torch`, `diffusers`, `huggingface-hub`, PIL | — | HF: Qwen/Qwen-Image-Layered |
 | **mistral-ocr** | `httpx` | `MISTRAL_API_KEY` or config `mistral_api_key` | API-only; no local model |
-| **got-ocr** | `torch`, `transformers`, PIL | — | HF: stepfun-ai/GOT-OCR2_0 |
+| **got-ocr** | isolated `.venv-legacy-vlm` (see below), or `torch`/`torchvision`/`transformers`/`tiktoken`/`verovio`/PIL in-process (broken on transformers>=5.0) | — | HF: stepfun-ai/GOT-OCR2_0, vendored code targets transformers==4.37.2 |
+| **unlimited-ocr** | `torch`, `torchvision`, `transformers`, `einops`, `addict`, `easydict`, `matplotlib`, PIL | — | HF: baidu/Unlimited-OCR (same deepseek-v2 encoder family as deepseek-ocr2) |
 | **tesseract** | `pytesseract`, PIL | Tesseract binary in PATH or `config.tesseract_cmd` | Languages: `config.tesseract_languages` (default eng) |
 | **easyocr** | `easyocr`, PIL | — | First run downloads CRAFT/detector models |
 
 PIL is provided by `pillow` (in pyproject). `httpx` is in pyproject. `pytesseract` and `easyocr` are in pyproject.
+
+---
+
+## got-ocr: isolated legacy-transformers venv
+
+stepfun-ai/GOT-OCR2_0's `trust_remote_code` (`modeling_GOT.py`, `tokenization_qwen.py`) targets
+`transformers==4.37.2`. Under the main venv's `transformers>=5.0` (needed by paddleocr-vl,
+dots-ocr, etc.) it breaks three separate ways in sequence: a tokenizer `None`-injection bug
+(`build_inputs_with_special_tokens` splicing in `cls_token_id`/`sep_token_id` that this
+tokenizer never defines), `Cache.seen_tokens`/`get_max_length()` removal, and finally a
+`cache_position` mismatch inside the vendored `forward()` itself -- the last one risks silently
+wrong OCR output rather than a clean crash if patched incorrectly in-process.
+
+Run **`python scripts/setup_legacy_vlm_venv.py`** once to create `.venv-legacy-vlm` (pinned
+`transformers==4.37.2`, `torch<2.3`, `numpy<2`, `tiktoken`, `verovio`, `torchvision`,
+`accelerate`). `got_ocr_backend.py` shells out to it via subprocess
+(`_got_ocr_legacy_runner.py`) whenever it exists; without it, `process_image()` falls back to
+the known-broken in-process path and logs a warning telling you to run the setup script.
+
+## deepseek-ocr2 / unlimited-ocr: shared isolated venv
+
+DeepSeek-OCR-2 and Unlimited-OCR ("Built on DeepSeek-OCR lineage" per its own model card) vendor
+the same deepseek-v2 encoder, the same `seen_tokens` pattern, and the same
+`infer(tokenizer, prompt=..., image_file=..., ...)` signature with `.cuda()` hardcoded ~14 times
+throughout `generate()` and image tensors hardcoded to `.to(torch.bfloat16)`. Both needed more
+than the got-ocr treatment: their pre-existing backend code called the wrong HF class
+(`AutoModelForCausalLM` instead of `AutoModel`) and, for `deepseek_ocr2_backend.py`, invoked a
+nonexistent tokenizer-as-processor API (`tokenizer(image, return_tensors="pt")`) that never
+matched how these models actually work -- that code path had never run successfully.
+
+(DeepSeek-OCR v1 had the identical bugs and needed the identical treatment, but was removed
+2026-09-08 once DeepSeek-OCR-2 was confirmed working end-to-end -- same authors, newer
+"Visual Causal Flow" architecture, no published reason to keep both registered.)
+
+Run **`python scripts/setup_legacy_vlm_deepseek_venv.py`** once to create
+`.venv-legacy-vlm-deepseek` (pinned `transformers==4.46.3`, `torch==2.6.0`, `torchvision==0.21.0`,
+`tokenizers==0.20.3`, `einops`, `addict`, `easydict`, `numpy<2`). Both backends shell out to
+the same runner (`_deepseek_ocr_legacy_runner.py`, parameterized by `model_id`) via subprocess
+whenever it exists, loading the model in `bfloat16` (matching the hardcoded image dtype) and
+neutralizing `.cuda()`/`.half()` the same way got-ocr's runner does. Without the venv, each
+backend falls back to the known-broken in-process path and logs a warning.
+
+Note: Unlimited-OCR's own README states `transformers==4.57.1`/`torch==2.10.0` (newer than
+DeepSeek-OCR-2's) -- that's config metadata, not a hard requirement; the vendored `.cuda()` calls
+in `generate()` are what actually break things, and those are identical across both, so the one
+shared 4.46.3 venv works for both.
+
+**HF download gotcha:** at least one of these weight downloads landed a file with the *correct*
+total byte size but a zero-filled safetensors header (`Error while deserializing header: invalid
+JSON in header: EOF...`) -- a resume-related corruption, not a code bug. If you hit this, delete
+the blob under `~/.cache/ocr-mcp/models/<model>/models--.../blobs/<hash>` and re-download from
+scratch (`huggingface_hub.snapshot_download` or `curl -C -` against the `resolve/main/...` URL,
+verifying the final byte count against the `X-Linked-Size` response header) rather than trying to
+patch the partial file.
 
 ---
 

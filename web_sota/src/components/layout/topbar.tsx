@@ -61,13 +61,40 @@ export function Topbar() {
     return () => clearInterval(interval);
   }, [checkHealth, loadApps]);
 
+  // Tauri backend-status events (native shell); HTTP polling above is the
+  // dev-browser fallback. Dynamic import so the Vite dev server (no Tauri
+  // runtime) never breaks on a static bare import.
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { listen } = await import("@tauri-apps/api/event");
+        if (cancelled) return;
+        unlisten = await listen<string>("backend-status", (event) => {
+          setBackendOnline(event.payload === "ready");
+        });
+      } catch {
+        /* not running inside Tauri: HTTP polling covers status */
+      }
+    })();
+    return () => {
+      cancelled = true;
+      try {
+        unlisten?.();
+      } catch {
+        /* ignore teardown races */
+      }
+    };
+  }, []);
+
   const aliveApps = fleetApps.filter((a) => a.alive);
   const deadApps = fleetApps.filter((a) => !a.alive);
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-slate-800 bg-slate-950/50 px-6 backdrop-blur-xl">
       <div className="flex items-center gap-4">
-        <h1 className="text-sm font-medium text-slate-400">
+        <h1 className="text-base font-medium text-slate-300">
           Navigation / <span className="text-slate-100">Control Center</span>
         </h1>
       </div>
@@ -87,9 +114,9 @@ export function Topbar() {
         {/* Backend Health Indicator */}
         <div
           data-testid="backend-dot"
-          className={`mr-4 flex items-center gap-2 rounded-full px-3 py-1 text-xs border ${
+          className={`mr-4 flex items-center gap-2 rounded-full px-3 py-1 text-sm border ${
             backendOnline === null
-              ? "bg-slate-500/10 text-slate-400 border-slate-500/20"
+              ? "bg-slate-500/10 text-slate-300 border-slate-500/20"
               : backendOnline
                 ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
                 : "bg-red-500/10 text-red-500 border-red-500/20"
@@ -123,16 +150,16 @@ export function Topbar() {
               sideOffset={5}
               align="end"
             >
-              <DropdownMenu.Label className="px-2 py-1.5 text-xs font-semibold text-slate-500">
+              <DropdownMenu.Label className="px-2 py-1.5 text-sm font-semibold text-slate-300">
                 Switch Application
               </DropdownMenu.Label>
 
               <div className="h-px bg-slate-800 my-1" />
 
               {appsLoading ? (
-                <div className="px-2 py-3 text-xs text-slate-500 text-center">Scanning...</div>
+                <div className="px-2 py-3 text-sm text-slate-300 text-center">Scanning...</div>
               ) : aliveApps.length === 0 && deadApps.length === 0 ? (
-                <div className="px-2 py-3 text-xs text-slate-500 text-center">No fleet apps detected</div>
+                <div className="px-2 py-3 text-sm text-slate-300 text-center">No fleet apps detected</div>
               ) : (
                 <>
                   {aliveApps.map((app) => {
@@ -147,7 +174,7 @@ export function Topbar() {
                         >
                           <Icon className="mr-2 h-4 w-4 text-emerald-400" />
                           <span>{app.label}</span>
-                          <span className="ml-1 text-[10px] text-emerald-500">live</span>
+                          <span className="ml-1 text-xs font-medium text-emerald-400">live</span>
                           <ExternalLink className="ml-auto h-3 w-3 opacity-50" />
                         </a>
                       </DropdownMenu.Item>
@@ -156,7 +183,7 @@ export function Topbar() {
                   {deadApps.length > 0 && (
                     <>
                       <div className="h-px bg-slate-800 my-1" />
-                      <DropdownMenu.Label className="px-2 py-1 text-[10px] font-semibold text-slate-600">
+                      <DropdownMenu.Label className="px-2 py-1 text-xs font-semibold text-slate-400">
                         Offline
                       </DropdownMenu.Label>
                       {deadApps.map((app) => {
@@ -167,11 +194,11 @@ export function Topbar() {
                               href={`http://localhost:${app.port}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex w-full select-none items-center rounded-sm px-2 py-1.5 text-sm text-slate-500 hover:bg-slate-800 focus:bg-slate-800 outline-none cursor-pointer"
+                              className="flex w-full select-none items-center rounded-sm px-2 py-1.5 text-sm text-slate-300 hover:bg-slate-800 focus:bg-slate-800 outline-none cursor-pointer"
                             >
                               <Icon className="mr-2 h-4 w-4 opacity-40" />
                               <span>{app.label}</span>
-                              <span className="ml-auto text-[10px] text-slate-600">—</span>
+                              <span className="ml-auto text-xs text-slate-400">—</span>
                               <ExternalLink className="ml-3 h-3 w-3 opacity-30" />
                             </a>
                           </DropdownMenu.Item>

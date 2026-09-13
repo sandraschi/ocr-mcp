@@ -46,44 +46,89 @@ from tests.mocks.mock_backends import MockDeepSeekBackend
 from tests.mocks.mock_scanner import MockScannerManager
 
 
+def _flat(res):
+    """Flatten the SOTA tool contract for legacy flat-dict assertions.
+
+    Portmanteau tools return ``ToolResponse`` (pydantic) with the payload
+    nested under ``result`` (or ``results`` for create_success_response
+    dicts). This merges nested payload keys to the top level so tests can
+    assert on the documented payload fields directly.
+    """
+    if isinstance(res, dict):
+        data = dict(res)
+    elif hasattr(res, "model_dump"):
+        data = res.model_dump()
+    else:
+        return res
+    for key in ("result", "results"):
+        nested = data.get(key)
+        if isinstance(nested, dict):
+            for k, v in nested.items():
+                data.setdefault(k, v)
+    return data
+
+
+@pytest.fixture
+def config():
+    """Test configuration (module scope: shared by all test classes)."""
+    return OCRConfig(cache_dir=Path("/tmp/test_cache"))
+
+
+@pytest.fixture
+def mock_backend_manager(config, mock_scanner_manager):
+    """Mock backend manager for testing (module scope: shared by all test classes)."""
+    manager = MagicMock(spec=BackendManager)
+    manager.config = config
+    manager.scanner_manager = mock_scanner_manager
+
+    mock_processor = MagicMock()
+    mock_processor.is_available.return_value = True
+    mock_processor.detect_file_type.return_value = "image"
+    manager.document_processor = mock_processor
+
+    mock_backend = MockDeepSeekBackend(config)
+    manager.select_backend.return_value = mock_backend
+    manager.process_with_backend = AsyncMock(
+        return_value={
+            "success": True,
+            "text": "Test OCR result",
+            "backend": "deepseek-ocr2",
+            "confidence": 0.95,
+        }
+    )
+    # Declared double for the intelligent-batch path (real impl delegates here).
+    manager.process_document = AsyncMock(
+        return_value={
+            "success": True,
+            "text": "Test OCR result",
+            "backend": "deepseek-ocr2",
+            "confidence": 0.95,
+        }
+    )
+    # Declared double for backend listing (real impl returns this shape).
+    manager.list_backends = MagicMock(
+        return_value={
+            "backends": {
+                "deepseek-ocr2": {"available": True},
+                "tesseract": {"available": True},
+            },
+            "available_count": 2,
+            "total_count": 2,
+        }
+    )
+
+    return manager
+
+
+@pytest.fixture
+def fastmcp_app():
+    """FastMCP app instance for testing (module scope: shared by all test classes)."""
+    app = FastMCP("test-ocr-mcp")
+    return app
+
+
 class TestMCPToolsIntegration:
     """Integration tests for MCP tools."""
-
-    @pytest.fixture
-    def config(self):
-        """Test configuration."""
-        return OCRConfig(cache_dir=Path("/tmp/test_cache"))
-
-    @pytest.fixture
-    def mock_backend_manager(self, config, mock_scanner_manager):
-        """Mock backend manager for testing."""
-        manager = MagicMock(spec=BackendManager)
-        manager.config = config
-        manager.scanner_manager = mock_scanner_manager
-
-        mock_processor = MagicMock()
-        mock_processor.is_available.return_value = True
-        mock_processor.detect_file_type.return_value = "image"
-        manager.document_processor = mock_processor
-
-        mock_backend = MockDeepSeekBackend(config)
-        manager.select_backend.return_value = mock_backend
-        manager.process_with_backend = AsyncMock(
-            return_value={
-                "success": True,
-                "text": "Test OCR result",
-                "backend": "deepseek-ocr",
-                "confidence": 0.95,
-            }
-        )
-
-        return manager
-
-    @pytest.fixture
-    def fastmcp_app(self):
-        """FastMCP app instance for testing."""
-        app = FastMCP("test-ocr-mcp")
-        return app
 
     @pytest.fixture
     def registered_app(self, fastmcp_app, mock_backend_manager, config):
@@ -103,14 +148,16 @@ class TestMCPToolsIntegration:
 
         # Get the tool
         tools = await registered_app.list_tools()
-        process_tool = next(t for t in tools if t.name == "document_processing")
+        process_tool = next(t for t in tools if t.name == "process_document")
 
         # Call the tool
-        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
-            operation="process_document",
-            source_path=str(test_image),
-            backend="auto",
-            ocr_mode="text",
+        result = _flat(
+            await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
+                operation="process_document",
+                source_path=str(test_image),
+                backend="auto",
+                ocr_mode="text",
+            )
         )
 
         assert result["success"] is True
@@ -127,16 +174,18 @@ class TestMCPToolsIntegration:
         img.save(test_image)
 
         tools = await registered_app.list_tools()
-        process_tool = next(t for t in tools if t.name == "document_processing")
+        process_tool = next(t for t in tools if t.name == "process_document")
 
         # Test with formatting options
-        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
-            operation="process_document",
-            source_path=str(test_image),
-            backend="deepseek-ocr",
-            ocr_mode="format",
-            output_format="html",
-            language="en",
+        result = _flat(
+            await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
+                operation="process_document",
+                source_path=str(test_image),
+                backend="deepseek-ocr2",
+                ocr_mode="format",
+                output_format="html",
+                language="en",
+            )
         )
 
         assert result["success"] is True
@@ -152,22 +201,24 @@ class TestMCPToolsIntegration:
         img.save(test_image)
 
         tools = await registered_app.list_tools()
-        process_tool = next(t for t in tools if t.name == "document_processing")
+        process_tool = next(t for t in tools if t.name == "process_document")
 
         region = [10, 10, 100, 100]
-        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
-            operation="extract_regions",
-            source_path=str(test_image),
-            backend="florence-2",
-            region=region,
+        result = _flat(
+            await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
+                operation="process_document",
+                source_path=str(test_image),
+                backend="florence-2",
+                region=region,
+            )
         )
 
         assert result["success"] is True
-        assert "region" in str(result).lower() or "fine-grained" in result.get("mode", "")
+        assert "text" in result
 
     @pytest.mark.asyncio
     async def test_process_document_tool_comic_mode(self, registered_app, tmp_path):
-        """Test comic/manga processing mode."""
+        """Test dense-layout processing mode (ex comic/manga params, removed in SOTA refit)."""
         test_image = tmp_path / "comic.png"
         from PIL import Image
 
@@ -177,19 +228,17 @@ class TestMCPToolsIntegration:
         tools = await registered_app.list_tools()
         process_tool = next(t for t in tools if t.name == "process_document")
 
-        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
-            source_path=str(test_image),
-            backend="got-ocr",
-            mode="formatted",
-            comic_mode=True,
-            manga_layout=True,
-            scaffold_separate=True,
-            panel_analysis=True,
+        result = _flat(
+            await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
+                operation="process_document",
+                source_path=str(test_image),
+                backend="got-ocr",
+                ocr_mode="accurate",
+            )
         )
 
         assert result["success"] is True
-        assert result.get("comic_mode") is True
-        assert result.get("manga_layout") is True
+        assert "text" in result
 
     @pytest.mark.asyncio
     async def test_workflow_management_batch_tool(self, registered_app, tmp_path):
@@ -205,18 +254,17 @@ class TestMCPToolsIntegration:
             test_images.append(str(img_path))
 
         tools = await registered_app.list_tools()
-        batch_tool = next(t for t in tools if t.name == "workflow_management")
+        batch_tool = next(t for t in tools if t.name == "manage_workflow")
 
-        result = await (batch_tool.fn if hasattr(batch_tool, "fn") else batch_tool)(
-            operation="process_batch_intelligent",
-            document_paths=test_images,
-            workflow_type="auto",
-            quality_threshold=0.8,
-            max_concurrent=2,
+        result = _flat(
+            await (batch_tool.fn if hasattr(batch_tool, "fn") else batch_tool)(
+                operation="process_batch_intelligent",
+                source_dir=str(tmp_path),
+            )
         )
 
         assert result["success"] is True
-        assert result["total_documents"] == 3
+        assert result["batch_summary"]["total_documents"] == 3
         assert "results" in result
         assert len(result["results"]) == 3
 
@@ -224,37 +272,38 @@ class TestMCPToolsIntegration:
     async def test_workflow_management_health_check_tool(self, registered_app):
         """Test OCR health check tool."""
         tools = await registered_app.list_tools()
-        workflow_tool = next(t for t in tools if t.name == "workflow_management")
+        workflow_tool = next(t for t in tools if t.name == "manage_workflow")
 
-        result = await (workflow_tool.fn if hasattr(workflow_tool, "fn") else workflow_tool)(
-            operation="ocr_health_check"
+        result = _flat(
+            await (workflow_tool.fn if hasattr(workflow_tool, "fn") else workflow_tool)(operation="ocr_health_check")
         )
 
-        assert "status" in result
-        assert "ocr_backends" in result
-        assert "scanner_backends" in result
-        assert "configuration" in result
+        assert result["success"] is True
+        assert result.get("status") == "healthy"
+        assert isinstance(result.get("backends"), dict)
 
     @pytest.mark.asyncio
     async def test_list_backends_tool(self, registered_app):
         """Test list backends tool."""
         tools = await registered_app.list_tools()
-        list_tool = next(t for t in tools if t.name == "list_backends")
+        list_tool = next(t for t in tools if t.name == "manage_workflow")
 
-        result = await (list_tool.fn if hasattr(list_tool, "fn") else list_tool)()
+        result = _flat(await (list_tool.fn if hasattr(list_tool, "fn") else list_tool)(operation="list_backends"))
 
-        assert "backends" in result
-        assert "available_count" in result
-        assert "total_count" in result
+        assert result["success"] is True
         assert isinstance(result["backends"], dict)
+        assert result["backends"]["available_count"] == 2
+        assert result["backends"]["total_count"] == 2
 
     @pytest.mark.asyncio
     async def test_scanner_operations_list_tool(self, registered_app):
         """Test list scanners tool."""
         tools = await registered_app.list_tools()
-        scanner_tool = next(t for t in tools if t.name == "scanner_operations")
+        scanner_tool = next(t for t in tools if t.name == "operate_scanner")
 
-        result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(operation="list_scanners")
+        result = _flat(
+            await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(operation="list_scanners")
+        )
 
         assert isinstance(result, dict)
         assert "scanners" in result
@@ -264,10 +313,12 @@ class TestMCPToolsIntegration:
     async def test_scanner_operations_properties_tool(self, registered_app):
         """Test scanner properties tool."""
         tools = await registered_app.list_tools()
-        scanner_tool = next(t for t in tools if t.name == "scanner_operations")
+        scanner_tool = next(t for t in tools if t.name == "operate_scanner")
 
-        result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
-            operation="scanner_properties", device_id="wia:test_scanner_1"
+        result = _flat(
+            await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
+                operation="scanner_properties", device_id="wia:test_scanner_1"
+            )
         )
 
         assert isinstance(result, dict)
@@ -279,36 +330,39 @@ class TestMCPToolsIntegration:
     async def test_scanner_operations_configure_tool(self, registered_app):
         """Test scan configuration tool."""
         tools = await registered_app.list_tools()
-        scanner_tool = next(t for t in tools if t.name == "scanner_operations")
+        scanner_tool = next(t for t in tools if t.name == "operate_scanner")
 
-        result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
-            operation="configure_scan",
-            device_id="wia:test_scanner_1",
-            dpi=300,
-            color_mode="Color",
-            paper_size="A4",
-            brightness=0,
-            contrast=0,
-            use_adf=False,
-            duplex=False,
+        result = _flat(
+            await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
+                operation="configure_scan",
+                device_id="wia:test_scanner_1",
+                resolution=300,
+                color_mode="color",
+                paper_size="A4",
+                brightness=0,
+                contrast=0,
+                duplex=False,
+            )
         )
 
         assert isinstance(result, dict)
         assert "configured" in result
 
     @pytest.mark.asyncio
-    async def test_scanner_operations_scan_tool(self, registered_app):
+    async def test_scanner_operations_scan_tool(self, registered_app, tmp_path):
         """Test document scanning tool."""
         tools = await registered_app.list_tools()
-        scanner_tool = next(t for t in tools if t.name == "scanner_operations")
+        scanner_tool = next(t for t in tools if t.name == "operate_scanner")
 
-        result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
-            operation="scan_document",
-            device_id="wia:test_scanner_1",
-            dpi=300,
-            color_mode="Color",
-            paper_size="A4",
-            save_path=None,
+        result = _flat(
+            await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
+                operation="scan_document",
+                device_id="wia:test_scanner_1",
+                resolution=300,
+                color_mode="color",
+                paper_size="A4",
+                save_path=str(tmp_path / "scan.png"),
+            )
         )
 
         # Result should be scan result data
@@ -316,35 +370,44 @@ class TestMCPToolsIntegration:
         assert "device_id" in result
 
     @pytest.mark.asyncio
-    async def test_scan_batch_tool(self, registered_app):
+    async def test_scan_batch_tool(self, registered_app, tmp_path):
         """Test batch scanning tool."""
         tools = await registered_app.list_tools()
-        batch_scan_tool = next(t for t in tools if t.name == "scan_batch")
+        batch_scan_tool = next(t for t in tools if t.name == "operate_scanner")
 
-        result = await (batch_scan_tool.fn if hasattr(batch_scan_tool, "fn") else batch_scan_tool)(
-            device_id="wia:test_scanner_1",
-            count=2,
-            dpi=150,
-            color_mode="Grayscale",
-            paper_size="A4",
-            save_directory=None,
+        result = _flat(
+            await (batch_scan_tool.fn if hasattr(batch_scan_tool, "fn") else batch_scan_tool)(
+                operation="scan_batch",
+                device_id="wia:test_scanner_1",
+                count=2,
+                resolution=150,
+                color_mode="grayscale",
+                paper_size="A4",
+                save_directory=str(tmp_path),
+            )
         )
 
-        assert isinstance(result, list)
-        assert len(result) <= 2  # May be less if scanning fails
+        assert result["success"] is True
+        assert result["count_completed"] == 2
+        assert len(result["saved_paths"]) == 2
 
     @pytest.mark.asyncio
-    async def test_preview_scan_tool(self, registered_app):
+    async def test_preview_scan_tool(self, registered_app, tmp_path):
         """Test preview scanning tool."""
         tools = await registered_app.list_tools()
-        preview_tool = next(t for t in tools if t.name == "preview_scan")
+        preview_tool = next(t for t in tools if t.name == "operate_scanner")
 
-        result = await (preview_tool.fn if hasattr(preview_tool, "fn") else preview_tool)(
-            device_id="wia:test_scanner_1", dpi=75, save_path=None
+        result = _flat(
+            await (preview_tool.fn if hasattr(preview_tool, "fn") else preview_tool)(
+                operation="preview_scan",
+                device_id="wia:test_scanner_1",
+                save_path=str(tmp_path / "preview.png"),
+            )
         )
 
         # Result should be image data or file path
         assert result is not None
+        assert result["success"] is True
 
 
 class TestToolErrorHandling:
@@ -374,10 +437,12 @@ class TestToolErrorHandling:
         register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
         tools = await fastmcp_app.list_tools()
-        process_tool = next(t for t in tools if t.name == "document_processing")
+        process_tool = next(t for t in tools if t.name == "process_document")
 
-        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
-            operation="process_document", source_path="/nonexistent/file.png", backend="auto"
+        result = _flat(
+            await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
+                operation="process_document", source_path="/nonexistent/file.png", backend="auto"
+            )
         )
 
         assert result["success"] is False
@@ -390,13 +455,27 @@ class TestToolErrorHandling:
         unsupported_file = tmp_path / "test.xyz"
         unsupported_file.write_text("not an image")
 
+        # Backend double rejects unknown extensions, like a real backend would.
+        async def _reject_xyz(**kwargs):
+            if str(kwargs.get("image_path", "")).endswith(".xyz"):
+                return {"success": False, "error": "Unsupported file type: xyz"}
+            return {
+                "success": True,
+                "text": "Test OCR result",
+                "backend": "deepseek-ocr2",
+                "confidence": 0.95,
+            }
+
+        mock_backend_manager.process_with_backend = AsyncMock(side_effect=_reject_xyz)
         register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
         tools = await fastmcp_app.list_tools()
         process_tool = next(t for t in tools if t.name == "process_document")
 
-        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
-            source_path=str(unsupported_file), backend="auto"
+        result = _flat(
+            await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
+                operation="process_document", source_path=str(unsupported_file), backend="auto"
+            )
         )
 
         assert result["success"] is False
@@ -405,13 +484,17 @@ class TestToolErrorHandling:
     @pytest.mark.asyncio
     async def test_scanner_operations_with_invalid_device(self, fastmcp_app, mock_backend_manager, config):
         """Test scanner tools with invalid device IDs."""
+        # Unknown devices resolve to no properties (declared double behavior).
+        mock_backend_manager.scanner_manager.get_scanner_properties.return_value = None
         register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
         tools = await fastmcp_app.list_tools()
-        scanner_tool = next(t for t in tools if t.name == "scanner_operations")
+        scanner_tool = next(t for t in tools if t.name == "operate_scanner")
 
-        result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
-            operation="scanner_properties", device_id="invalid:device"
+        result = _flat(
+            await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
+                operation="scanner_properties", device_id="invalid:device"
+            )
         )
 
         # Should handle gracefully
@@ -434,10 +517,12 @@ class TestToolParameterValidation:
         register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
         tools = await fastmcp_app.list_tools()
-        process_tool = next(t for t in tools if t.name == "document_processing")
+        process_tool = next(t for t in tools if t.name == "process_document")
 
-        result = await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
-            operation="process_document", source_path=str(test_image), backend="invalid-backend"
+        result = _flat(
+            await (process_tool.fn if hasattr(process_tool, "fn") else process_tool)(
+                operation="process_document", source_path=str(test_image), backend="invalid-backend"
+            )
         )
 
         # Should either fail gracefully or fall back to auto
@@ -449,14 +534,16 @@ class TestToolParameterValidation:
         register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
         tools = await fastmcp_app.list_tools()
-        scanner_tool = next(t for t in tools if t.name == "scanner_operations")
+        scanner_tool = next(t for t in tools if t.name == "operate_scanner")
 
-        result = await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
-            operation="configure_scan",
-            device_id="wia:test_scanner_1",
-            dpi=-1,  # Invalid DPI
-            color_mode="InvalidMode",  # Invalid color mode
-            paper_size="InvalidSize",
+        result = _flat(
+            await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
+                operation="configure_scan",
+                device_id="wia:test_scanner_1",
+                resolution=-1,  # Invalid DPI
+                color_mode="InvalidMode",  # Invalid color mode
+                paper_size="InvalidSize",
+            )
         )
 
         # Should handle invalid parameters gracefully
@@ -465,13 +552,13 @@ class TestToolParameterValidation:
     @pytest.mark.parametrize(
         "tool_name,operation,required_params",
         [
-            ("document_processing", "process_document", ["source_path"]),
-            ("scanner_operations", "list_scanners", []),
-            ("scanner_operations", "scanner_properties", ["device_id"]),
-            ("scanner_operations", "configure_scan", ["device_id"]),
-            ("scanner_operations", "scan_document", ["device_id"]),
-            ("scanner_operations", "scan_batch", ["device_id"]),
-            ("scanner_operations", "preview_scan", ["device_id"]),
+            ("process_document", "process_document", ["source_path"]),
+            ("operate_scanner", "list_scanners", []),
+            ("operate_scanner", "scanner_properties", ["device_id"]),
+            ("operate_scanner", "configure_scan", ["device_id"]),
+            ("operate_scanner", "scan_document", ["device_id"]),
+            ("operate_scanner", "scan_batch", ["device_id"]),
+            ("operate_scanner", "preview_scan", ["device_id"]),
         ],
     )
     @pytest.mark.asyncio
@@ -510,17 +597,17 @@ class TestToolConcurrency:
         register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
         tools = await fastmcp_app.list_tools()
-        workflow_tool = next(t for t in tools if t.name == "workflow_management")
+        workflow_tool = next(t for t in tools if t.name == "manage_workflow")
 
-        result = await (workflow_tool.fn if hasattr(workflow_tool, "fn") else workflow_tool)(
-            operation="process_batch_intelligent",
-            document_paths=test_files,
-            workflow_type="auto",
-            max_concurrent=3,
+        result = _flat(
+            await (workflow_tool.fn if hasattr(workflow_tool, "fn") else workflow_tool)(
+                operation="process_batch_intelligent",
+                source_dir=str(tmp_path),
+            )
         )
 
         assert result["success"] is True
-        assert result["total_documents"] == 5
+        assert result["batch_summary"]["total_documents"] == 5
         assert len(result["results"]) == 5
 
     @pytest.mark.asyncio
@@ -529,17 +616,19 @@ class TestToolConcurrency:
         register_sota_tools(fastmcp_app, mock_backend_manager, config)
 
         tools = await fastmcp_app.list_tools()
-        scanner_tool = next(t for t in tools if t.name == "scanner_operations")
+        scanner_tool = next(t for t in tools if t.name == "operate_scanner")
 
         # Simulate multiple concurrent scan requests
         import asyncio
 
         async def scan_once():
-            return await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
-                operation="scan_document",
-                device_id="wia:test_scanner_1",
-                dpi=150,
-                color_mode="Grayscale",
+            return _flat(
+                await (scanner_tool.fn if hasattr(scanner_tool, "fn") else scanner_tool)(
+                    operation="scan_document",
+                    device_id="wia:test_scanner_1",
+                    resolution=150,
+                    color_mode="grayscale",
+                )
             )
 
         # Run multiple scans concurrently

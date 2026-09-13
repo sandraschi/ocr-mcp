@@ -439,7 +439,7 @@ def _calculate_optimal_settings(
     ) / len(analysis_results)
 
     if avg_complexity > 0.7:
-        recommended_backend = "deepseek-ocr"  # Best for complex docs
+        recommended_backend = "deepseek-ocr2"  # Best for complex docs
         preprocessing = ["deskew", "enhance", "crop"]
     elif avg_complexity > 0.4:
         recommended_backend = "paddleocr-vl"  # VL layout (florence alias → paddleocr-vl)
@@ -462,8 +462,8 @@ def _generate_processing_recommendations(optimization: dict, analysis: list[dict
     recommendations = []
 
     backend = optimization["recommended_backend"]
-    if backend == "deepseek-ocr":
-        recommendations.append("Use DeepSeek-OCR for complex documents with formulas or tables")
+    if backend == "deepseek-ocr2":
+        recommendations.append("Use DeepSeek-OCR-2 for complex documents with formulas or tables")
     elif backend == "florence-2":
         recommendations.append("Use Florence-2 for documents with complex layouts")
     elif backend == "easyocr":

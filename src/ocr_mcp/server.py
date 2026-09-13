@@ -109,7 +109,7 @@ app = FastMCP(
     instructions="""OCR-MCP: High-fidelity document understanding and hardware control plane.
 
 CORE CAPABILITIES:
-- OCR Engines: DeepSeek-OCR, PaddleOCR-VL, PP-OCRv5, Mistral OCR, GOT-OCR, Tesseract, EasyOCR.
+- OCR Engines: DeepSeek-OCR-2, PaddleOCR-VL, PP-OCRv5, Mistral OCR, GOT-OCR, Tesseract, EasyOCR.
 - Formats: PDF, CBZ/CBR, PNG, JPG, TIFF, WebP.
 - Hardware: Direct WIA scanner control (Windows).
 - Analysis: Layout parsing, table extraction, form detection, accuracy validation.
@@ -184,7 +184,7 @@ def get_ocr_capabilities() -> str:
         except Exception:
             logger.warning("Failed to get available backends", exc_info=True)
     if not backends:
-        backends = ["deepseek-ocr", "paddleocr-vl", "pp-ocrv5", "tesseract", "easyocr"]
+        backends = ["deepseek-ocr2", "paddleocr-vl", "pp-ocrv5", "tesseract", "easyocr"]
 
     return (
         "OCR-MCP Capabilities:\n"
@@ -340,6 +340,17 @@ except ImportError as e:
     logger.warning(f"Book pipeline tool not available: {e}")
 except Exception as e:
     logger.error(f"Failed to register book pipeline tool: {e}")
+
+# Register llm_ops tool (fleet LLM engine path shared with AI Settings)
+try:
+    from .tools.llm_ops import register_llm_ops_tool
+
+    register_llm_ops_tool(app)
+    logger.info("llm_ops tool registered")
+except ImportError as e:
+    logger.warning(f"llm_ops tool not available: {e}")
+except Exception as e:
+    logger.error(f"Failed to register llm_ops tool: {e}")
 
 
 async def run_server():

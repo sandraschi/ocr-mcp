@@ -38,8 +38,13 @@ import string
 from pathlib import Path
 
 import pytest
-from hypothesis import Verbosity, given, settings
+from hypothesis import HealthCheck, Verbosity, given, settings
 from hypothesis import strategies as st
+
+# file_manager is function-scoped but only accumulates temp files (cleaned at
+# teardown), so sharing it across @given examples is safe. Suppress the health
+# check explicitly rather than restructuring every fuzz test.
+FUZZ_SETTINGS_KWARGS = {"suppress_health_check": [HealthCheck.function_scoped_fixture]}
 
 from ocr_mcp.core.error_handler import ErrorHandler
 from tests.utils.test_helpers import TestDataGenerator
@@ -65,7 +70,7 @@ class TestOCRFuzzing:
             max_size=10000,
         )
     )
-    @settings(max_examples=100, verbosity=Verbosity.normal)
+    @settings(max_examples=100, verbosity=Verbosity.normal, **FUZZ_SETTINGS_KWARGS)
     def test_text_input_fuzzing(self, text, file_manager):
         """Fuzz test with random text inputs."""
         # Create image with fuzzed text
@@ -93,7 +98,7 @@ class TestOCRFuzzing:
         width=st.integers(min_value=1, max_value=10000),
         height=st.integers(min_value=1, max_value=10000),
     )
-    @settings(max_examples=50)
+    @settings(max_examples=50, **FUZZ_SETTINGS_KWARGS)
     def test_image_size_fuzzing(self, width, height, file_manager):
         """Fuzz test with random image dimensions."""
         try:
@@ -118,8 +123,8 @@ class TestOCRFuzzing:
         except Exception as e:
             pytest.fail(f"Unexpected failure with size {width}x{height}: {e}")
 
-    @given(st.lists(st.text(min_size=1, max_size=100), min_size=0, max_size=20))
-    @settings(max_examples=30)
+    @given(text_list=st.lists(st.text(min_size=1, max_size=100), min_size=0, max_size=20))
+    @settings(max_examples=30, **FUZZ_SETTINGS_KWARGS)
     def test_batch_input_fuzzing(self, text_list, file_manager):
         """Fuzz test with random batch inputs."""
         try:
@@ -150,7 +155,7 @@ class TestOCRFuzzing:
             max_size=255,
         )
     )
-    @settings(max_examples=50)
+    @settings(max_examples=50, **FUZZ_SETTINGS_KWARGS)
     def test_filename_fuzzing(self, filename, file_manager):
         """Fuzz test with random filenames."""
         try:
@@ -178,14 +183,14 @@ class TestOCRFuzzing:
             pytest.fail(f"Unexpected failure with filename '{filename}': {e}")
 
     @given(
-        st.dictionaries(
+        metadata_dict=st.dictionaries(
             keys=st.text(min_size=1, max_size=50),
             values=st.one_of(st.text(max_size=1000), st.integers(), st.floats(), st.booleans(), st.none()),
             min_size=0,
             max_size=100,
         )
     )
-    @settings(max_examples=20)
+    @settings(max_examples=20, **FUZZ_SETTINGS_KWARGS)
     def test_metadata_fuzzing(self, metadata_dict, file_manager):
         """Fuzz test with random metadata structures."""
         try:
@@ -212,9 +217,9 @@ class TestOCRFuzzing:
             pytest.fail(f"Unexpected failure with metadata: {e}")
 
     @given(
-        st.binary(min_size=0, max_size=1024 * 1024)  # Up to 1MB
+        binary_data=st.binary(min_size=0, max_size=1024 * 1024)  # Up to 1MB
     )
-    @settings(max_examples=20)
+    @settings(max_examples=20, **FUZZ_SETTINGS_KWARGS)
     def test_binary_content_fuzzing(self, binary_data, file_manager):
         """Fuzz test with random binary content."""
         try:
@@ -234,7 +239,7 @@ class TestOCRFuzzing:
             pytest.skip(f"Binary content fuzzing caused expected failure: {e}")
 
     @given(
-        st.lists(
+        coordinates_list=st.lists(
             st.tuples(
                 st.integers(min_value=0, max_value=1000),
                 st.integers(min_value=0, max_value=1000),
@@ -245,7 +250,7 @@ class TestOCRFuzzing:
             max_size=10,
         )
     )
-    @settings(max_examples=20)
+    @settings(max_examples=20, **FUZZ_SETTINGS_KWARGS)
     def test_coordinate_fuzzing(self, coordinates_list, file_manager):
         """Fuzz test with random coordinate data."""
         try:
@@ -271,7 +276,7 @@ class TestOCRFuzzing:
             pytest.skip(f"Coordinate fuzzing caused expected failure: {e}")
 
     @given(
-        st.text(
+        unicode_text=st.text(
             alphabet=st.characters(
                 categories=["L", "N", "P", "S", "Zs", "C"],  # Include control characters
                 min_codepoint=0x0000,  # Include null and control chars
@@ -281,7 +286,7 @@ class TestOCRFuzzing:
             max_size=1000,
         )
     )
-    @settings(max_examples=30)
+    @settings(max_examples=30, **FUZZ_SETTINGS_KWARGS)
     def test_unicode_fuzzing(self, unicode_text, file_manager):
         """Fuzz test with random Unicode text including control characters."""
         try:

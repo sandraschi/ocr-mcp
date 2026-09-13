@@ -3,11 +3,14 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  Cpu,
   Database,
   FileEdit,
   FileSpreadsheet,
   GraduationCap,
+  Grid3X3,
   HelpCircle,
+  Inbox,
   LayoutDashboard,
   MessageSquare,
   Scan,
@@ -29,6 +32,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   const navItems = [
     { href: "/", label: "Dashboard", icon: LayoutDashboard, testId: "nav-dashboard" },
+    { href: "/inbox", label: "Inbox", icon: Inbox, testId: "nav-inbox" },
     { href: "/forms", label: "Form Filler", icon: FileSpreadsheet, testId: "nav-forms" },
     { href: "/depot", label: "Corpus Depot", icon: Database, testId: "nav-depot" },
     { href: "/scan-viewer", label: "Raw Scan", icon: Scan, testId: "nav-scan-viewer" },
@@ -36,10 +40,12 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { href: "/editor", label: "Editor", icon: FileEdit, testId: "nav-editor" },
     { href: "/status", label: "Activity", icon: Activity, testId: "nav-activity" },
     { href: "/chat", label: "Chat", icon: MessageSquare, testId: "nav-chat" },
+    { href: "/apps", label: "Apps", icon: Grid3X3, testId: "nav-apps" },
     { href: "/tools", label: "Tools", icon: Wrench, testId: "nav-tools" },
     { href: "/skills", label: "Skills", icon: GraduationCap, testId: "nav-skills" },
     { href: "/logs", label: "Logs", icon: ScrollText, testId: "nav-logs" },
     { href: "/settings", label: "Settings", icon: Settings, testId: "nav-settings" },
+    { href: "/ai-settings", label: "AI Settings", icon: Cpu, testId: "nav-ai-settings" },
     { href: "/help", label: "Help", icon: HelpCircle, testId: "nav-help" },
   ];
 
