@@ -121,7 +121,7 @@ class WatchFolderService:
 
             try:
                 # Move file to appropriate directory
-                shutil.move(str(file_path), str(dest_dir / file_path.name))
+                await asyncio.to_thread(shutil.move, str(file_path), str(dest_dir / file_path.name))
                 logger.info(f"Moved {file_path.name} to {dest_dir.name}")
             except Exception as e:
                 logger.error(f"Failed to move file {file_path}: {e}")
