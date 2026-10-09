@@ -184,8 +184,8 @@ def wait_backend():
             if r.status == 200:
                 log(f"Backend ready ({url})")
                 return True
-        except Exception:
-            pass
+        except Exception as _e:
+            print(f"[cua-webapp-test] best-effort step failed, continuing: {_e}", file=sys.stderr)
         time.sleep(2)
     log(f"Backend not reachable at {url}")
     return False
@@ -204,8 +204,8 @@ def wait_frontend():
             if r.status == 200:
                 log(f"Frontend ready ({url})")
                 return True
-        except Exception:
-            pass
+        except Exception as _e:
+            print(f"[cua-webapp-test] best-effort step failed, continuing: {_e}", file=sys.stderr)
         time.sleep(2)
     log(f"Frontend not reachable at {url}")
     return False
@@ -244,8 +244,8 @@ def find_webapp_window():
             try:
                 if w.descendants(control_type="Hyperlink"):
                     return w
-            except Exception:
-                pass
+            except Exception as _e:
+                log(f"  candidate window skipped: {_e}")
         return candidates[0]
     except Exception:
         return None
@@ -281,8 +281,8 @@ def wait_connected_badge(timeout=None):
                 # If we see connecting text, keep waiting (not an error)
                 if any(k in text for k in CONNECTING_KEYWORDS):
                     log("  Still connecting...")
-            except Exception:
-                pass
+            except Exception as _e:
+                log(f"  poll attempt failed: {_e}")
         time.sleep(2)
     if win is None:
         log(f"No window matching '{WINDOW_TITLE_RE}' found in {timeout}s")

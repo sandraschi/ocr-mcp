@@ -1,4 +1,9 @@
 ; Kill UI + backend before install/uninstall (backend locks resources/*.exe).
+; Fleet client registration: mcp-clients.nsh (canonical copy vendored by
+; native/build.ps1 from mcp-central-docs - do not edit it here).
+!define MCP_REG_NAME "ocr-mcp"
+!define MCP_REG_EXE "ocr-mcp-backend.exe"
+!include "${__FILEDIR__}\mcp-clients.nsh"
 !macro KillOcrMcpFleetProcesses
   DetailPrint "Stopping ocr-mcp processes..."
   ExecWait 'taskkill /F /IM ocr-mcp-backend.exe /T' $0
@@ -23,11 +28,9 @@
 
 !macro NSIS_HOOK_PREUNINSTALL
   !insertmacro KillOcrMcpFleetProcesses
+  !insertmacro McpClientsUnregister
 !macroend
 
 !macro NSIS_HOOK_POSTINSTALL
-  IfFileExists "$INSTDIR\resources\install-mcp-clients.ps1" 0 mcp_hook_done
-    DetailPrint "Optional: register ocr-mcp in Cursor / Claude Desktop"
-    ExecWait 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\resources\install-mcp-clients.ps1" -Interactive'
-  mcp_hook_done:
+  !insertmacro McpClientsRegister
 !macroend

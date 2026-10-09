@@ -164,6 +164,7 @@ def cua_find_window(title_re: str = "", retry_seconds: int = 10) -> dict | None:
     import pywinauto
 
     deadline = time.monotonic() + retry_seconds
+    last_error: Exception | None = None
     while True:
         try:
             wins = pywinauto.findwindows.find_elements(title_re=title_re)
@@ -181,9 +182,16 @@ def cua_find_window(title_re: str = "", retry_seconds: int = 10) -> dict | None:
                     "title": win.window_text(),
                     "rect": {"left": rect.left, "top": rect.top, "width": w, "height": h},
                 }
-        except Exception:
-            pass
+        except Exception as e:
+            # Retry loop: per-attempt failures are expected until the window
+            # appears; report the last one instead of swallowing silently.
+            last_error = e
         if time.monotonic() >= deadline:
+            if last_error is not None:
+                print(
+                    f"[cua-smoke] window lookup failed: {type(last_error).__name__}: {last_error}",
+                    file=sys.stderr,
+                )
             return None
         time.sleep(1)
 
@@ -232,8 +240,8 @@ def cua_ocr_text(window_handle: int = 0, image_path: str = "") -> str:
             capture = cua_screenshot(window_handle, f"{image_path or 'capture'}.png")
             if capture and os.path.exists(capture):
                 return pytesseract.image_to_string(Image.open(capture))
-    except Exception:
-        pass
+    except Exception as _e:
+        print(f"[cua-smoke] best-effort step failed, continuing: {_e}", file=sys.stderr)
     return ""
 
 
@@ -243,8 +251,8 @@ def cua_click(window_handle: int, x: int, y: int):
         import pywinauto.mouse
 
         pywinauto.mouse.click(button="left", coords=(x, y))
-    except Exception:
-        pass
+    except Exception as _e:
+        print(f"[cua-smoke] best-effort step failed, continuing: {_e}", file=sys.stderr)
 
 
 def _release_mouse():
@@ -261,8 +269,8 @@ def _release_mouse():
         MOUSEEVENTF_MIDDLEUP = 0x0040
         for flag in (MOUSEEVENTF_LEFTUP, MOUSEEVENTF_RIGHTUP, MOUSEEVENTF_MIDDLEUP):
             ctypes.windll.user32.mouse_event(flag, 0, 0, 0, 0)
-    except Exception:
-        pass
+    except Exception as _e:
+        print(f"[cua-smoke] best-effort step failed, continuing: {_e}", file=sys.stderr)
     try:
         import ctypes
 
@@ -270,8 +278,8 @@ def _release_mouse():
         KEYEVENTF_KEYUP = 0x0002
         ctypes.windll.user32.keybd_event(VK_ESCAPE, 0, 0, 0)
         ctypes.windll.user32.keybd_event(VK_ESCAPE, 0, KEYEVENTF_KEYUP, 0)
-    except Exception:
-        pass
+    except Exception as _e:
+        print(f"[cua-smoke] best-effort step failed, continuing: {_e}", file=sys.stderr)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────
@@ -372,8 +380,8 @@ def _foreground_and_maximize(handle: int):
         w.set_focus()
         w.maximize()
         time.sleep(1)
-    except Exception:
-        pass
+    except Exception as _e:
+        print(f"[cua-smoke] best-effort step failed, continuing: {_e}", file=sys.stderr)
 
 
 def verify_window():
@@ -539,16 +547,16 @@ def _nav_click_element(win_handle: int, wx: int, wy: int, idx: int, label: str =
             if link:
                 link[0].click_input()
                 return
-        except Exception:
-            pass
+        except Exception as _e:
+            print(f"[cua-smoke] best-effort step failed, continuing: {_e}", file=sys.stderr)
         try:
             elements = w.descendants(control_type="Hyperlink")
             el = [e for e in elements if label.lower() in (e.window_text() or "").lower()]
             if el:
                 el[0].click_input()
                 return
-        except Exception:
-            pass
+        except Exception as _e:
+            print(f"[cua-smoke] best-effort step failed, continuing: {_e}", file=sys.stderr)
 
     # Fallback: positional Hyperlink
     try:
@@ -556,8 +564,8 @@ def _nav_click_element(win_handle: int, wx: int, wy: int, idx: int, label: str =
         if idx < len(elements):
             elements[idx].click_input()
             return
-    except Exception:
-        pass
+    except Exception as _e:
+        print(f"[cua-smoke] best-effort step failed, continuing: {_e}", file=sys.stderr)
     # Try Pane (some WebView versions)
     try:
         elements = w.descendants(control_type="Pane")
@@ -566,8 +574,8 @@ def _nav_click_element(win_handle: int, wx: int, wy: int, idx: int, label: str =
         if idx < len(nav_elements_sorted):
             nav_elements_sorted[idx].click_input()
             return
-    except Exception:
-        pass
+    except Exception as _e:
+        print(f"[cua-smoke] best-effort step failed, continuing: {_e}", file=sys.stderr)
 
     # Fallback to coordinate click
     click_x = wx + int(cfg("sidebar_click_x", 30))
