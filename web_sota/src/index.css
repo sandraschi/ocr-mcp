@@ -93,24 +93,33 @@ html:not(.dark) iframe {
 }
 
 @layer utilities {
-  /* Bump Tailwind's smallest tiers: 12px -> 13px, 10/11px -> 12px */
+  /* Bump Tailwind's smallest tiers: 12px -> 13px, 10/11px -> 12px.
+     biome-ignore: deliberate global design-token override (needs !important
+     to beat Tailwind's own utilities layer). */
   .text-xs {
+    /* biome-ignore lint/complexity/noImportantStyles: global a11y floor, see above */
     font-size: 0.8125rem !important;
+    /* biome-ignore lint/complexity/noImportantStyles: global a11y floor, see above */
     line-height: 1.45 !important;
   }
   .text-\[10px\],
   .text-\[11px\] {
+    /* biome-ignore lint/complexity/noImportantStyles: global a11y floor, see above */
     font-size: 0.75rem !important;
+    /* biome-ignore lint/complexity/noImportantStyles: global a11y floor, see above */
     line-height: 1.4 !important;
   }
   /* Low-contrast slate tiers on dark bg: lift one step brighter */
   .text-slate-500 {
+    /* biome-ignore lint/complexity/noImportantStyles: global contrast floor, see above */
     color: #94a3b8 !important; /* slate-400 */
   }
   .text-slate-600 {
+    /* biome-ignore lint/complexity/noImportantStyles: global contrast floor, see above */
     color: #94a3b8 !important;
   }
   .placeholder\:text-slate-500::placeholder {
+    /* biome-ignore lint/complexity/noImportantStyles: global contrast floor, see above */
     color: #94a3b8 !important;
     opacity: 1;
   }

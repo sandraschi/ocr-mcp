@@ -19,12 +19,12 @@
     "enabled": true,
     "indentStyle": "space",
     "lineWidth": 120,
-    "lineEnding": "crlf"
+    "lineEnding": "lf"
   },
   "linter": {
     "enabled": true,
     "rules": {
-      "preset": "recommended",
+      "recommended": true,
       "style": {
         "noNonNullAssertion": "warn",
         "useTemplate": "off"
