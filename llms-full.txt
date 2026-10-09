@@ -1,7 +1,7 @@
 # OCR-MCP — Full Documentation for LLMs
 
-**Version:** 0.2.1-beta
-**Last Updated:** 2026-09-13
+**Version:** 0.3.0-beta
+**Last Updated:** 2026-10-09
 
 This is the complete reference for OCR-MCP, a FastMCP 3.4+ server providing comprehensive OCR capabilities. Read this to understand all tools, configuration, backends, and endpoints.
 
@@ -265,7 +265,10 @@ Graceful self-termination. Parameter: `confirm=true` (required).
 All `@mcp.tool()` registrations carry `ToolAnnotations` (`readOnlyHint` on
 `get_help`/`get_status`/Prefab cards, `destructiveHint` on
 `manage_corpus`/`manage_image`/`shutdown_server`, `openWorldHint` on
-engine/hardware/workflow tools).
+engine/hardware/workflow tools). Every tool declares an explicit
+`output_schema=` (structured `ToolResponse` schema; plain-string `get_help`
+takes none per the MCP object-type rule). `ToolResponse` always carries a
+natural-language `message` key (backfilled from `summary`).
 
 ---
 
@@ -276,6 +279,8 @@ OpenAPI docs at `http://127.0.0.1:10859/docs`.
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/api/health` | GET | Server status, version, uptime, tool count |
+| `/health` | GET | Bare-path alias for the fleet launcher probe (same shape as `/api/v1/health`) |
+| `/api/shutdown` | POST | Orderly exit (200 now, process exits ~500 ms later; for launchers/service managers) |
 | `/api/backends` | GET | Registered backends with availability |
 | `/api/scanners` | GET | WIA scanner discovery |
 | `/api/scan` | POST | Trigger WIA scan (FormData: device_id, dpi, color_mode, paper_size) |

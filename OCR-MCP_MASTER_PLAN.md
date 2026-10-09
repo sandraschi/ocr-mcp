@@ -514,3 +514,21 @@ User Request → MCP Tool → Scanner Manager → WIA Backend → Hardware → I
 **Timeline**: 6-8 weeks to production-ready dual-repo ecosystem
 **Priority**: High - Unique scanner + OCR combination creates market differentiation
 **Next Step**: Begin Phase 3: Complete GOT-OCR2.0 integration and image preprocessing
+
+---
+
+## Backlog — Deferred feature (assessed 2026-10-09, not implemented)
+
+**GitHub issue #3: translate text in images preserving graphic composition** (OPEN since 2026-07-25).
+
+Requested pipeline: (1) separate text/background/foreground layers via
+Qwen-Image-Layered decomposition, (2) save 3 layers as hi-res RGBA, (3) OCR the
+text layer, (4) translate, (5) replace text in-place with paragraph/top-middle
+anchoring, (6) recompose with alpha, (7) save translated image.
+
+Feasibility: the repo's `qwen-layered` backend key is Qwen2.5-VL, **not**
+Qwen-Image-Layered (different model family, no weights path or requirements
+entry). Implementing needs a new model backend + an MT engine + layout-aware
+text rasterization + alpha recompose + tests: a multi-day feature, assessed as
+too large for an assfix pass. Kept as backlog; reassess when a layered
+decomposition backend lands.

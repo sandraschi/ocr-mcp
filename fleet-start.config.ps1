@@ -1,4 +1,4 @@
-﻿# Per-repo fleet start config for ocr-mcp
+# Per-repo fleet start config for ocr-mcp
 # Edit ports/backend target here - start.ps1 is fleet-standard.
 @{
     Name         = 'ocr-mcp'
@@ -10,6 +10,7 @@
         Kind          = 'uvicorn'
         UvicornTarget = 'backend.app:app'
         SyncExtras    = @('dev')
+        SyncOnStart  = $true
         Env           = @{ WEB_PORT = '10859' }
     }
     Frontend = @{
