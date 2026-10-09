@@ -70,6 +70,73 @@ This project adheres to **SOTA 14.1** industrial standards for high-fidelity age
 - **Automation**: [Justfile](./justfile) recipes for all fleet operations (`just lint`, `just fix`, `just dev`).
 - **Security**: Automated audits via `bandit` and `safety`.
 
+## Install (Claude Desktop)
+
+```powershell
+irm https://github.com/sandraschi/ocr-mcp/releases/latest/download/install.ps1 | iex
+```
+
+Or download `ocr-mcp.mcpb` from
+[releases](https://github.com/sandraschi/ocr-mcp/releases) (stable name) and
+install it in Claude Desktop. Other clients (Cursor, Windsurf, opencode):
+
+```json
+{
+  "mcpServers": {
+    "ocr-mcp": {
+      "command": "uv",
+      "args": ["--directory", "D:/Dev/repos/ocr-mcp", "run", "ocr-mcp"]
+    }
+  }
+}
+```
+
+## Stack
+
+| Layer | Tech |
+|-------|------|
+| MCP server | Python 3.12+, FastMCP 3.4 (stdio + streamable HTTP), Pydantic v2 |
+| REST backend | FastAPI + Uvicorn (`backend/app.py`, port 10859) |
+| Web UI | React + Vite + TypeScript + TailwindCSS + Zustand + Lucide + Framer Motion (`web_sota/`, port 10858) |
+| Desktop | Tauri 2.0 NSIS (`native/`) |
+| Lint/type | Ruff (T20), Pyright, Biome, tsc |
+
+## MCP tools (portmanteau)
+
+| Tool | Operations |
+|------|-----------|
+| `process_document` | process_document, process_batch, analyze_layout, extract_tables, detect_forms, analyze_reading_order, classify_type, extract_metadata, assess_quality, validate_accuracy, compare_backends, analyze_image_quality |
+| `manage_image` | preprocess, convert, pdf_to_images, embed_text |
+| `operate_scanner` | list_scanners, scanner_properties, configure_scan, scan_document, scan_batch, preview_scan, diagnostics |
+| `manage_workflow` | process_batch_intelligent, create/execute/monitor pipeline, optimize_processing, ocr_health_check, list_backends, manage_models |
+| `manage_corpus` | register, update_metadata, get, search, list_recent, attach_ocr_result |
+| `ingest_book` | detect_chapters, detect_metadata, assemble_epub, full_pipeline |
+| `execute_agentic_workflow` | goal-driven multi-step OCR via sampling (SEP-1577) |
+| `llm_ops` | list_models, loaded, switch_model, unload_all, vram |
+| `get_help` / `get_status` / `shutdown_server` | docs, health, graceful exit |
+
+## Env vars
+
+| Var | Default | Purpose |
+|-----|---------|---------|
+| `OCR_DEFAULT_BACKEND` | auto | default engine (`tesseract`, `paddleocr-vl`, `mistral-ocr`, …) |
+| `MISTRAL_API_KEY` | — | Mistral OCR cloud backend |
+| `OCR_TRANSPORT` / `MCP_TRANSPORT` | stdio | `stdio`, `http`, `sse` |
+| `MCP_PORT` / `OCR_PORT` | 10859 | HTTP bind port |
+| `TESSERACT_CMD` / `POPPLER_PATH` | — | native helper paths (Windows) |
+| `OCR_SAMPLING_USE_CLIENT_LLM` | 0 | `1` = use host IDE LLM for sampling |
+
+## Ports
+
+| Service | Port |
+|---------|------|
+| Vite frontend | 10858 |
+| FastAPI backend + MCP HTTP (`/mcp`) | 10859 |
+
+Full reference: [llms-full.txt](llms-full.txt). Backend deps:
+[docs/BACKEND_DEPS.md](docs/BACKEND_DEPS.md). Onboarding:
+[docs/ONBOARDING.md](docs/ONBOARDING.md).
+
 ## License
 
-MIT  see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).

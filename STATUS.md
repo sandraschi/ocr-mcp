@@ -1,6 +1,6 @@
 # OCR-MCP — Project Status
 
-**Last Updated:** 2026-09-13
+**Last Updated:** 2026-10-09
 **Version:** 0.3.0-beta
 **Status:** Beta
 
@@ -16,7 +16,9 @@
 | NSIS build | Pass |
 | CUA smoke test | Pass |
 | Pre-commit hooks | Configured (ruff, file hygiene) |
-| CI workflow | Windows CI (ruff, pytest, tsc, vite build) |
+| CI workflow | Windows CI (ruff, pytest, tsc, vite build) — last runs red (May), needs green run |
+| MCPB bundle | Audit clean; `dist/ocr-mcp-v0.3.0-beta.mcpb` packed + launch-proven (stdio entry `python -m ocr_mcp`) |
+| REST extras | `GET /health` (launcher probe), `POST /api/shutdown` (orderly exit) |
 
 ## What's Working
 

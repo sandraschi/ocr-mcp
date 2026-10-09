@@ -1,4 +1,49 @@
 
+## [Unreleased] - 2026-10-09 (assfix, SOTA 0/100 -> self-assessed)
+
+### Fixed (CRITICAL)
+- **MCPB `${PWD}` NONSPEC**: `manifest.json` + `mcpb/manifest.json` now use
+  `${__dirname}` (Claude Desktop never expands `${PWD}`).
+- **MCPB SIDECAR entry**: `mcpb/manifest.json` `mcp_config` now starts stdio via
+  `uv run --directory ${__dirname} python -m ocr_mcp` (was: `run_server.py`
+  uvicorn HTTP sidecar); new `src/ocr_mcp/__main__.py` enables `python -m`.
+  Manifest tool list replaced (had hallucinated `main_stdio`/`register_sota_*`
+  entries) with the real 13 tool names.
+
+### Fixed (HIGH)
+- **MCP double-prefix mount**: `http_app(path="/")` in `backend/app.py` +
+  `run_server.py` (endpoint was at `/mcp/mcp`); bare-`/mcp` ASGI rewrite added.
+- **MCP lifespan composition**: parent lifespan now enters the mounted sub-app
+  lifespan (session manager starts; failure only warns, serves REST).
+- **`GET /health`** alias added (fleet-start `HealthPath` probed an unrouted path).
+- **`POST /api/shutdown`** added (200 now, `os._exit(0)` ~500 ms later).
+- **Pack pipeline**: justfile `pack`/`mcpb-pack` use the fleet shim
+  (`scripts/mcpb-pack.ps1`); `mcpb/pack.ps1` is a forwarder; audit clean,
+  bundle packed + launch-proven.
+- **README one-liner**: Claude `install.ps1` one-liner added (publishes `.mcpb`).
+- Pyright 269 errors: NOT fixed here (dedicated type-repair pass needed).
+- CI red/stale: NOT fixed here (needs a green run after push).
+
+### Fixed (MEDIUM/LOW)
+- `glama.json` refreshed (FastMCP 3.4, port 10858, 14 backends).
+- `ToolResponse.message` added (backfilled from `summary`); `output_schema=`
+  on all 13 tools (verified via `list_tools()`).
+- Font contrast: `text-slate-400/500` -> `text-slate-300` (17 files;
+  `text-xs` sizes + `index.css` definitions intentionally untouched).
+- justfile: `fmt`, `gates-green` recipes added.
+- NSIS: fleet `mcp-clients.nsh` vendored + register/unregister wired in
+  `hooks.nsh`; `install-mcp-clients.ps1` synced to canonical.
+- `renovate.json` added; 6 tracked `.bak` files removed via `git rm`;
+  `S110` ignore lifted from scripts (13 silent swallows now log).
+- Version drift aligned to released `0.3.0-beta` (pyproject/glama/mcpb manifest).
+
+### Deferred (documented, not done)
+- `mcp-central-docs/starts/ocr-mcp-start.bat` (cross-repo; operator forbade
+  touching other repos) — content spec'd in `reports/assess-2026-10-09.md`.
+- Feature #3 (translate text in images, Qwen-Image-Layered): needs a new model
+  backend + MT + layout-preserving render; multi-day feature, not an assfix item.
+- Full pyright repair (269 errors); keyboard-shortcut layer; `text-xs` sizes.
+
 ## [Unreleased] - 2026-09-13 (assfix)
 
 ### Added
