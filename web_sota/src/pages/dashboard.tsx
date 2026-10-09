@@ -451,7 +451,7 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-lg font-bold text-white truncate">{health?.server || "ocr-mcp"}</div>
-            <p className="text-xs text-slate-400">{health?.version ? `v${health.version}` : "connecting..."}</p>
+            <p className="text-xs text-slate-300">{health?.version ? `v${health.version}` : "connecting..."}</p>
           </CardContent>
         </Card>
         <Card className="border-slate-800 bg-slate-950/50" data-testid="kpi-tools">
@@ -461,7 +461,7 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-white">{health?.tool_count ?? "—"}</div>
-            <p className="text-xs text-slate-400">MCP tools registered</p>
+            <p className="text-xs text-slate-300">MCP tools registered</p>
           </CardContent>
         </Card>
         <Card className="border-slate-800 bg-slate-950/50" data-testid="kpi-backends">
@@ -473,7 +473,7 @@ export function Dashboard() {
             <div className="text-2xl font-bold text-white">
               {backends.filter((b) => b.available).length}/{backends.length}
             </div>
-            <p className="text-xs text-slate-400">Available / total</p>
+            <p className="text-xs text-slate-300">Available / total</p>
           </CardContent>
         </Card>
         <Card className="border-slate-800 bg-slate-950/50" data-testid="kpi-jobs">
@@ -488,12 +488,12 @@ export function Dashboard() {
                   className={`absolute inline-flex h-full w-full animate-ping rounded-full ${backendOk ? "bg-green-400" : "bg-red-400"} opacity-75`}
                 />
               </span>
-              <span className="text-xs text-slate-400">{backendOk ? "Online" : "Offline"}</span>
+              <span className="text-xs text-slate-300">{backendOk ? "Online" : "Offline"}</span>
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-lg font-bold text-white">{ocrJobId ? "Active" : "Idle"}</div>
-            <p className="text-xs text-slate-400">{ocrJobId ? ocrStatus : "Waiting for input"}</p>
+            <p className="text-xs text-slate-300">{ocrJobId ? ocrStatus : "Waiting for input"}</p>
           </CardContent>
         </Card>
       </div>
@@ -629,11 +629,11 @@ export function Dashboard() {
           }`}
         >
           <input ref={fileInputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={handleFilePick} />
-          <Upload className="h-10 w-10 text-slate-400 mb-3" />
+          <Upload className="h-10 w-10 text-slate-300 mb-3" />
           <p className="text-sm font-medium text-slate-300">
             {droppedFile ? droppedFile.name : "Drop an image or PDF here, or click to browse"}
           </p>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-slate-300 mt-1">
             {scanners.length > 0
               ? "Or select a scanner above and click Quick Scan & OCR."
               : "Supports PNG, JPG, TIFF, PDF"}
@@ -716,7 +716,7 @@ export function Dashboard() {
         </CardHeader>
         <CardContent>
           {ocrStatus === "processing" && !ocrText ? (
-            <div className="flex items-center justify-center h-32 text-slate-500">
+            <div className="flex items-center justify-center h-32 text-slate-300">
               <Loader2 className="h-6 w-6 animate-spin mr-3 text-blue-400" />
               <span className="text-sm">OCR in progress...</span>
             </div>
@@ -744,9 +744,9 @@ export function Dashboard() {
 
       {/* Recent history strip */}
       {ocrJobId && (
-        <div className="flex items-center gap-2 text-xs text-slate-500">
+        <div className="flex items-center gap-2 text-xs text-slate-300">
           <RefreshCw className="h-3 w-3" />
-          Latest job: <span className="font-mono text-slate-400">{ocrJobId.slice(0, 24)}</span>
+          Latest job: <span className="font-mono text-slate-300">{ocrJobId.slice(0, 24)}</span>
           <button onClick={() => navigate("/status")} className="text-blue-400 hover:underline ml-2">
             View activity
           </button>

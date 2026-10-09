@@ -57,14 +57,14 @@ export function Import() {
       <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl" data-testid="import-control-3">
         <CardHeader>
           <CardTitle className="text-slate-100">Upload File for OCR</CardTitle>
-          <CardDescription className="text-slate-400">Select an image or PDF to process.</CardDescription>
+          <CardDescription className="text-slate-300">Select an image or PDF to process.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center space-x-4">
             <input
               type="file"
               onChange={handleFileChange}
-              className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-500/10 file:text-blue-500 hover:file:bg-blue-500/20"
+              className="block w-full text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-500/10 file:text-blue-500 hover:file:bg-blue-500/20"
               accept="image/*,.pdf"
               title="Upload File"
             />

@@ -133,7 +133,7 @@ function PipelineCard({ pipeline, backends }: PipelineCardProps) {
     <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl flex flex-col" data-testid="process-control-1">
       <CardHeader>
         <CardTitle className="text-slate-200 text-lg">{pipeline.name}</CardTitle>
-        <CardDescription className="text-slate-400 text-sm">{pipeline.description}</CardDescription>
+        <CardDescription className="text-slate-300 text-sm">{pipeline.description}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 flex-1">
         {/* Steps pills */}
@@ -172,7 +172,7 @@ function PipelineCard({ pipeline, backends }: PipelineCardProps) {
 
         {/* Backend selector */}
         <div>
-          <label className="text-xs font-medium text-slate-500 mb-1 block">OCR Backend</label>
+          <label className="text-xs font-medium text-slate-300 mb-1 block">OCR Backend</label>
           <select
             value={backend}
             onChange={(e) => setBackend(e.target.value)}
@@ -243,8 +243,8 @@ function PipelineCard({ pipeline, backends }: PipelineCardProps) {
                 )}
                 {result.results &&
                   Object.entries(result.results).map(([step, stepResult]: [string, any]) => (
-                    <div key={step} className="text-xs text-slate-400">
-                      <span className="text-slate-500">{stepLabel[step] || step}: </span>
+                    <div key={step} className="text-xs text-slate-300">
+                      <span className="text-slate-300">{stepLabel[step] || step}: </span>
                       {stepResult?.text ? (
                         <span className="text-slate-300">
                           {String(stepResult.text).slice(0, 120)}
@@ -258,7 +258,7 @@ function PipelineCard({ pipeline, backends }: PipelineCardProps) {
                     </div>
                   ))}
                 {result.quality_score !== undefined && (
-                  <p className="text-xs text-slate-500">Quality: {(result.quality_score * 100).toFixed(0)}%</p>
+                  <p className="text-xs text-slate-300">Quality: {(result.quality_score * 100).toFixed(0)}%</p>
                 )}
               </div>
             )}
@@ -344,7 +344,7 @@ export function Process() {
             <Cpu className="w-5 h-5 text-purple-400" />
             Quality Optimizer
           </CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardDescription className="text-slate-300">
             Automatically tries backends until hitting a target quality score.
           </CardDescription>
         </CardHeader>
@@ -357,7 +357,7 @@ export function Process() {
                 setStatus(null);
                 setError(null);
               }}
-              className="block text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-purple-500/10 file:text-purple-400 hover:file:bg-purple-500/20"
+              className="block text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-purple-500/10 file:text-purple-400 hover:file:bg-purple-500/20"
               accept="image/*,.pdf"
               title="Choose file for optimization"
             />

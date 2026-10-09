@@ -398,7 +398,7 @@ export function FormFillerPage() {
       {/* Header */}
       <div className="flex flex-wrap justify-between items-center gap-4">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="text-slate-400 hover:text-white">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="text-slate-300 hover:text-white">
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
@@ -408,7 +408,7 @@ export function FormFillerPage() {
             >
               <FileSpreadsheet className="w-8 h-8 text-emerald-500" /> Preprinted Form Filler
             </h1>
-            <p className="text-slate-400">
+            <p className="text-slate-300">
               Scan empty form ➔ Elicit fields ➔ Query input data ➔ Print overlay on preprinted paper.
             </p>
           </div>
@@ -416,19 +416,19 @@ export function FormFillerPage() {
 
         {/* 4-Step Progress Indicator */}
         <div className="flex items-center gap-2 bg-slate-900/80 border border-slate-800 p-1.5 rounded-lg text-xs font-semibold text-slate-300">
-          <span className={`px-2.5 py-1 rounded ${activeStep === 1 ? "bg-blue-600 text-white" : "text-slate-500"}`}>
+          <span className={`px-2.5 py-1 rounded ${activeStep === 1 ? "bg-blue-600 text-white" : "text-slate-300"}`}>
             1. Scan Form
           </span>
           <span className="text-slate-600">➔</span>
-          <span className={`px-2.5 py-1 rounded ${activeStep === 2 ? "bg-blue-600 text-white" : "text-slate-500"}`}>
+          <span className={`px-2.5 py-1 rounded ${activeStep === 2 ? "bg-blue-600 text-white" : "text-slate-300"}`}>
             2. Elicit Fields
           </span>
           <span className="text-slate-600">➔</span>
-          <span className={`px-2.5 py-1 rounded ${activeStep === 3 ? "bg-blue-600 text-white" : "text-slate-500"}`}>
+          <span className={`px-2.5 py-1 rounded ${activeStep === 3 ? "bg-blue-600 text-white" : "text-slate-300"}`}>
             3. Query Inputs
           </span>
           <span className="text-slate-600">➔</span>
-          <span className={`px-2.5 py-1 rounded ${activeStep === 4 ? "bg-emerald-600 text-white" : "text-slate-500"}`}>
+          <span className={`px-2.5 py-1 rounded ${activeStep === 4 ? "bg-emerald-600 text-white" : "text-slate-300"}`}>
             4. Print / Export
           </span>
         </div>
@@ -442,12 +442,12 @@ export function FormFillerPage() {
               <FileText className="w-4 h-4 text-emerald-400" /> Preprinted Form Canvas
             </CardTitle>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400">Click canvas to manually place input fields</span>
+              <span className="text-xs text-slate-300">Click canvas to manually place input fields</span>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setFields([])}
-                className="h-7 text-xs border-slate-800 text-slate-400 hover:text-slate-200"
+                className="h-7 text-xs border-slate-800 text-slate-300 hover:text-slate-200"
               >
                 <RotateCcw className="w-3 h-3 mr-1" /> Clear Fields
               </Button>
@@ -490,7 +490,7 @@ export function FormFillerPage() {
                           : "border-amber-500/80 bg-amber-950/80 text-amber-300 animate-pulse z-10"
                     }`}
                   >
-                    <span className="text-[10px] text-slate-400 block -mt-1 font-sans">{field.label}</span>
+                    <span className="text-[10px] text-slate-300 block -mt-1 font-sans">{field.label}</span>
                     <span>{field.value || `<${field.label}>`}</span>
                   </button>
                 ))}
@@ -499,7 +499,7 @@ export function FormFillerPage() {
               <div className="flex flex-col items-center justify-center p-12 text-center space-y-4">
                 <Scan className="w-16 h-16 text-slate-700 animate-bounce" />
                 <h3 className="text-xl font-bold text-slate-200">No Form Template Loaded</h3>
-                <p className="text-sm text-slate-500 max-w-sm">
+                <p className="text-sm text-slate-300 max-w-sm">
                   Scan an empty preprinted form sheet using your connected scanner or upload a PNG/PDF file template.
                 </p>
                 <div className="flex gap-3 pt-2">
@@ -598,7 +598,7 @@ export function FormFillerPage() {
                   </Button>
 
                   <div className="border-t border-slate-800 pt-3">
-                    <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">
+                    <Label className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 block">
                       Or load a known form preset
                     </Label>
                     <div className="space-y-2">
@@ -616,7 +616,7 @@ export function FormFillerPage() {
                     </div>
                   </div>
 
-                  <div className="pt-2 text-xs text-slate-400">
+                  <div className="pt-2 text-xs text-slate-300">
                     <span>Fields detected: {fields.length}</span>
                   </div>
                 </div>
@@ -657,7 +657,7 @@ export function FormFillerPage() {
 
                   <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
                     {fields.length === 0 ? (
-                      <p className="text-xs text-slate-500 italic">
+                      <p className="text-xs text-slate-300 italic">
                         No fields elicited. Click "Auto-Detect" or click on the image canvas.
                       </p>
                     ) : (
@@ -682,7 +682,7 @@ export function FormFillerPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6 text-slate-500 hover:text-red-400 shrink-0"
+                              className="h-6 w-6 text-slate-300 hover:text-red-400 shrink-0"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 deleteField(f.id);
@@ -699,7 +699,7 @@ export function FormFillerPage() {
                             placeholder={`Enter ${f.label}...`}
                           />
 
-                          <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                          <div className="flex items-center justify-between text-[11px] text-slate-300 pt-1">
                             <span>
                               X: {f.x}% | Y: {f.y}%
                             </span>
@@ -745,7 +745,7 @@ export function FormFillerPage() {
                     >
                       <FileCheck className="w-5 h-5 text-blue-400" />
                       <span className="text-xs font-bold">Print Full Document</span>
-                      <span className="text-[10px] font-normal text-slate-400">Prints template + text</span>
+                      <span className="text-[10px] font-normal text-slate-300">Prints template + text</span>
                     </Button>
                   </div>
                 </div>
