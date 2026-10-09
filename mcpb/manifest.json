@@ -1,40 +1,35 @@
 {
   "manifest_version": "0.2",
   "name": "ocr-mcp",
-  "version": "0.2.1-beta",
+  "version": "0.3.0-beta",
   "description": "FastMCP server providing comprehensive OCR capabilities to the MCP ecosystem",
   "author": { "name": "sandraschi" },
   "server": {
     "type": "python",
-    "entry_point": "run_server.py",
+    "entry_point": "src/ocr_mcp/server.py",
     "mcp_config": {
       "command": "uv",
-      "args": ["run","--directory","${PWD}","run_server.py"],
+      "args": ["run", "--directory", "${__dirname}", "python", "-m", "ocr_mcp"],
       "env": {
-        "PYTHONPATH": "${PWD}/src",
-        "PYTHONUNBUFFERED": "1"
+        "PYTHONPATH": "${__dirname}/src",
+        "PYTHONUNBUFFERED": "1",
+        "MCP_TRANSPORT": "stdio"
       }
     }
   },
   "tools": [
-    { "name": "main_stdio", "description": "main(stdio)" },
-    { "name": "main_http", "description": "main(http)" },
-    { "name": "main_sse", "description": "main(sse)" },
-    { "name": "register_prefab_tools", "description": "Register Prefab UI tools with the FastMCP app." },
-    { "name": "show_health_card", "description": "show_health_card" },
-    { "name": "show_backends_card", "description": "show_backends_card" },
-    { "name": "execute_agentic_workflow", "description": "execute_agentic_workflow" },
-    { "name": "ingest_book", "description": "ingest_book" },
-    { "name": "process_document", "description": "process_document" },
-    { "name": "manage_image", "description": "manage_image" },
-    { "name": "operate_scanner", "description": "operate_scanner" },
-    { "name": "manage_workflow", "description": "manage_workflow" },
-    { "name": "manage_corpus", "description": "manage_corpus" },
-    { "name": "get_help", "description": "get_help" },
-    { "name": "get_status", "description": "get_status" },
-    { "name": "shutdown_server", "description": "shutdown_server" },
-    { "name": "register_sota_tools_comprehensive", "description": "register_sota_tools(comprehensive)" },
-    { "name": "register_sota_tools_basic", "description": "register_sota_tools(basic)" },
-    { "name": "register_sota_tools_layout", "description": "register_sota_tools(layout)" }
+    { "name": "process_document", "description": "Core OCR with 14 backends: process, batch, layout, tables, forms, quality, comparison" },
+    { "name": "manage_image", "description": "Image preprocessing and conversion: deskew, denoise, threshold, autocrop, pdf_to_images" },
+    { "name": "operate_scanner", "description": "WIA scanner control (Windows): list, configure, scan, batch, preview, diagnostics" },
+    { "name": "manage_workflow", "description": "Batch pipelines, quality optimizer, backend management, health checks" },
+    { "name": "manage_corpus", "description": "Document corpus: register, search, metadata, OCR result attachment" },
+    { "name": "ingest_book", "description": "Book pipeline: detect chapters, extract metadata, assemble EPUB" },
+    { "name": "execute_agentic_workflow", "description": "Autonomous multi-step document processing via FastMCP sampling" },
+    { "name": "llm_ops", "description": "Local LLM engine ops: list_models, loaded, switch_model, unload_all, vram" },
+    { "name": "get_help", "description": "Contextual documentation for all tools and configuration" },
+    { "name": "get_status", "description": "System health: backends, models, server status" },
+    { "name": "show_health_card", "description": "Prefab in-chat card: server status and backends" },
+    { "name": "show_backends_card", "description": "Prefab in-chat card: all 14 backends with availability" },
+    { "name": "shutdown_server", "description": "Graceful self-termination (confirm=true)" }
   ]
 }

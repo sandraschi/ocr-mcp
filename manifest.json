@@ -14,7 +14,7 @@
       "command": "uv",
       "args": ["run", "ocr-mcp"],
       "env": {
-        "PYTHONPATH": "${PWD}",
+        "PYTHONPATH": "${__dirname}",
         "PYTHONUNBUFFERED": "1"
       }
     }
