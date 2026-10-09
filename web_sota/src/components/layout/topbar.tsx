@@ -104,7 +104,7 @@ export function Topbar() {
         <button
           type="button"
           onClick={toggle}
-          className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-800 bg-slate-900/50 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-800 bg-slate-900/50 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
           title={light ? "Switch to dark (experimental light mode)" : "Switch to light (experimental, ugly)"}
           aria-label="Toggle light mode (experimental)"
         >
@@ -183,7 +183,7 @@ export function Topbar() {
                   {deadApps.length > 0 && (
                     <>
                       <div className="h-px bg-slate-800 my-1" />
-                      <DropdownMenu.Label className="px-2 py-1 text-xs font-semibold text-slate-400">
+                      <DropdownMenu.Label className="px-2 py-1 text-xs font-semibold text-slate-300">
                         Offline
                       </DropdownMenu.Label>
                       {deadApps.map((app) => {
@@ -198,7 +198,7 @@ export function Topbar() {
                             >
                               <Icon className="mr-2 h-4 w-4 opacity-40" />
                               <span>{app.label}</span>
-                              <span className="ml-auto text-xs text-slate-400">—</span>
+                              <span className="ml-auto text-xs text-slate-300">—</span>
                               <ExternalLink className="ml-3 h-3 w-3 opacity-30" />
                             </a>
                           </DropdownMenu.Item>
@@ -212,7 +212,7 @@ export function Topbar() {
           </DropdownMenu.Portal>
         </DropdownMenu.Root>
 
-        <button className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-800 bg-slate-900/50 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+        <button className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-800 bg-slate-900/50 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
           <HelpCircle className="h-4 w-4" />
         </button>
       </div>

@@ -127,7 +127,7 @@ export function Editor() {
         <h1 className="text-3xl font-bold tracking-tight text-slate-100" data-testid="editor-title">
           Your OCR text
         </h1>
-        <p className="text-sm text-slate-400 mt-1 max-w-2xl">
+        <p className="text-sm text-slate-300 mt-1 max-w-2xl">
           Follows your latest scan or upload automatically. Edit below, then export.
         </p>
       </div>
@@ -147,7 +147,7 @@ export function Editor() {
       <button
         type="button"
         onClick={() => setAdvancedOpen((o) => !o)}
-        className="text-left text-xs text-slate-500 hover:text-slate-400 flex items-center gap-1 shrink-0"
+        className="text-left text-xs text-slate-300 hover:text-slate-300 flex items-center gap-1 shrink-0"
       >
         {advancedOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         Advanced — load by internal job ID (support / debugging only)
@@ -176,7 +176,7 @@ export function Editor() {
               type="button"
               size="sm"
               variant="ghost"
-              className="text-xs text-slate-500"
+              className="text-xs text-slate-300"
               onClick={() => {
                 setAdvancedIdInput(lastOcrJobId);
                 setActiveJobId(lastOcrJobId);
@@ -195,11 +195,11 @@ export function Editor() {
             <CardTitle className="text-slate-100 flex items-center gap-2">
               <FileText className="w-5 h-5 text-blue-400" /> Text
             </CardTitle>
-            <CardDescription className="text-slate-400">Edit the extracted text, then export.</CardDescription>
+            <CardDescription className="text-slate-300">Edit the extracted text, then export.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col flex-1 min-h-0 pb-6">
             {status && status.status === "processing" ? (
-              <div className="flex flex-col items-center justify-center h-full text-slate-400">
+              <div className="flex flex-col items-center justify-center h-full text-slate-300">
                 <RefreshCw className="w-8 h-8 animate-spin mb-4 text-blue-500" />
                 <p>OCR in progress…</p>
               </div>
@@ -227,7 +227,7 @@ export function Editor() {
             <CardTitle className="text-slate-100">
               <Download className="w-5 h-5 inline-block mr-2 text-emerald-400" /> Export
             </CardTitle>
-            <CardDescription className="text-slate-400">Download edited text.</CardDescription>
+            <CardDescription className="text-slate-300">Download edited text.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 flex-1">
             <Button

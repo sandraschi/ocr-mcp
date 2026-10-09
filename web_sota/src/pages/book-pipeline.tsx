@@ -154,7 +154,7 @@ export function BookPipeline() {
           <h1 className="text-3xl font-bold tracking-tight text-slate-100" data-testid="book-pipeline-title">
             Book Pipeline
           </h1>
-          <p className="text-sm text-slate-400">Scan pages &rarr; OCR &rarr; detect chapters &rarr; assemble EPUB</p>
+          <p className="text-sm text-slate-300">Scan pages &rarr; OCR &rarr; detect chapters &rarr; assemble EPUB</p>
         </div>
       </div>
 
@@ -168,7 +168,7 @@ export function BookPipeline() {
           <input ref={fileRef} type="file" multiple accept="image/*" className="hidden" onChange={handleFiles} />
           <button
             onClick={() => fileRef.current?.click()}
-            className="flex w-full items-center justify-center gap-3 rounded-lg border-2 border-dashed border-slate-700 p-8 text-slate-400 hover:border-slate-500 hover:text-slate-300 transition-colors"
+            className="flex w-full items-center justify-center gap-3 rounded-lg border-2 border-dashed border-slate-700 p-8 text-slate-300 hover:border-slate-500 hover:text-slate-300 transition-colors"
           >
             <Upload className="h-8 w-8" />
             <div className="text-left">
@@ -176,7 +176,7 @@ export function BookPipeline() {
               <p className="text-xs">page_001.png, page_002.png, ... (sorted alphabetically)</p>
             </div>
           </button>
-          {files.length > 0 && <p className="text-sm text-slate-400">{files.length} pages selected</p>}
+          {files.length > 0 && <p className="text-sm text-slate-300">{files.length} pages selected</p>}
         </CardContent>
       </Card>
 
@@ -188,7 +188,7 @@ export function BookPipeline() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="text-xs font-medium text-slate-400 mb-1 block">Title</label>
+            <label className="text-xs font-medium text-slate-300 mb-1 block">Title</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -198,7 +198,7 @@ export function BookPipeline() {
             {detectedTitle && !title && <p className="text-xs text-emerald-400 mt-1">Detected: {detectedTitle}</p>}
           </div>
           <div>
-            <label className="text-xs font-medium text-slate-400 mb-1 block">Author</label>
+            <label className="text-xs font-medium text-slate-300 mb-1 block">Author</label>
             <input
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
@@ -250,11 +250,11 @@ export function BookPipeline() {
             <div className="space-y-1">
               {chapters.map((ch) => (
                 <div key={ch.chapter_number} className="flex items-center gap-3 text-sm py-1">
-                  <span className="text-xs font-mono text-slate-500 w-8">{ch.chapter_number}.</span>
-                  <span className={`flex-1 ${ch.confidence > 0.7 ? "text-slate-200" : "text-slate-400"}`}>
+                  <span className="text-xs font-mono text-slate-300 w-8">{ch.chapter_number}.</span>
+                  <span className={`flex-1 ${ch.confidence > 0.7 ? "text-slate-200" : "text-slate-300"}`}>
                     {ch.title}
                   </span>
-                  <span className="text-xs text-slate-500">p.{ch.start_page}</span>
+                  <span className="text-xs text-slate-300">p.{ch.start_page}</span>
                   <span
                     className={`text-xs px-1.5 py-0.5 rounded ${
                       ch.confidence > 0.7 ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"

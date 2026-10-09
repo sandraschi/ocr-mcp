@@ -66,7 +66,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <div className="border-b border-slate-800 p-2">
         <button
           onClick={onToggle}
-          className="flex w-full items-center justify-center rounded-md p-2 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+          className="flex w-full items-center justify-center rounded-md p-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
           data-testid="sidebar-toggle"
         >
           {collapsed ? (
@@ -90,7 +90,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               data-testid={item.testId}
               className={cn(
                 "group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white",
-                isActive ? "bg-slate-800 text-white" : "text-slate-400",
+                isActive ? "bg-slate-800 text-white" : "text-slate-300",
                 collapsed ? "justify-center" : "justify-start",
               )}
             >
