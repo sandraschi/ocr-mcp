@@ -40,7 +40,7 @@ import os
 import tempfile
 import time
 import uuid
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -212,20 +212,35 @@ async def app_lifespan(app_instance: FastAPI):
         _silence_third_party_loggers()
         logger.info("Backend starting (real mode)...")
 
-    yield
-
-    # Cleanup on shutdown
-    for _jid, job in list(processing_jobs.items()):
-        for key in ("file_path", "file_paths"):
-            paths = job.get(key)
-            if paths is None:
-                continue
-            for path in paths if isinstance(paths, list) else [paths]:
-                try:
-                    if path and os.path.exists(path):
-                        os.unlink(path)
-                except OSError:
-                    logger.debug("suppressed OSError in app_lifespan", exc_info=True)
+    # Compose the mounted MCP sub-app lifespan so its session manager starts.
+    # Mounting alone never runs it (fleet BUG-038; pattern matches arxiv-mcp:
+    # `async with mcp_http.lifespan(app):`). _mcp_http is bound at import time
+    # below; the lifespan executes later, so the late binding is safe. A compose
+    # failure only warns and serves REST (status quo, never a new crash).
+    stack = AsyncExitStack()
+    mcp_http = globals().get("_mcp_http")
+    if mcp_http is not None:
+        try:
+            await stack.enter_async_context(mcp_http.lifespan(app_instance))
+            logger.info("MCP sub-app lifespan composed")
+        except Exception as _mcp_ls_err:
+            logger.warning("MCP sub-app lifespan not composed, serving REST only: %s", _mcp_ls_err)
+    try:
+        yield
+    finally:
+        # Cleanup on shutdown
+        for _jid, job in list(processing_jobs.items()):
+            for key in ("file_path", "file_paths"):
+                paths = job.get(key)
+                if paths is None:
+                    continue
+                for path in paths if isinstance(paths, list) else [paths]:
+                    try:
+                        if path and os.path.exists(path):
+                            os.unlink(path)
+                    except OSError:
+                        logger.debug("suppressed OSError in app_lifespan", exc_info=True)
+        await stack.aclose()
 
 
 # Initialize FastAPI app
@@ -237,13 +252,39 @@ app = FastAPI(
 )
 
 # Mount FastMCP streamable HTTP endpoint (dual transport: REST + MCP on one port)
+_mcp_http = None
 try:
     from ocr_mcp.server import app as _mcp
 
-    app.mount("/mcp", _mcp.http_app(), name="mcp")
+    # path="/": the sub-app serves the MCP endpoint at its own root; the parent
+    # mount point supplies the /mcp prefix. Without it the endpoint lands at
+    # /mcp/mcp while clients call /mcp (fleet BUG-008).
+    _mcp_http = _mcp.http_app(path="/")
+    app.mount("/mcp", _mcp_http, name="mcp")
     logger.info("MCP streamable HTTP mounted at /mcp")
 except Exception as _mcp_err:
     logger.warning("Failed to mount MCP HTTP endpoint: %s", _mcp_err)
+
+
+class _McpBarePathMiddleware:
+    """Rewrite the bare `/mcp` path to `/mcp/` before routing.
+
+    A Starlette Mount("/mcp") only matches `/mcp/*`; the bare client URL falls
+    through to unrelated handlers (405). The middleware fixes that without
+    touching any route table.
+    """
+
+    def __init__(self, inner):
+        self.inner = inner
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") == "http" and scope.get("path") == "/mcp":
+            scope = dict(scope)
+            scope["path"] = "/mcp/"
+        await self.inner(scope, receive, send)
+
+
+app.add_middleware(_McpBarePathMiddleware)
 
 # Fleet Apps hub (APPS_PAGE_STANDARD.md v3 — vendored, do not hand-edit the
 # modules). Standard /api/apps* live alongside the legacy custom
@@ -366,6 +407,25 @@ async def health_check_v1():
             "backend_initialized": backend_manager is not None,
         },
     }
+
+
+@app.get("/health")
+async def health_check_root():
+    """Bare-path alias for the fleet launcher probe (fleet-start HealthPath)."""
+    return await health_check_v1()
+
+
+@app.post("/api/shutdown")
+async def shutdown_backend(background: BackgroundTasks):
+    """Orderly exit for launchers/service managers: 200 now, exit ~500 ms later."""
+    import asyncio as _asyncio
+
+    async def _delayed_exit():
+        await _asyncio.sleep(0.5)
+        os._exit(0)
+
+    background.add_task(_delayed_exit)
+    return {"status": "shutting_down", "server": "ocr-mcp"}
 
 
 @app.get("/api/v1/system/info")

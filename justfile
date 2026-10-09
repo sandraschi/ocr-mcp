@@ -69,9 +69,25 @@ format:
 webapp:
     powershell -NoProfile -ExecutionPolicy Bypass -File web_sota/start.ps1
 
-# Pack .mcpb bundle (requires mcpb installed: pip install mcpb)
+# Pack .mcpb bundle via the fleet shim (wipe+recopy src -> mcpb/src, checks, release assets).
+# Never bare `mcpb pack` (stale-bundle class). Shim: scripts/mcpb-pack.ps1.
 pack:
-    mcpb pack . dist/ocr-mcp.mcpb
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File '{{justfile_directory()}}\scripts\mcpb-pack.ps1'
+
+# Alias: canonical fleet recipe name per PACKAGING_STANDARDS
+mcpb-pack:
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File '{{justfile_directory()}}\scripts\mcpb-pack.ps1'
+
+# Format Python + check formatting (canonical `fmt` recipe name)
+fmt:
+    uv run ruff format src/ backend/ run_server.py
+
+# All quality gates: ruff lint + format check + pyright types + unit tests
+gates-green:
+    uv run ruff check src/ backend/ run_server.py
+    uv run ruff format src/ backend/ run_server.py --check
+    uv run --with pyright pyright src/
+    uv run pytest tests/unit -q --no-cov -p no:cacheprovider
 
 # Install OCR models (optional, large download)
 install-models:

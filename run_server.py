@@ -18,12 +18,29 @@ if str(base / "src") not in sys.path:
 os.environ.setdefault("MCP_TRANSPORT", "http")
 
 if __name__ == "__main__":
+    from contextlib import AsyncExitStack, asynccontextmanager
+
     from fastapi import FastAPI
     from fastapi.middleware.cors import CORSMiddleware
 
     from ocr_mcp.server import app as _mcp
 
-    app = FastAPI(title="ocr-mcp")
+    @asynccontextmanager
+    async def _lifespan(app_instance: FastAPI):
+        # Compose the mounted MCP sub-app lifespan (fleet BUG-038); failure
+        # only warns and serves REST (status quo, never a new crash).
+        stack = AsyncExitStack()
+        if _mcp_http is not None:
+            try:
+                await stack.enter_async_context(_mcp_http.lifespan(app_instance))
+            except Exception as _ls_err:
+                print(f"MCP sub-app lifespan not composed: {_ls_err}")
+        try:
+            yield
+        finally:
+            await stack.aclose()
+
+    app = FastAPI(title="ocr-mcp", lifespan=_lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[
@@ -40,7 +57,10 @@ if __name__ == "__main__":
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    app.mount("/mcp", _mcp.http_app())
+    # path="/": the sub-app serves the MCP endpoint at its own root; the parent
+    # mount point supplies the /mcp prefix (fleet BUG-008).
+    _mcp_http = _mcp.http_app(path="/")
+    app.mount("/mcp", _mcp_http)
 
     host = os.environ.get("OCR_HOST", "127.0.0.1")
     port = int(os.environ.get("OCR_PORT", os.environ.get("MCP_PORT", "10859")))
