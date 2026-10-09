@@ -70,7 +70,7 @@ export function Skills() {
             <BookOpen className="h-8 w-8 text-amber-400" />
             Skills
           </h1>
-          <p className="text-sm text-slate-400 mt-1 max-w-2xl">
+          <p className="text-sm text-slate-300 mt-1 max-w-2xl">
             Skills teach the LLM how to use OCR-MCP. Click a skill to read its SKILL.md.
           </p>
         </div>
@@ -91,16 +91,16 @@ export function Skills() {
       <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl">
         <CardHeader>
           <CardTitle className="text-slate-100 text-base">
-            Registered skills <span className="text-slate-500 font-normal">({skills.length})</span>
+            Registered skills <span className="text-slate-300 font-normal">({skills.length})</span>
           </CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardDescription className="text-slate-300">
             Content served from src/ocr_mcp/skills/{`{name}`}/SKILL.md.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[min(65vh,560px)] rounded-md border border-slate-800 bg-slate-950 p-2">
             {skills.length === 0 && !loading && !error ? (
-              <p className="text-sm text-slate-500 p-3">No skills found.</p>
+              <p className="text-sm text-slate-300 p-3">No skills found.</p>
             ) : (
               <div className="space-y-1">
                 {skills.map((skill) => (
@@ -111,16 +111,16 @@ export function Skills() {
                       className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left hover:bg-slate-800/50 transition-colors"
                     >
                       {expanded === skill.name ? (
-                        <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
+                        <ChevronDown className="h-4 w-4 shrink-0 text-slate-300" />
                       ) : (
-                        <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" />
+                        <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
                       )}
                       <code className="text-sm font-mono text-sky-300">{skill.name}</code>
                     </button>
                     {expanded === skill.name && (
                       <div className="px-4 pb-3 pl-9">
                         {contentLoading ? (
-                          <Loader2 className="h-4 w-4 animate-spin text-slate-500" />
+                          <Loader2 className="h-4 w-4 animate-spin text-slate-300" />
                         ) : (
                           <pre className="text-[11px] font-mono text-slate-300 whitespace-pre-wrap break-all bg-slate-900/60 rounded p-3 max-h-[50vh] overflow-auto">
                             {content}

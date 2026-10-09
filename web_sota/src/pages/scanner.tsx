@@ -220,15 +220,15 @@ export function Scanner() {
           <CardTitle className="text-slate-100 flex items-center gap-2">
             <Scan className="w-5 h-5 text-blue-400" /> Auto-Scan
           </CardTitle>
-          <CardDescription className="text-slate-400">Trigger a hardware scan via connected devices.</CardDescription>
+          <CardDescription className="text-slate-300">Trigger a hardware scan via connected devices.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {fetching ? (
-            <div className="text-slate-400 text-sm flex items-center">
+            <div className="text-slate-300 text-sm flex items-center">
               <RefreshCw className="animate-spin w-4 h-4 mr-2" /> Loading scanners...
             </div>
           ) : scanners.length === 0 ? (
-            <div className="text-slate-400 text-sm p-4 bg-slate-900 rounded-md border border-slate-800">
+            <div className="text-slate-300 text-sm p-4 bg-slate-900 rounded-md border border-slate-800">
               No scanners found nearby or manager not initialized.
             </div>
           ) : (
@@ -329,7 +329,7 @@ export function Scanner() {
                 )}
               </div>
 
-              <p className="text-xs text-slate-500 mb-1">
+              <p className="text-xs text-slate-300 mb-1">
                 Tip: click &quot;Select Area&quot; above, then drag on the image to select a region for OCR.
               </p>
               <div className="h-[600px] border border-slate-700 rounded-md bg-slate-950/50 overflow-hidden">

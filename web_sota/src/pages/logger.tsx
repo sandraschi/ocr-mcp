@@ -57,7 +57,7 @@ export function Logger() {
             <ScrollText className="h-8 w-8 text-amber-400" />
             Logger
           </h1>
-          <p className="text-sm text-slate-400 mt-1 max-w-2xl">
+          <p className="text-sm text-slate-300 mt-1 max-w-2xl">
             Recent lines from the FastAPI backend (in-memory buffer). Useful when OCR selection or scans misbehave; full
             detail still lives in the server console.
           </p>
@@ -77,12 +77,12 @@ export function Logger() {
       <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl">
         <CardHeader>
           <CardTitle className="text-slate-100 text-base">Server log tail</CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardDescription className="text-slate-300">
             Auto-refreshes every {POLL_MS / 1000}s. Sticky scroll to end when you stay at the bottom.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <label className="flex items-center gap-2 text-xs text-slate-400">
+          <label className="flex items-center gap-2 text-xs text-slate-300">
             <input
               type="checkbox"
               checked={stickToEnd}

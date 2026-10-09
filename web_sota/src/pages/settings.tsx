@@ -233,10 +233,10 @@ export function Settings() {
           className="text-2xl font-bold tracking-tight text-white flex items-center gap-2"
           data-testid="settings-title"
         >
-          <SettingsIcon className="w-6 h-6 text-slate-400" />
+          <SettingsIcon className="w-6 h-6 text-slate-300" />
           System Settings
         </h2>
-        <p className="text-slate-400">Manage connections and OCR preferences</p>
+        <p className="text-slate-300">Manage connections and OCR preferences</p>
       </div>
 
       <div className="grid gap-6">
@@ -246,7 +246,7 @@ export function Settings() {
             <CardTitle className="text-white flex items-center gap-2">
               <Key className="w-5 h-5 text-amber-400" /> Mistral OCR API
             </CardTitle>
-            <CardDescription className="text-slate-400">
+            <CardDescription className="text-slate-300">
               Required for the <span className="text-slate-300 font-mono">mistral-ocr</span> backend. Key is stored in
               the backend process only (not in browser localStorage).
             </CardDescription>
@@ -266,8 +266,8 @@ export function Settings() {
                 className="bg-slate-900 border-slate-700 text-slate-100"
               />
               {mistralConfigured && mistralHint && (
-                <p className="text-xs text-slate-500">
-                  Current key ends with <span className="font-mono text-slate-400">{mistralHint}</span>
+                <p className="text-xs text-slate-300">
+                  Current key ends with <span className="font-mono text-slate-300">{mistralHint}</span>
                 </p>
               )}
             </div>
@@ -351,7 +351,7 @@ export function Settings() {
             <CardTitle className="text-white flex items-center gap-2">
               <Cpu className="w-5 h-5 text-purple-400" /> Default OCR Backend
             </CardTitle>
-            <CardDescription className="text-slate-400">
+            <CardDescription className="text-slate-300">
               Which model to use for scan OCR and pipeline jobs when "Auto" is not selected explicitly. Stored locally
               in your browser.
             </CardDescription>
@@ -386,7 +386,7 @@ export function Settings() {
                 )}
               </Button>
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-300">
               Current default: <span className="text-slate-300 font-mono">{defaultBackend}</span>
             </p>
           </CardContent>
@@ -398,11 +398,11 @@ export function Settings() {
             <CardTitle className="text-white flex items-center gap-2">
               <Database className="w-5 h-5 text-blue-400" /> Available OCR Backends
             </CardTitle>
-            <CardDescription className="text-slate-400">Loaded OCR engines and their status</CardDescription>
+            <CardDescription className="text-slate-300">Loaded OCR engines and their status</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {backends.length === 0 ? (
-              <div className="text-sm text-slate-500">No external backends loaded (using defaults).</div>
+              <div className="text-sm text-slate-300">No external backends loaded (using defaults).</div>
             ) : (
               <div className="space-y-2">
                 {backends.map((b) => (
@@ -412,7 +412,7 @@ export function Settings() {
                   >
                     <div>
                       <p className="font-medium text-slate-200">{b.name}</p>
-                      <p className="text-xs text-slate-500">{b.description || "OCR Engine"}</p>
+                      <p className="text-xs text-slate-300">{b.description || "OCR Engine"}</p>
                     </div>
                     <div
                       className={`text-xs px-2 py-1 rounded border ${
@@ -436,7 +436,7 @@ export function Settings() {
             <CardTitle className="text-white flex items-center gap-2">
               <Eye className="w-5 h-5 text-emerald-400" /> Auto-Scan
             </CardTitle>
-            <CardDescription className="text-slate-400">
+            <CardDescription className="text-slate-300">
               Automatically detect documents on the flatbed via preview-scan polling. When content change is detected,
               scan + OCR triggers automatically.
             </CardDescription>
@@ -493,11 +493,11 @@ export function Settings() {
             <CardTitle className="text-white flex items-center gap-2">
               <ScanLine className="w-5 h-5 text-purple-400" /> Scanners & Hardware
             </CardTitle>
-            <CardDescription className="text-slate-400">Connected physical devices</CardDescription>
+            <CardDescription className="text-slate-300">Connected physical devices</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {scanners.length === 0 ? (
-              <div className="text-sm text-slate-500">No hardware scanners detected.</div>
+              <div className="text-sm text-slate-300">No hardware scanners detected.</div>
             ) : (
               <div className="space-y-2">
                 {scanners.map((s) => (
@@ -507,7 +507,7 @@ export function Settings() {
                   >
                     <div className="space-y-0.5">
                       <p className="font-medium text-slate-200">{s.name}</p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-300">
                         {s.manufacturer || ""}
                         {s.type ? ` · ${s.type}` : ""}
                         {s.max_dpi ? ` · max ${s.max_dpi} DPI` : ""}
@@ -530,13 +530,13 @@ export function Settings() {
             <CardTitle className="text-white flex items-center gap-2">
               <Cpu className="w-5 h-5 text-cyan-400" /> Local LLM
             </CardTitle>
-            <CardDescription className="text-slate-400">
+            <CardDescription className="text-slate-300">
               Auto-detected local inference providers. Use with the AI assistant features.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {llmProviders.length === 0 ? (
-              <div className="text-sm text-slate-500">No providers detected. Start Ollama or LM Studio.</div>
+              <div className="text-sm text-slate-300">No providers detected. Start Ollama or LM Studio.</div>
             ) : (
               <div className="space-y-2">
                 {llmProviders.map((p) => (
@@ -546,9 +546,9 @@ export function Settings() {
                   >
                     <div>
                       <p className="font-medium text-slate-200">{p.label}</p>
-                      <p className="text-xs text-slate-500 font-mono">{p.base_url}</p>
+                      <p className="text-xs text-slate-300 font-mono">{p.base_url}</p>
                       {p.models.length > 0 && (
-                        <p className="text-xs text-slate-500 mt-0.5">
+                        <p className="text-xs text-slate-300 mt-0.5">
                           Models: {p.models.slice(0, 5).join(", ")}
                           {p.models.length > 5 ? ` +${p.models.length - 5} more` : ""}
                         </p>
@@ -592,7 +592,7 @@ export function Settings() {
                     })
                     .catch((e) => console.error("settings: failed to load backends", e));
                 }}
-                className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors bg-slate-800 hover:bg-slate-700 rounded-md px-3 py-1.5 border border-slate-700"
+                className="inline-flex items-center gap-1.5 text-xs text-slate-300 hover:text-slate-200 transition-colors bg-slate-800 hover:bg-slate-700 rounded-md px-3 py-1.5 border border-slate-700"
               >
                 <RefreshCw className="w-3 h-3" /> Refresh
               </button>

@@ -152,13 +152,13 @@ export function ScanViewerPage() {
         data-testid="scan-viewer-page"
       >
         <div className="p-6 bg-slate-900/50 rounded-full border border-slate-800">
-          <Scan className="w-12 h-12 text-slate-500" />
+          <Scan className="w-12 h-12 text-slate-300" />
         </div>
         <div className="space-y-2">
           <h2 className="text-2xl font-bold text-slate-100" data-testid="scan-viewer-title">
             No Active Raw Scan
           </h2>
-          <p className="text-slate-400 max-w-md">
+          <p className="text-slate-300 max-w-md">
             You haven't performed any scans in this session. Go to Dashboard and click "Quick Scan (Raw)" to start.
           </p>
         </div>
@@ -173,14 +173,14 @@ export function ScanViewerPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap justify-between items-center gap-4">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="text-slate-400 hover:text-white">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="text-slate-300 hover:text-white">
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-slate-100" data-testid="scan-viewer-title">
               Raw Scan Webpage
             </h1>
-            <p className="text-slate-400">View, export, print, email, share to Discord, or OCR selection.</p>
+            <p className="text-slate-300">View, export, print, email, share to Discord, or OCR selection.</p>
           </div>
         </div>
 
@@ -346,13 +346,13 @@ export function ScanViewerPage() {
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-slate-400">Filename:</span>
+                <span className="text-slate-300">Filename:</span>
                 <span className="text-slate-200 truncate ml-2 max-w-[150px]" title={lastScan.filename || ""}>
                   {lastScan.filename || "scan.png"}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Scan Status:</span>
+                <span className="text-slate-300">Scan Status:</span>
                 <span className="text-emerald-400 font-medium">Ready</span>
               </div>
             </CardContent>
