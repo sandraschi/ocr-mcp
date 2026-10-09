@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ocr-mcp"
-version = "0.2.1-beta"
+version = "0.3.0-beta"
 description = "Comprehensive OCR and document understanding: 14 engines, tables, forms, scanners, PDFs"
 authors = [
     {name = "Sandra", email = "sandraschipal@gmail.com"}
@@ -244,13 +244,14 @@ ignore = ["S101",
     "F403",
     "F405",
     "S104",
-    "S110",
     "S310",
     "S603",
     "S606",
     "S607",
     "T20",
 ]
+# PyInstaller/uvicorn sidecar entry: lifespan-fallback warning print only
+"run_server.py" = ["T20"]
 "backend/**" = ["S104"]
 "src/ocr_mcp/utils/startup_bootstrap.py" = ["T20"]
 "src/ocr_mcp/utils/gh_cli.py" = ["T20"]

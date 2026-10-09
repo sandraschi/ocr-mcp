@@ -5,11 +5,11 @@
       "command": "uv",
       "args": ["--directory", "${workspaceFolder}", "run", "ocr-mcp"],
       "env": {},
-      "description": "FastMCP 3.1 document OCR server: 10+ SOTA backends (PaddleOCR-VL-1.5, DeepSeek-OCR-2, olmOCR-2, etc.), sampling, agentic workflow (SEP-1577), prompts, skills resource. WIA scanner (Windows). React web UI.",
+      "description": "FastMCP 3.4 document OCR server: 14 backends (PaddleOCR-VL-1.5, DeepSeek-OCR-2, olmOCR-2, etc.), sampling, agentic workflow (SEP-1577), prompts, skills resource. WIA scanner (Windows). React web UI.",
       "capabilities": {
         "webapp": {
           "enabled": true,
-          "url": "http://localhost:15550"
+          "url": "http://localhost:10858"
         },
         "sampling": true,
         "ai_features": {
@@ -34,7 +34,7 @@
         "message": 60000
       },
       "metadata": {
-        "version": "0.2.1-beta",
+        "version": "0.3.0-beta",
         "author": "Sandra Schipal",
         "homepage": "https://github.com/sandraschi/ocr-mcp",
         "license": "MIT",
@@ -42,7 +42,7 @@
         "tags": [
           "ocr",
           "document-processing",
-          "fastmcp-3.1",
+          "fastmcp-3.4",
           "sampling",
           "agentic",
           "sep-1577",
