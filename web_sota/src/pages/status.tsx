@@ -98,7 +98,7 @@ export function Status() {
         <h1 className="text-3xl font-bold tracking-tight text-slate-100" data-testid="status-title">
           Activity
         </h1>
-        <p className="text-sm text-slate-400 mt-1 max-w-2xl">
+        <p className="text-sm text-slate-300 mt-1 max-w-2xl">
           What your last OCR run is doing. You don&apos;t need job IDs — use{" "}
           <Link to="/editor" className="text-blue-400 hover:underline">
             Your OCR text
@@ -112,13 +112,13 @@ export function Status() {
           <CardTitle className="text-slate-100 flex items-center gap-2">
             <Activity className="w-5 h-5 text-emerald-400" /> Latest run
           </CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardDescription className="text-slate-300">
             Tracks the most recent OCR from Scanner, Import, or Pipelines.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           {!activeJobId && !lastOcrJobId ? (
-            <p className="text-sm text-slate-500">Nothing running yet. Scan or upload and start OCR first.</p>
+            <p className="text-sm text-slate-300">Nothing running yet. Scan or upload and start OCR first.</p>
           ) : (
             <>
               <div className="flex flex-wrap items-center gap-3">
@@ -158,11 +158,11 @@ export function Status() {
 
               {jobData && !jobData.error && (
                 <details className="group">
-                  <summary className="cursor-pointer text-xs text-slate-500 hover:text-slate-400 list-none flex items-center gap-1">
+                  <summary className="cursor-pointer text-xs text-slate-300 hover:text-slate-300 list-none flex items-center gap-1">
                     <ChevronRight className="w-3 h-3 group-open:rotate-90 transition-transform" />
                     Technical details (JSON)
                   </summary>
-                  <pre className="mt-2 p-3 rounded-md bg-slate-950 border border-slate-800 font-mono text-[11px] text-slate-400 overflow-auto max-h-64">
+                  <pre className="mt-2 p-3 rounded-md bg-slate-950 border border-slate-800 font-mono text-[11px] text-slate-300 overflow-auto max-h-64">
                     {JSON.stringify(jobData, null, 2)}
                   </pre>
                 </details>
@@ -173,7 +173,7 @@ export function Status() {
           <button
             type="button"
             onClick={() => setAdvancedOpen((o) => !o)}
-            className="text-left text-xs text-slate-500 hover:text-slate-400 flex items-center gap-1 pt-2 border-t border-slate-800 w-full"
+            className="text-left text-xs text-slate-300 hover:text-slate-300 flex items-center gap-1 pt-2 border-t border-slate-800 w-full"
           >
             {advancedOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
             Advanced — inspect another job by ID

@@ -19,20 +19,16 @@ dist/
 build/
 *.mcpb
 
-# Editor / tooling backups (MCPB_PACKAGING_STANDARDS.md section 2.4)
+# Backup dross (batch-edit .bak copies, timestamped or plain)
 *.bak
 *.bak.*
-*.bak-*
-*.orig
-*.rej
 
-# Pack build tooling itself -- not runtime code
-mcpb/pack.ps1
-mcpb/verify_pack.py
-pack.ps1
-verify_pack.py
+# Runtime data (never ship local DBs/caches)
+data/
+*.sqlite3
+*.db*
 
-# Non-MCP components detected in this repo
-web_sota/
+# Non-MCP components (webapp, native, scripts)
 native/
+web_sota/
 scripts/

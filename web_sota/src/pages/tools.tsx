@@ -47,7 +47,7 @@ export function Tools() {
             <Wrench className="h-8 w-8 text-amber-400" />
             Tools
           </h1>
-          <p className="text-sm text-slate-400 mt-1 max-w-2xl">
+          <p className="text-sm text-slate-300 mt-1 max-w-2xl">
             Live MCP tool surface discovered from the FastMCP server. Click a tool to expand its schema.
           </p>
         </div>
@@ -68,16 +68,16 @@ export function Tools() {
       <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl">
         <CardHeader>
           <CardTitle className="text-slate-100 text-base">
-            MCP tools <span className="text-slate-500 font-normal">({tools.length} registered)</span>
+            MCP tools <span className="text-slate-300 font-normal">({tools.length} registered)</span>
           </CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardDescription className="text-slate-300">
             Portmanteau tools group multiple operations behind one entry point.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[min(65vh,560px)] rounded-md border border-slate-800 bg-slate-950 p-2">
             {tools.length === 0 && !loading && !error ? (
-              <p className="text-sm text-slate-500 p-3">No tools discovered.</p>
+              <p className="text-sm text-slate-300 p-3">No tools discovered.</p>
             ) : (
               <div className="space-y-1">
                 {tools.map((tool) => (
@@ -88,21 +88,21 @@ export function Tools() {
                       className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left hover:bg-slate-800/50 transition-colors"
                     >
                       {expanded === tool.name ? (
-                        <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
+                        <ChevronDown className="h-4 w-4 shrink-0 text-slate-300" />
                       ) : (
-                        <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" />
+                        <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
                       )}
                       <code className="text-sm font-mono text-sky-300">{tool.name}</code>
                     </button>
                     {expanded === tool.name && (
                       <div className="px-4 pb-3 pl-9 space-y-2">
-                        <p className="text-xs text-slate-400">{tool.description || "No description."}</p>
+                        <p className="text-xs text-slate-300">{tool.description || "No description."}</p>
                         {tool.parameters ? (
                           <pre className="text-[11px] font-mono text-slate-300 whitespace-pre-wrap break-all bg-slate-900/60 rounded p-2 max-h-64 overflow-auto">
                             {JSON.stringify(tool.parameters, null, 2)}
                           </pre>
                         ) : (
-                          <p className="text-[11px] text-slate-500">No parameter schema.</p>
+                          <p className="text-[11px] text-slate-300">No parameter schema.</p>
                         )}
                       </div>
                     )}
