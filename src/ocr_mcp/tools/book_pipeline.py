@@ -19,6 +19,8 @@ from .models import ToolResponse
 
 logger = logging.getLogger(__name__)
 
+_TOOL_OUTPUT_SCHEMA = ToolResponse.model_json_schema()
+
 try:
     from ..services.book_assembler import assemble_epub
     from ..services.chapter_detector import detect_chapters, detect_metadata
@@ -32,7 +34,10 @@ def register_book_pipeline_tool(app, backend_manager: BackendManager | None, con
     """Register the ingest_book portmanteau tool."""
 
     @app.tool(
-        annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=True)
+        annotations=ToolAnnotations(
+            readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=True
+        ),
+        output_schema=_TOOL_OUTPUT_SCHEMA,
     )
     async def ingest_book(
         operation: Literal[

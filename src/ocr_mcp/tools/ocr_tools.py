@@ -60,6 +60,10 @@ from .models import (
 
 logger = logging.getLogger(__name__)
 
+# Explicit structured-output schema (fleet TOOL_DESIGN_STANDARDS §8).
+# Plain-string tools (get_help) take none: the MCP spec requires object types.
+_TOOL_OUTPUT_SCHEMA = ToolResponse.model_json_schema()
+
 
 def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
     """Register refactored SOTA tools with the FastMCP app."""
@@ -73,7 +77,10 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
         return backend_manager_or_runtime, config
 
     @app.tool(
-        annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=True)
+        annotations=ToolAnnotations(
+            readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=True
+        ),
+        output_schema=_TOOL_OUTPUT_SCHEMA,
     )
     async def process_document(
         operation: Literal[
@@ -280,7 +287,10 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
             )
 
     @app.tool(
-        annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=True, idempotentHint=False, openWorldHint=False)
+        annotations=ToolAnnotations(
+            readOnlyHint=False, destructiveHint=True, idempotentHint=False, openWorldHint=False
+        ),
+        output_schema=_TOOL_OUTPUT_SCHEMA,
     )
     async def manage_image(
         operation: Literal["preprocess", "convert", "pdf_to_images", "embed_text"],
@@ -374,7 +384,10 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
             return ToolResponse(success=False, operation=operation, summary=str(e))
 
     @app.tool(
-        annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=True)
+        annotations=ToolAnnotations(
+            readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=True
+        ),
+        output_schema=_TOOL_OUTPUT_SCHEMA,
     )
     async def operate_scanner(
         operation: Literal[
@@ -451,7 +464,10 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
             return ToolResponse(success=False, operation=operation, summary=str(e))
 
     @app.tool(
-        annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=True)
+        annotations=ToolAnnotations(
+            readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=True
+        ),
+        output_schema=_TOOL_OUTPUT_SCHEMA,
     )
     async def manage_workflow(
         operation: Literal[
@@ -508,7 +524,10 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
             return ToolResponse(success=False, operation=operation, summary=str(e))
 
     @app.tool(
-        annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=True, idempotentHint=False, openWorldHint=False)
+        annotations=ToolAnnotations(
+            readOnlyHint=False, destructiveHint=True, idempotentHint=False, openWorldHint=False
+        ),
+        output_schema=_TOOL_OUTPUT_SCHEMA,
     )
     async def manage_corpus(
         operation: Literal["register", "update_metadata", "get", "search", "list_recent", "attach_ocr_result"],
@@ -578,7 +597,7 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
         """
         return _workflow.get_help_content(level, topic)
 
-    @app.tool(annotations=ToolAnnotations(readOnlyHint=True))
+    @app.tool(annotations=ToolAnnotations(readOnlyHint=True), output_schema=_TOOL_OUTPUT_SCHEMA)
     async def get_status(level: Literal["basic", "detailed"] = "basic") -> ToolResponse:
         """Real-time system health, backend availability, and resource utilization.
 
@@ -600,7 +619,7 @@ def register_sota_tools(app, backend_manager_or_runtime, config: OCRConfig):
             summary="System status retrieved.",
         )
 
-    @app.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=True))
+    @app.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=True), output_schema=_TOOL_OUTPUT_SCHEMA)
     async def shutdown_server(confirm: bool = False) -> ToolResponse:
         """Gracefully shut down the OCR-MCP server.
 

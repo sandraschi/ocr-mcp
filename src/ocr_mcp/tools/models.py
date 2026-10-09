@@ -28,7 +28,7 @@
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 # Common Literals for Enums
 OCRBackend = Literal[
@@ -122,5 +122,12 @@ class WorkflowResult(BaseModel):
 class ToolResponse(BaseResponse):
     result: Any | None = Field(None, description="The primary result of the operation")
     summary: str | None = Field(None, description="Human-readable summary of what was done")
+    message: str | None = Field(None, description="Natural-language message for the user/LLM (defaults to summary)")
     next_steps: list[str] = Field(default_factory=list, description="Recommended next actions for the user/LLM")
     suggestions: list[str] = Field(default_factory=list, description="Optimization or alternative suggestions")
+
+    @model_validator(mode="after")
+    def _default_message_from_summary(self):
+        if self.message is None:
+            self.message = self.summary
+        return self

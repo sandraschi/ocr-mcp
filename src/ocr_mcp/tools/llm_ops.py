@@ -48,7 +48,8 @@ def register_llm_ops_tool(app):
     @app.tool(
         annotations=ToolAnnotations(
             readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False
-        )
+        ),
+        output_schema={"type": "object"},
     )
     async def llm_ops(
         operation: Literal["list_models", "loaded", "switch_model", "unload_all", "vram"],

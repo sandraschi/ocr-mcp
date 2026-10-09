@@ -43,12 +43,17 @@ from .models import ToolResponse
 
 logger = logging.getLogger(__name__)
 
+_TOOL_OUTPUT_SCHEMA = ToolResponse.model_json_schema()
+
 
 def register_agentic_document_workflow(app):
     """Register the agentic document workflow tool with the FastMCP app."""
 
     @app.tool(
-        annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=True)
+        annotations=ToolAnnotations(
+            readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=True
+        ),
+        output_schema=_TOOL_OUTPUT_SCHEMA,
     )
     async def execute_agentic_workflow(
         workflow_prompt: str,
