@@ -22,12 +22,12 @@ try:
     import asyncio
 
     async def test():
-        tools = await app.get_tools()
+        tools = await app.list_tools()
         logger.info(f"SUCCESS: Got {len(tools)} tools")
         return tools
 
     tools = asyncio.run(test())
-    logger.info(f"Tools: {[str(t) for t in tools]}")
+    logger.info(f"Tools: {[t.name for t in tools]}")
 
 except Exception as e:
     logger.info(f"ERROR: Import failed: {e}")

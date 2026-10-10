@@ -51,14 +51,14 @@ try:
     async def count_tools():
         """Count and display registered tools."""
         try:
-            # Get tools from the MCP app
-            tools = await app.get_tools()
-            tool_names = [tool if isinstance(tool, str) else str(tool) for tool in tools]
+            # Get tools from the MCP app (FastMCP 3.x API returns Tool objects)
+            tools = await app.list_tools()
+            tool_names = [tool.name for tool in tools]
 
             logger.info(f"OCR-MCP Server - {len(tools)} tools registered:")
             logger.info("=" * 50)
             logger.info(f"All tools: {sorted(tool_names)}")
-            logger.info()
+            logger.info("")
 
             # Group tools by category
             ocr_tools = [t for t in tool_names if "ocr" in t.lower() or "process" in t.lower()]
@@ -69,13 +69,13 @@ try:
                 logger.info(f"OCR Tools ({len(ocr_tools)}):")
                 for tool in sorted(ocr_tools):
                     logger.info(f"  - {tool}")
-                logger.info()
+                logger.info("")
 
             if scanner_tools:
                 logger.info(f"Scanner Tools ({len(scanner_tools)}):")
                 for tool in sorted(scanner_tools):
                     logger.info(f"  - {tool}")
-                logger.info()
+                logger.info("")
 
             if other_tools:
                 logger.info(f"Other Tools ({len(other_tools)}):")
