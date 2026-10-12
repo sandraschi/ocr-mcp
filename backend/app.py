@@ -2396,7 +2396,6 @@ async def get_download_progress(backend_name: str):
 
 async def _download_model_background(backend_key: str, job_id: str):
     """Background task: load a backend (downloads models if needed)."""
-    import time as _time
 
     try:
         if not backend_manager:
@@ -2408,7 +2407,7 @@ async def _download_model_background(backend_key: str, job_id: str):
             return
 
         model_downloads[backend_key] = {"status": "downloading", "progress": 10, "job_id": job_id}
-        _time.sleep(0.2)  # Let the status propagate
+        await asyncio.sleep(0.2)  # Let the status propagate
 
         # Force-load the backend
         be = backend_manager.get_backend(backend_key)
