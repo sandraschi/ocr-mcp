@@ -229,7 +229,8 @@ class ModelInstaller:
                 # Test API connection
                 import httpx
 
-                response = httpx.get(
+                response = await asyncio.to_thread(
+                    httpx.get,
                     "https://api.mistral.ai/v1/models",
                     headers={"Authorization": f"Bearer {api_key}"},
                     timeout=10,
@@ -542,7 +543,8 @@ class ModelInstaller:
                         logger.error("✗ Mistral OCR: MISTRAL_API_KEY not set")
                         success = False
                     else:
-                        response = httpx.get(
+                        response = await asyncio.to_thread(
+                            httpx.get,
                             "https://api.mistral.ai/v1/models",
                             headers={"Authorization": f"Bearer {api_key}"},
                             timeout=10,
