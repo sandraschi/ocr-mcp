@@ -31,6 +31,7 @@ Adaptation: list_models uses ocr-mcp's own llm_providers registry probe
 (registry, keystore, sampling defaults are repo-specific by design).
 """
 
+import asyncio
 import logging
 from typing import Any, Literal
 
@@ -69,7 +70,7 @@ def register_llm_ops_tool(app):
             data = await list_models(provider)
             return {"success": True, "operation": operation, **data}
         if operation == "vram":
-            return {"success": True, "operation": operation, "gpus": gpu_vram()}
+            return {"success": True, "operation": operation, "gpus": await asyncio.to_thread(gpu_vram)}
         if provider != "ollama":
             return {
                 "success": False,
