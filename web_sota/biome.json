@@ -1,52 +1,52 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
-  "files": {
-    "ignoreUnknown": false,
-    "includes": ["src/**", "vite.config.ts", "vite-plugin-backend-restart.ts"]
-  },
-  "json": {
-    "parser": {
-      "allowComments": true,
-      "allowTrailingCommas": true
-    }
-  },
-  "css": {
-    "parser": {
-      "tailwindDirectives": true
-    }
-  },
-  "formatter": {
-    "enabled": true,
-    "indentStyle": "space",
-    "lineWidth": 120,
-    "lineEnding": "lf"
-  },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true,
-      "style": {
-        "noNonNullAssertion": "warn",
-        "useTemplate": "off"
-      },
-      "suspicious": {
-        "noExplicitAny": "off",
-        "noArrayIndexKey": "off",
-        "noUnknownAtRules": "off"
-      },
-      "a11y": {
-        "noLabelWithoutControl": "off",
-        "useButtonType": "off",
-        "noStaticElementInteractions": "off"
-      },
-      "correctness": {
-        "useExhaustiveDependencies": "off"
-      }
-    }
-  },
-  "javascript": {
-    "formatter": {
-      "quoteStyle": "double"
-    }
-  }
+	"$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
+	"files": {
+		"ignoreUnknown": false,
+		"includes": ["src/**", "vite.config.ts", "vite-plugin-backend-restart.ts"]
+	},
+	"json": {
+		"parser": {
+			"allowComments": true,
+			"allowTrailingCommas": true
+		}
+	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "space",
+		"lineWidth": 120,
+		"lineEnding": "lf"
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"style": {
+				"noNonNullAssertion": "warn",
+				"useTemplate": "off"
+			},
+			"suspicious": {
+				"noExplicitAny": "off",
+				"noArrayIndexKey": "off",
+				"noUnknownAtRules": "off"
+			},
+			"a11y": {
+				"noLabelWithoutControl": "off",
+				"useButtonType": "off",
+				"noStaticElementInteractions": "off"
+			},
+			"correctness": {
+				"useExhaustiveDependencies": "off"
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double"
+		}
+	}
 }
