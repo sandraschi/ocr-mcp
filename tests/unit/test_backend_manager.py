@@ -222,10 +222,11 @@ class TestBackendManager:
         assert "available_backends" in result
 
     def test_preference_order_auto_selection(self, config):
-        """Auto mode prefers light engines first (tesseract before heavy VL models)."""
+        """Auto mode prefers light engines first (indra-ocr before heavy VL models)."""
         manager = BackendManager(config)
 
         preference_order = [
+            "indra-ocr",
             "paddleocr-vl",
             "got-ocr",
             "tesseract",
@@ -238,7 +239,7 @@ class TestBackendManager:
 
         selected = manager.select_backend("auto")
         assert selected is not None
-        assert selected.name == "tesseract"
+        assert selected.name == "indra-ocr"
 
     def test_fallback_selection_when_preferred_unavailable(self, config):
         """Test fallback to next available backend when preferred is unavailable."""
@@ -284,6 +285,7 @@ class TestBackendManager:
             "got-ocr",
             "tesseract",
             "easyocr",
+            "indra-ocr",
         ]
 
         for backend_name in expected_backends:
@@ -407,6 +409,7 @@ class TestBackendListAndStatus:
             "got-ocr",
             "tesseract",
             "easyocr",
+            "indra-ocr",
         }
 
         for name in expected:

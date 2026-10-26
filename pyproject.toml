@@ -42,6 +42,7 @@ dependencies = [
     # OCR backends
     "pytesseract>=0.3.10",
     "easyocr>=1.7.0",
+    "indra-ocr>=0.2.0",
     # ML dependencies (optional, can be installed separately)
     # "transformers>=4.35.0",
     # "accelerate>=0.24.0",

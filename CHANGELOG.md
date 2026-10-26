@@ -1,4 +1,14 @@
 
+## [Unreleased] - 2026-10-26 (indra-ocr backend)
+
+### Added
+- **Indra OCR backend** (`indra_ocr_backend.py`) — Datalab-to 1M-param CPU OCR (ONNX, no Torch/GPU)
+  - PDFs/images -> markdown/text/JSON with layout blocks + reading order + per-line boxes/confidence
+  - `auto` text-layer hybrid, 95 scripts, rotated/tilted/dark-ground scans, optional math-as-LaTeX
+  - Registered as `indra-ocr` (alias `indra`); `auto` fallback prefers it first among CPU engines
+  - Config: `INDRA_OCR_THREADS/MODE/DPI/MATH/MODEL_DIR`; dep `indra-ocr>=0.2.0`
+  - License note: code Apache-2.0, weights OpenRAIL-M (see AI_MODELS.md)
+
 ## [Unreleased] - 2026-10-09 (assfix, SOTA 0/100 -> self-assessed)
 
 ### Fixed (CRITICAL)

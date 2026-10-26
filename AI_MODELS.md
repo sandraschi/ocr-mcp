@@ -20,6 +20,7 @@ This document lists every OCR backend used by **OCR-MCP** (both the [web app](RE
 | **Qwen2.5-VL** | ✅ Good | 7B | ~16GB | Strong on DocVQA | Complex layouts, VQA |
 | **GOT-OCR 2.0** | ✅ Lean | 580M | ~2GB | Solid | Fast, mixed content, lean VRAM |
 | **DOTS.OCR** | ✅ OK | 3B | ~6GB | 87-90% tables | Table-heavy docs |
+| **Indra OCR** | ✅ Fast CPU | 1M | 0 | 66.7 OmniParseBench | CPU scans, layout blocks |
 | **PP-OCRv5** | ✅ Legacy | ~100MB | low | 86-89% | High throughput, CJK |
 | **EasyOCR** | ⚠️ Legacy | ~200MB | low | 82-87% | Handwriting, quick integration |
 | **Tesseract** | ✅ Backstop | ~50MB | 0 | 78-85% | CPU-only fallback, always available |
@@ -27,7 +28,10 @@ This document lists every OCR backend used by **OCR-MCP** (both the [web app](RE
 *\* with `flash-attn` installed. Without it: ~40GB — do not run on GPU without flash-attn.*
 
 **Auto-selection priority** (highest to lowest):
-`paddleocr-vl → mistral-ocr → deepseek-ocr2 → unlimited-ocr → mineru-2.5 → olmocr-2 → nemotron-vl → qwen-layered → got-ocr → dots-ocr → pp-ocrv5 → easyocr → tesseract`
+`paddleocr-vl → mistral-ocr → deepseek-ocr2 → unlimited-ocr → mineru-2.5 → olmocr-2 → nemotron-vl → qwen-layered → got-ocr → dots-ocr → indra-ocr → pp-ocrv5 → easyocr → tesseract`
+
+> `auto` fallback prefers light CPU engines first (`indra-ocr → tesseract → pp-ocrv5 → ...`)
+> so flatbed scans succeed without huge downloads; quality ranking above is for manual pick.
 
 ---
 
@@ -265,6 +269,45 @@ pip install timm einops open-clip-torch
 
 ---
 
+## Fast CPU Backends
+
+### Indra OCR
+
+**Datalab-to 1M-param CPU OCR (ONNX, no Torch/GPU). Upstream: https://github.com/datalab-to/indra**
+
+Tiny + fast document OCR that turns PDFs/images into markdown, text, or JSON with
+per-line boxes/confidence and layout blocks in reading order. Reads the PDF text
+layer where valid (`auto` mode), OCRs only what's missing; handles sideways/
+upside-down/tilted pages, light-on-dark, vertical CJK.
+
+**Key features:**
+- 66.7 OmniParseBench headline (71.4 with `--math`), 92.2 layout; text 46.7 vs PP-OCR 35.8 vs Tesseract 19.3
+- ~44 pages/s on 32 cores (~15x Tesseract, ~10x PP-OCR text); ~210ms/page on 4 cores
+- 95 scripts measured (Latin/Cyrillic/Greek/CJK/RTL/Indic/Thai/Khmer...), handwriting (weak, ~25%)
+- Block labels: Text, Section-Header, Page-Header/Footer, List-Group, Table, Caption, Footnote, Form
+- Optional math-as-LaTeX (`indra_math=True`, slower on math pages)
+- ~76MB models auto-downloaded from HF on first run
+
+**Limitations:** complex merged-cell tables, degraded scans (~30%), banner pages, math off by default.
+
+**License:** code Apache-2.0, weights modified OpenRAIL-M
+(free for research/personal/startups <$20M revenue; no competitive API use).
+See https://www.datalab.to/pricing for commercial licensing.
+
+**Dependencies:**
+```
+pip install indra-ocr
+```
+
+**HF model:** `datalab-to/indra-ocr`
+**Backend name:** `indra-ocr`
+**Aliases:** `indra`
+
+**Config (env or OCRConfig):** `INDRA_OCR_THREADS` (0=auto), `INDRA_OCR_MODE` (auto|ocr|text),
+`INDRA_OCR_DPI` (200), `INDRA_OCR_MATH` (false), `INDRA_OCR_MODEL_DIR` (local weights copy).
+
+---
+
 ## Legacy Backends
 
 ### PP-OCRv5
@@ -317,8 +360,8 @@ Microsoft Florence-2 is a general vision foundation model (object detection, ima
 | Arabic / Devanagari / rare scripts | `paddleocr-vl` |
 | Maximum accuracy, no VRAM limit | `olmocr-2` (7B) or `mineru-2.5` (1.2B) |
 | Minimum VRAM, still good quality | `got-ocr` (580M) or `mineru-2.5` (2.5GB) |
-| CPU only, no GPU | `tesseract` |
-| High volume batch | `pp-ocrv5` or `tesseract` |
+| CPU only, no GPU | `indra-ocr` (layout + speed) or `tesseract` (zero-download backstop) |
+| High volume batch | `indra-ocr` or `pp-ocrv5` |
 | Cloud, no local model | `mistral-ocr` |
 
 ---
@@ -336,6 +379,7 @@ Microsoft Florence-2 is a general vision foundation model (object detection, ima
 | Qwen2.5-VL-7B | ~16GB | ✅ | bfloat16 |
 | olmOCR-2 (7B) | ~16GB | ✅ | bfloat16 |
 | Tesseract / PP-OCRv5 | 0 | ✅ | CPU only |
+| Indra OCR | 0 | ✅ | CPU only, ONNX |
 | PaddleOCR-VL-1.5 (no flash-attn) | ~40GB | ❌ OOM | Install flash-attn |
 
 ---
