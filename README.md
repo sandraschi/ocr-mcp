@@ -32,6 +32,7 @@
 | Doc | Description |
 |-----|-------------|
 | [**Install**](docs/INSTALL.md) | Install, run MCP, Web UI (`start.ps1`, ports 10858/10859), PyYAML notes, client config |
+| [**Recent improvements**](docs/IMPROVEMENTS.md) | Incremental improvements log, newest first: backends, UI, hygiene |
 | [**Backend deps**](docs/BACKEND_DEPS.md) | Web FastAPI backend: same venv as `ocr-mcp`, `pyproject.toml`, PyTorch, `OCR_AUTO_INSTALL_DEPS` |
 | [**Technical**](docs/TECHNICAL.md) | Architecture, tools, config, development, packaging |
 | [**OCR models**](docs/OCR_MODELS.md) | Engines, capabilities, hardware (see also [AI_MODELS.md](AI_MODELS.md)) |
