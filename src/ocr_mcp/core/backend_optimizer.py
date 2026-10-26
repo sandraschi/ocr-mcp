@@ -271,9 +271,11 @@ class DocumentAnalyzer:
             recommendations.extend(["mistral-ocr", "deepseek-ocr2", "florence-2"])
         elif doc_type == DocumentType.PRINTED_TEXT:
             if complexity == ContentComplexity.SIMPLE:
-                recommendations.extend(["pp-ocrv5", "tesseract", "easyocr"])
+                recommendations.extend(["indra-ocr", "pp-ocrv5", "tesseract"])
             else:
                 recommendations.extend(["mistral-ocr", "deepseek-ocr2", "florence-2"])
+        elif doc_type == DocumentType.SCANNED_DOCUMENT:
+            recommendations.extend(["indra-ocr", "pp-ocrv5", "tesseract"])
 
         # Adjust for image quality
         if quality in [ImageQuality.POOR, ImageQuality.VERY_POOR]:
@@ -554,6 +556,14 @@ class BackendOptimizer:
                 "weaknesses": ["handwriting", "complex_layouts"],
                 "speed": "very_fast",
                 "accuracy": "medium",
+                "gpu_memory": "none",
+                "offline": True,
+            },
+            "indra-ocr": {
+                "strengths": ["printed_text", "scanned_docs", "layout_blocks", "multilingual_95"],
+                "weaknesses": ["handwriting", "complex_tables", "degraded_scans"],
+                "speed": "very_fast",
+                "accuracy": "high",
                 "gpu_memory": "none",
                 "offline": True,
             },

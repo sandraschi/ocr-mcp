@@ -70,6 +70,13 @@ class OCRConfig(BaseModel):
     poppler_path: str | None = Field(default=None)
     easyocr_languages: list = Field(default_factory=lambda: ["en"])
 
+    # Indra OCR (Datalab-to, CPU ONNX) settings
+    indra_threads: int = Field(default=0)  # 0 = auto (cpu_count - 1)
+    indra_mode: str = Field(default="auto")  # auto | ocr | text (text-layer hybrid)
+    indra_dpi: int = Field(default=200)
+    indra_math: bool = Field(default=False)
+    indra_model_dir: Path | None = Field(default=None)  # overrides INDRA_OCR_MODEL_DIR
+
     # Mistral OCR API settings
     mistral_api_key: str | None = Field(default=None)
     mistral_base_url: str = Field(default="https://api.mistral.ai/v1")
@@ -164,6 +171,16 @@ class OCRConfig(BaseModel):
         poppler_env = os.getenv("POPPLER_PATH")
         if poppler_env:
             data.setdefault("poppler_path", poppler_env)
+
+        data.setdefault("indra_threads", int(os.getenv("INDRA_OCR_THREADS", 0) or 0))
+        data.setdefault("indra_mode", os.getenv("INDRA_OCR_MODE", "auto"))
+        data.setdefault("indra_dpi", int(os.getenv("INDRA_OCR_DPI", 200) or 200))
+        data.setdefault(
+            "indra_math",
+            os.getenv("INDRA_OCR_MATH", "false").lower() in ("1", "true", "yes"),
+        )
+        indra_dir_env = os.getenv("INDRA_OCR_MODEL_DIR")
+        data.setdefault("indra_model_dir", Path(indra_dir_env) if indra_dir_env else None)
 
         super().__init__(**data)
 

@@ -127,6 +127,8 @@ _BACKEND_NAME_ALIASES: dict[str, str] = {
     "unlimited-ocr": "unlimited-ocr",
     "unlimited": "unlimited-ocr",
     "baidu": "unlimited-ocr",
+    "indra": "indra-ocr",
+    "indra-ocr": "indra-ocr",
 }
 
 
@@ -257,6 +259,12 @@ class BackendManager:
                 "model_size": "~50MB",
                 "description": "Tesseract OCR engine",
             },
+            "indra-ocr": {
+                "module": "..backends.indra_ocr_backend",
+                "class": "IndraOCRBackend",
+                "model_size": "~76MB (1M params)",
+                "description": "Datalab-to Indra OCR - fast CPU OCR, layout blocks + reading order",
+            },
             "easyocr": {
                 "module": "..backends.easyocr_backend",
                 "class": "EasyOCRBackend",
@@ -319,6 +327,8 @@ class BackendManager:
 
         if name == "tesseract":
             return importlib.util.find_spec("pytesseract") is not None
+        elif name == "indra-ocr":
+            return importlib.util.find_spec("indra_ocr") is not None
         elif name == "easyocr":
             return importlib.util.find_spec("easyocr") is not None and importlib.util.find_spec("torch") is not None
         elif name == "mistral-ocr":
@@ -389,6 +399,7 @@ class BackendManager:
 
             # Fallback: light reliable engines first so flatbed scans succeed without huge downloads.
             preference_order = [
+                "indra-ocr",
                 "tesseract",
                 "pp-ocrv5",
                 "got-ocr",
