@@ -80,7 +80,8 @@ def get_help_content(level: str = "basic", topic: str | None = None) -> str:
             "- **easyocr** - Multi-language DL OCR with bounding boxes\n"
             "- **olmocr-2** - Best for academic PDFs (7B VLM, needs GPU)\n"
             "- **paddleocr-vl** - SOTA VL OCR, 109 languages\n"
-            "- **mistral-ocr** - Cloud API, no local GPU\n\n"
+            "- **mistral-ocr** - Cloud API, no local GPU\n"
+            "- **deepseek-api** - DeepSeek cloud OCR (page text). Local weights stay **deepseek-ocr2**\n\n"
             'Use `get_help(level="advanced")` for backend details and pipeline guides.'
         ),
         "advanced": (
