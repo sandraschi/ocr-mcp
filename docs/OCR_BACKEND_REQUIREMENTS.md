@@ -16,6 +16,8 @@ Per-backend pip packages, system deps, and config. For **how the web FastAPI bac
 | `TESSERACT_CMD` | — | Full path to `tesseract` |
 | `POPPLER_PATH` | — | Folder containing `pdftoppm` / `pdftoppm.exe` |
 | `MISTRAL_API_KEY` | — | Enables **mistral-ocr** |
+| `DEEPSEEK_API_KEY` | — | Enables **deepseek-api** (cloud page OCR, not the local **deepseek-ocr2** weights) |
+| `DEEPSEEK_OCR_PURPOSE` | `text_recognition` | `text_recognition` or `rich_layout_recognition` |
 | `OCR_CORPUS_DIR` | — | Optional folder for **corpus_management** SQLite (`corpus.db`); default `{OCR_CACHE_DIR}/corpus` |
 
 | Backend | Typical install | Auto pip (`OCR_AUTO_INSTALL_DEPS=1`) | Bootstrap / notes |
@@ -27,6 +29,7 @@ Per-backend pip packages, system deps, and config. For **how the web FastAPI bac
 | **pp-ocrv5** | paddle wheels | **paddlepaddle**, **paddleocr** (optional block) | Pick CPU/CUDA wheel manually if pip default wrong |
 | **qwen-layered** | `uv sync` | torch + diffusers | |
 | **mistral-ocr** | `httpx` only | — | **API key** only; no auto-install |
+| **deepseek-api** | `httpx` only | — | **API key** only. Page text. No boxes |
 | **got-ocr** | `uv sync` | torch stack | |
 | **tesseract** | `pytesseract` in pyproject | — | **Binary**: Windows auto via bootstrap |
 | **easyocr** | `easyocr` in pyproject | — | **Models** download on first OCR (logged once) |
@@ -49,6 +52,7 @@ Per-backend pip packages, system deps, and config. For **how the web FastAPI bac
 | **pp-ocrv5** | `paddlepaddle`, `paddleocr`, `numpy`, PIL | — | Optional; platform/CUDA variants for paddle |
 | **qwen-layered** | `torch`, `diffusers`, `huggingface-hub`, PIL | — | HF: Qwen/Qwen-Image-Layered |
 | **mistral-ocr** | `httpx` | `MISTRAL_API_KEY` or config `mistral_api_key` | API-only; no local model |
+| **deepseek-api** | `httpx` | `DEEPSEEK_API_KEY` or config `deepseek_api_key` | `POST /v1/tools/ocr`. PDF, Word, PowerPoint, images. $0.225 / 1,000 pages. Raw page text, no boxes. The name `deepseek` still means the local **deepseek-ocr2** weights |
 | **got-ocr** | isolated `.venv-legacy-vlm` (see below), or `torch`/`torchvision`/`transformers`/`tiktoken`/`verovio`/PIL in-process (broken on transformers>=5.0) | — | HF: stepfun-ai/GOT-OCR2_0, vendored code targets transformers==4.37.2 |
 | **unlimited-ocr** | `torch`, `torchvision`, `transformers`, `einops`, `addict`, `easydict`, `matplotlib`, PIL | — | HF: baidu/Unlimited-OCR (same deepseek-v2 encoder family as deepseek-ocr2) |
 | **tesseract** | `pytesseract`, PIL | Tesseract binary in PATH or `config.tesseract_cmd` | Languages: `config.tesseract_languages` (default eng) |
