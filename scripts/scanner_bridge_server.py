@@ -137,4 +137,4 @@ def perform_scan(request: ScanRequest):
 if __name__ == "__main__":
     print("Starting Scanner Bridge on Port 15002...")
     print("Make sure this script is running on the HOST machine (Windows) where scanners are connected.")
-    uvicorn.run(app, host="0.0.0.0", port=15002)
+    uvicorn.run(app, host="127.0.0.1", port=15002)
