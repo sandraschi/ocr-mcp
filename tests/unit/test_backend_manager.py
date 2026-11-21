@@ -405,6 +405,7 @@ class TestBackendListAndStatus:
             "pp-ocrv5",
             "qwen-layered",
             "mistral-ocr",
+            "deepseek-api",
             "mineru-2.5",
             "got-ocr",
             "tesseract",

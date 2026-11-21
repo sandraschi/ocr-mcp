@@ -43,6 +43,7 @@ OCRBackend = Literal[
     "tesseract",
     "easyocr",
     "mistral-ocr",
+    "deepseek-api",
     "nemotron-vl",
     "unlimited-ocr",
     "indra-ocr",
