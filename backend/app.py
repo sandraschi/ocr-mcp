@@ -658,6 +658,11 @@ async def get_backends():
                     "available": True,
                     "description": "Mistral OCR API — 94.9% accuracy",
                 },
+                {
+                    "name": "deepseek-api",
+                    "available": True,
+                    "description": "DeepSeek OCR API. Page text for PDF, Word, PowerPoint, and images.",
+                },
                 {"name": "got-ocr", "available": True, "description": "GOT-OCR2.0 — fast, lean"},
                 {
                     "name": "qwen-layered",

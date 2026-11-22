@@ -81,6 +81,10 @@ class OCRConfig(BaseModel):
     mistral_api_key: str | None = Field(default=None)
     mistral_base_url: str = Field(default="https://api.mistral.ai/v1")
 
+    # DeepSeek cloud OCR (POST /v1/tools/ocr). Not the local deepseek-ocr2 weights.
+    deepseek_api_key: str | None = Field(default=None)
+    deepseek_ocr_purpose: str = Field(default="text_recognition")
+
     # Server-side MCP sampling (OpenAI-compatible chat/completions; default Ollama)
     sampling_api_key: str | None = Field(default=None)
     sampling_base_url: str = Field(default="http://127.0.0.1:11434/v1")
@@ -114,6 +118,12 @@ class OCRConfig(BaseModel):
         data.setdefault("batch_size", int(os.getenv("OCR_BATCH_SIZE", 4)))
         data.setdefault("max_concurrent_jobs", int(os.getenv("OCR_MAX_CONCURRENT", 4)))
         data.setdefault("mistral_api_key", os.getenv("MISTRAL_API_KEY"))
+        _deepseek_key = os.getenv("DEEPSEEK_API_KEY")
+        data.setdefault("deepseek_api_key", _deepseek_key.strip() if _deepseek_key else None)
+        data.setdefault(
+            "deepseek_ocr_purpose",
+            os.getenv("DEEPSEEK_OCR_PURPOSE", "text_recognition"),
+        )
         data.setdefault(
             "mistral_base_url",
             os.getenv("MISTRAL_BASE_URL", "https://api.mistral.ai/v1"),
