@@ -108,6 +108,8 @@ _BACKEND_NAME_ALIASES: dict[str, str] = {
     "deepseek": "deepseek-ocr2",  # v1 (deepseek-ocr) removed; DeepSeek-OCR-2 supersedes it
     "deepseek2": "deepseek-ocr2",
     "deepseek-ocr-2": "deepseek-ocr2",
+    "deepseek-cloud": "deepseek-api",
+    "deepseek-ocr-api": "deepseek-api",
     "paddleocr": "paddleocr-vl",
     "paddle": "paddleocr-vl",
     "paddleocr-vl-1.5": "paddleocr-vl",
@@ -229,6 +231,12 @@ class BackendManager:
                 "model_size": "~500MB",
                 "description": "Mistral OCR 3 cloud API",
             },
+            "deepseek-api": {
+                "module": "..backends.deepseek_api_backend",
+                "class": "DeepSeekApiOcrBackend",
+                "model_size": "cloud",
+                "description": "DeepSeek OCR API. Page text for PDF, Word, PowerPoint, and images. Not the local deepseek-ocr2 weights.",
+            },
             "mineru-2.5": {
                 "module": "..backends.mineru_backend",
                 "class": "MinerU25Backend",
@@ -331,7 +339,7 @@ class BackendManager:
             return importlib.util.find_spec("indra_ocr") is not None
         elif name == "easyocr":
             return importlib.util.find_spec("easyocr") is not None and importlib.util.find_spec("torch") is not None
-        elif name == "mistral-ocr":
+        elif name in {"mistral-ocr", "deepseek-api"}:
             return importlib.util.find_spec("httpx") is not None or importlib.util.find_spec("requests") is not None
         elif name == "unlimited-ocr":
             has_torch = importlib.util.find_spec("torch") is not None
@@ -407,6 +415,7 @@ class BackendManager:
                 "easyocr",
                 "paddleocr-vl",
                 "mistral-ocr",
+                "deepseek-api",
                 "deepseek-ocr2",
                 "unlimited-ocr",
                 "mineru-2.5",
