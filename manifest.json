@@ -20,7 +20,7 @@
     }
   },
   "mcp": {
-    "protocol_version": "2024-11-05",
+    "protocol_version": "2026-07-28",
     "capabilities": {
       "tools": true,
       "resources": true,
